@@ -2,7 +2,7 @@ package com.plummy.vio.config;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
-import java.util.List;
+import java.util.Arrays;
 
 public class ServerConfig {
 
@@ -19,7 +19,7 @@ public class ServerConfig {
 
         PROVIDER = builder
                 .comment("LLM provider, currently supported: [openai, anthropic, ollama]")
-                .defineInList("provider", "openai", List.of("openai", "anthropic", "ollama"));
+                .defineInList("provider", "openai", Arrays.asList("openai", "anthropic", "ollama"));
 
         builder.push("openai");
         OPENAI_MODEL = builder

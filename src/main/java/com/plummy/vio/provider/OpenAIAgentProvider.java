@@ -9,8 +9,8 @@ import com.plummy.vio.Vio;
 import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.message.AgentResponseMessage;
 import com.plummy.vio.message.ConversationMessage;
+import com.plummy.vio.message.SystemMessage;
 import com.plummy.vio.message.ToolRequestMessage;
-import com.plummy.vio.registry.ToolRegistry;
 import com.plummy.vio.registry.VisitorRegistry;
 import com.plummy.vio.tool.Tool;
 import com.plummy.vio.tool.ToolArgumentException;
@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.SequencedMap;
@@ -43,12 +44,12 @@ public class OpenAIAgentProvider implements AgentProvider {
     }
 
     @Override
-    public ConversationMessage request(Conversation conversation) {
+    public ConversationMessage request(SystemMessage systemMessage, Conversation conversation, Collection<Tool> tools) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(OPENAI_URI))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + getApiKey())
-                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(conversation).toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(systemMessage, conversation, tools).toString()))
                 .build();
 
         HttpResponse<String> response;
@@ -73,7 +74,7 @@ public class OpenAIAgentProvider implements AgentProvider {
         }
     }
 
-    private JsonObject buildRequestBody(Conversation conversation) {
+    private JsonObject buildRequestBody(SystemMessage systemMessage, Conversation conversation, Collection<Tool> tools) {
         JsonObject json = new JsonObject();
 
         JsonArray input = new JsonArray();
@@ -81,18 +82,18 @@ public class OpenAIAgentProvider implements AgentProvider {
             message.accept(VisitorRegistry.OPENAI_MESSAGE_JSON_SERIALIZER).forEach(input::add);
         }
 
-        JsonArray tools = new JsonArray();
-        for (Tool tool : ToolRegistry.getAll()) {
-            tools.add(buildToolDefinition(tool));
+        JsonArray toolDefinitions = new JsonArray();
+        for (Tool tool : tools) {
+            toolDefinitions.add(buildToolDefinition(tool));
         }
 
         JsonObject reasoning = new JsonObject();
         reasoning.addProperty("effort", "low");
 
         json.addProperty("model", getModel());
-        json.addProperty("instructions", conversation.getSystemMessage().getText().getText());
+        json.addProperty("instructions", systemMessage.getContent());
         json.add("input", input);
-        json.add("tools", tools);
+        json.add("tools", toolDefinitions);
 
         json.addProperty("store", false);
         json.add("reasoning", reasoning);

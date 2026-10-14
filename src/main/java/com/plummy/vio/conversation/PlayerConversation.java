@@ -1,7 +1,6 @@
 package com.plummy.vio.conversation;
 
 import com.plummy.vio.message.ConversationMessage;
-import com.plummy.vio.message.SystemMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,16 +9,10 @@ import java.util.UUID;
 public class PlayerConversation implements Conversation {
 
     private final UUID playerId;
-    private final SystemMessage systemMessage;
     private final List<ConversationMessage> messages = new ArrayList<>();
 
-    public PlayerConversation(UUID playerId, SystemMessage systemMessage) {
+    public PlayerConversation(UUID playerId) {
         this.playerId = playerId;
-        this.systemMessage = systemMessage;
-    }
-
-    public static PlayerConversation of(UUID playerId, String systemMessage) {
-        return new PlayerConversation(playerId, SystemMessage.of(systemMessage));
     }
 
     @Override
@@ -30,11 +23,6 @@ public class PlayerConversation implements Conversation {
     @Override
     public ConversationType getType() {
         return ConversationType.PLAYER;
-    }
-
-    @Override
-    public SystemMessage getSystemMessage() {
-        return systemMessage;
     }
 
     @Override

@@ -2,7 +2,6 @@ package com.plummy.vio.conversation;
 
 import com.plummy.vio.core.Keyed;
 import com.plummy.vio.message.ConversationMessage;
-import com.plummy.vio.message.SystemMessage;
 
 import java.util.List;
 import java.util.UUID;
@@ -12,8 +11,6 @@ public interface Conversation extends Keyed<UUID> {
     UUID getId();
 
     ConversationType getType();
-
-    SystemMessage getSystemMessage();
 
     List<ConversationMessage> getMessages();
 
