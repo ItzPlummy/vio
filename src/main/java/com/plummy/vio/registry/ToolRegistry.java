@@ -1,6 +1,8 @@
 package com.plummy.vio.registry;
 
+import com.plummy.vio.tool.GetPlayerInventoryTool;
 import com.plummy.vio.tool.SetTimeTool;
+import com.plummy.vio.tool.TeleportPlayerTool;
 import com.plummy.vio.tool.Tool;
 
 import java.util.Collection;
@@ -14,6 +16,8 @@ public class ToolRegistry {
     private static final Map<String, Tool> TOOLS = new LinkedHashMap<>();
 
     public static final Tool SET_TIME = register(new SetTimeTool());
+    public static final Tool GET_PLAYER_INVENTORY_TOOL = register(new GetPlayerInventoryTool());
+    public static final Tool TELEPORT_PLAYER_TOOL = register(new TeleportPlayerTool());
 
     private static Tool register(Tool tool) {
         if (TOOLS.putIfAbsent(tool.getName(), tool) != null) {

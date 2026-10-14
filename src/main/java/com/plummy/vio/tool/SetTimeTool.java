@@ -15,7 +15,7 @@ public class SetTimeTool implements Tool {
 
     @Override
     public String getDescription() {
-        return "Sets the time of day in all dimensions, like the /time set command.";
+        return "Set the time of day in ticks.";
     }
 
     @Override
@@ -46,6 +46,6 @@ public class SetTimeTool implements Tool {
             level.setDayTime(time);
         }
 
-        return ExecutionResult.success("Time set to " + time + " in all dimensions.");
+        return ExecutionResult.success("Time set to " + time + ".");
     }
 }

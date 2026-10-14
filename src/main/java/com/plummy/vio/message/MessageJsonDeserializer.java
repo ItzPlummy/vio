@@ -55,7 +55,7 @@ public class MessageJsonDeserializer {
                     JsonObject toolExecutionResult = entry.getValue().getAsJsonObject();
 
                     toolExecutionResults.put(entry.getKey(), new Tool.ExecutionResult(
-                            Tool.Status.fromValue(toolExecutionResult.get("status").getAsString()),
+                            Tool.ExecutionStatus.fromValue(toolExecutionResult.get("status").getAsString()),
                             toolExecutionResult.get("result").getAsString()
                     ));
                 }

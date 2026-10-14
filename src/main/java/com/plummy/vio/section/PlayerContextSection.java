@@ -9,14 +9,15 @@ public class PlayerContextSection implements Section {
 
     private final UUID id;
     private final String name;
+    private final AccessLevel accessLevel;
+
     private final double x;
     private final double y;
     private final double z;
     private final double yaw;
     private final double pitch;
-    private final AccessLevel accessLevel;
 
-    public PlayerContextSection(UUID id, String name, double x, double y, double z, double yaw, double pitch, AccessLevel accessLevel) {
+    public PlayerContextSection(UUID id, String name, AccessLevel accessLevel, double x, double y, double z, double yaw, double pitch) {
         this.id = id;
         this.name = name;
         this.x = x;
@@ -28,7 +29,7 @@ public class PlayerContextSection implements Section {
     }
 
     public static PlayerContextSection fromPlayer(ServerPlayer player, AccessLevel accessLevel) {
-        return new PlayerContextSection(player.getUUID(), player.getName().getString(), player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot(), accessLevel);
+        return new PlayerContextSection(player.getUUID(), player.getName().getString(), accessLevel, player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
     }
 
     @Override

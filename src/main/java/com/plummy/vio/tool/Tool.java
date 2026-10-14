@@ -228,35 +228,35 @@ public interface Tool {
 
     class ExecutionResult {
 
-        private final Status status;
+        private final ExecutionStatus status;
         private final String result;
 
-        public ExecutionResult(Status status, String result) {
+        public ExecutionResult(ExecutionStatus status, String result) {
             this.status = status;
             this.result = result;
         }
 
         public static ExecutionResult success(String result) {
-            return new ExecutionResult(Status.SUCCESS, result);
+            return new ExecutionResult(ExecutionStatus.SUCCESS, result);
         }
 
         public static ExecutionResult partial(String result) {
-            return new ExecutionResult(Status.PARTIAL, result);
+            return new ExecutionResult(ExecutionStatus.PARTIAL, result);
         }
 
         public static ExecutionResult invalidArguments(String result) {
-            return new ExecutionResult(Status.INVALID_ARGUMENTS, result);
+            return new ExecutionResult(ExecutionStatus.INVALID_ARGUMENTS, result);
         }
 
         public static ExecutionResult denied(String result) {
-            return new ExecutionResult(Status.DENIED, result);
+            return new ExecutionResult(ExecutionStatus.DENIED, result);
         }
 
         public static ExecutionResult failure(String result) {
-            return new ExecutionResult(Status.FAILURE, result);
+            return new ExecutionResult(ExecutionStatus.FAILURE, result);
         }
 
-        public Status getStatus() {
+        public ExecutionStatus getStatus() {
             return status;
         }
 
@@ -265,7 +265,7 @@ public interface Tool {
         }
     }
 
-    enum Status {
+    enum ExecutionStatus {
 
         SUCCESS("success"),
         PARTIAL("partial"),
@@ -275,12 +275,12 @@ public interface Tool {
 
         private final String value;
 
-        Status(String value) {
+        ExecutionStatus(String value) {
             this.value = value;
         }
 
-        public static Status fromValue(String value) {
-            for (Status status : values()) {
+        public static ExecutionStatus fromValue(String value) {
+            for (ExecutionStatus status : values()) {
                 if (status.getValue().equals(value)) {
                     return status;
                 }
