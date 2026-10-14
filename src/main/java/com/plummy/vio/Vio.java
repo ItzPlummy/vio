@@ -43,13 +43,13 @@ public class Vio {
     @SubscribeEvent
     public void onServerStarting(ServerAboutToStartEvent event) {
         AgentProvider provider = new OpenAIAgentProvider(
-                "gpt-5-mini",
+                "gpt-6-luna",
                 "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"
         );
 
         Conversation conversation = new PlayerConversation(
                 UUID.randomUUID(),
-                "This is a test system message."
+                "You are an assistant on a Minecraft server. Before calling tools, write one short sentence telling the player what you are about to do."
         );
 
         conversation.addMessage(
