@@ -1,7 +1,7 @@
 package com.plummy.vio.message;
 
+import com.plummy.vio.section.ActivityDescriptionSection;
 import com.plummy.vio.section.Section;
-import com.plummy.vio.section.TextSection;
 import com.plummy.vio.tool.ToolExecutionRequest;
 
 import java.util.Collections;
@@ -11,12 +11,16 @@ import java.util.SequencedMap;
 
 public class ToolRequestMessage implements ConversationMessage {
 
-    private final TextSection activityDescription;
+    private final ActivityDescriptionSection activityDescription;
     private final SequencedMap<String, ToolExecutionRequest> toolExecutionRequests;
 
-    public ToolRequestMessage(TextSection activityDescription, SequencedMap<String, ToolExecutionRequest> toolExecutionRequests) {
+    public ToolRequestMessage(ActivityDescriptionSection activityDescription, SequencedMap<String, ToolExecutionRequest> toolExecutionRequests) {
         this.activityDescription = activityDescription;
         this.toolExecutionRequests = new LinkedHashMap<>(toolExecutionRequests);
+    }
+
+    public static ToolRequestMessage of(String activityDescription, SequencedMap<String, ToolExecutionRequest> toolExecutionRequests) {
+        return new ToolRequestMessage(new ActivityDescriptionSection(activityDescription), toolExecutionRequests);
     }
 
     @Override
@@ -36,7 +40,7 @@ public class ToolRequestMessage implements ConversationMessage {
         return visitor.visitToolRequestMessage(this);
     }
 
-    public TextSection getActivityDescription() {
+    public ActivityDescriptionSection getActivityDescription() {
         return activityDescription;
     }
 

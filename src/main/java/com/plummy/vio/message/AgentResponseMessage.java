@@ -9,12 +9,12 @@ public class AgentResponseMessage implements ConversationMessage {
 
     private final TextSection response;
 
-    public AgentResponseMessage(String content) {
-        this(new TextSection(content));
-    }
-
     public AgentResponseMessage(TextSection response) {
         this.response = response;
+    }
+
+    public static AgentResponseMessage of(String response) {
+        return new AgentResponseMessage(new TextSection(response));
     }
 
     @Override

@@ -1,20 +1,26 @@
 package com.plummy.vio.message;
 
+import com.plummy.vio.section.PlayerContextSection;
+import com.plummy.vio.section.PlayerRequestSection;
 import com.plummy.vio.section.Section;
-import com.plummy.vio.section.TextSection;
+import com.plummy.vio.section.ServerContextSection;
 
 import java.util.List;
 
 public class PlayerRequestMessage implements ConversationMessage {
 
-    private final TextSection request;
+    private final PlayerRequestSection request;
+    private final PlayerContextSection playerContext;
+    private final ServerContextSection serverContext;
 
-    public PlayerRequestMessage(String content) {
-        this(new TextSection(content));
+    public PlayerRequestMessage(PlayerRequestSection request, PlayerContextSection playerContext, ServerContextSection serverContext) {
+        this.request = request;
+        this.playerContext = playerContext;
+        this.serverContext = serverContext;
     }
 
-    public PlayerRequestMessage(TextSection request) {
-        this.request = request;
+    public static PlayerRequestMessage of(String request, PlayerContextSection playerContext, ServerContextSection serverContext) {
+        return new PlayerRequestMessage(new PlayerRequestSection(request), playerContext, serverContext);
     }
 
     @Override
@@ -25,6 +31,8 @@ public class PlayerRequestMessage implements ConversationMessage {
     @Override
     public List<Section> getSections() {
         return List.of(
+                getPlayerContext(),
+                getServerContext(),
                 getRequest()
         );
     }
@@ -34,7 +42,15 @@ public class PlayerRequestMessage implements ConversationMessage {
         return visitor.visitPlayerRequestMessage(this);
     }
 
-    public TextSection getRequest() {
+    public PlayerRequestSection getRequest() {
         return request;
+    }
+
+    public PlayerContextSection getPlayerContext() {
+        return playerContext;
+    }
+
+    public ServerContextSection getServerContext() {
+        return serverContext;
     }
 }

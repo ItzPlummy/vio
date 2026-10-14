@@ -9,12 +9,12 @@ public class SystemMessage implements Message {
 
     private final TextSection text;
 
-    public SystemMessage(String content) {
-        this(new TextSection(content));
+    public SystemMessage(TextSection text) {
+        this.text = text;
     }
 
-    public SystemMessage(TextSection section) {
-        this.text = section;
+    public static SystemMessage of(String text) {
+        return new SystemMessage(new TextSection(text));
     }
 
     @Override

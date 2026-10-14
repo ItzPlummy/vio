@@ -13,13 +13,13 @@ public class PlayerConversation implements Conversation {
     private final SystemMessage systemMessage;
     private final List<ConversationMessage> messages = new ArrayList<>();
 
-    public PlayerConversation(UUID playerId, String systemMessage) {
-        this(playerId, new SystemMessage(systemMessage));
-    }
-
     public PlayerConversation(UUID playerId, SystemMessage systemMessage) {
         this.playerId = playerId;
         this.systemMessage = systemMessage;
+    }
+
+    public static PlayerConversation of(UUID playerId, String systemMessage) {
+        return new PlayerConversation(playerId, SystemMessage.of(systemMessage));
     }
 
     @Override

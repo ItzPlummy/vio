@@ -8,12 +8,7 @@ public class ActivityPlaceholder {
     private static final List<String> PLACEHOLDERS = List.of(
             "Thinking",
             "Tinkering",
-            "Crafting",
-            "Brewing",
-            "Enchanting",
-            "Smelting",
-            "Mining for ideas",
-            "Consulting the villagers"
+            "Brewing"
     );
 
     public static String random() {

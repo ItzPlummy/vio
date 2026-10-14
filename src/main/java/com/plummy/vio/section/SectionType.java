@@ -2,7 +2,11 @@ package com.plummy.vio.section;
 
 public enum SectionType {
 
-    TEXT("text");
+    TEXT("text"),
+    ACTIVITY_DESCRIPTION("activity_description"),
+    PLAYER_REQUEST("player_request"),
+    PLAYER_CONTEXT("player_context"),
+    SERVER_CONTEXT("server_context");
 
     private final String value;
 

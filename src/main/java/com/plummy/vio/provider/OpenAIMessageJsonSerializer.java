@@ -42,7 +42,7 @@ public class OpenAIMessageJsonSerializer implements MessageVisitor<List<JsonObje
     public List<JsonObject> visitToolRequestMessage(ToolRequestMessage message) {
         List<JsonObject> items = new ArrayList<>();
 
-        String activityDescription = message.getActivityDescription().getText();
+        String activityDescription = message.getActivityDescription().getActivityDescription();
 
         if (!activityDescription.isBlank()) {
             JsonObject json = new JsonObject();

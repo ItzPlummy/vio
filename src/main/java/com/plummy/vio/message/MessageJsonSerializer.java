@@ -24,6 +24,8 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", message.getType().getValue());
+        json.add("player_context", message.getPlayerContext().accept(VisitorRegistry.SECTION_JSON_SERIALIZER));
+        json.add("server_context", message.getServerContext().accept(VisitorRegistry.SECTION_JSON_SERIALIZER));
         json.add("request", message.getRequest().accept(VisitorRegistry.SECTION_JSON_SERIALIZER));
 
         return json;

@@ -12,7 +12,6 @@ import com.plummy.vio.message.ConversationMessage;
 import com.plummy.vio.message.ToolRequestMessage;
 import com.plummy.vio.registry.ToolRegistry;
 import com.plummy.vio.registry.VisitorRegistry;
-import com.plummy.vio.section.TextSection;
 import com.plummy.vio.tool.Tool;
 import com.plummy.vio.tool.ToolArgumentException;
 import com.plummy.vio.tool.ToolArguments;
@@ -170,10 +169,10 @@ public class OpenAIAgentProvider implements AgentProvider {
         }
 
         if (toolExecutionRequests.isEmpty()) {
-            return new AgentResponseMessage(text.toString());
+            return AgentResponseMessage.of(text.toString());
         }
 
-        return new ToolRequestMessage(new TextSection(text.toString()), toolExecutionRequests);
+        return ToolRequestMessage.of(text.toString(), toolExecutionRequests);
     }
 
     public String getModel() {

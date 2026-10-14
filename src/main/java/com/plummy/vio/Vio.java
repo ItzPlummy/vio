@@ -1,12 +1,6 @@
 package com.plummy.vio;
 
 import com.mojang.logging.LogUtils;
-import com.plummy.vio.conversation.Conversation;
-import com.plummy.vio.conversation.PlayerConversation;
-import com.plummy.vio.message.ConversationMessage;
-import com.plummy.vio.message.PlayerRequestMessage;
-import com.plummy.vio.provider.AgentProvider;
-import com.plummy.vio.provider.OpenAIAgentProvider;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,7 +14,6 @@ import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import org.slf4j.Logger;
 
 import java.net.http.HttpClient;
-import java.util.UUID;
 
 @Mod(Vio.MODID)
 public class Vio {
@@ -42,22 +35,7 @@ public class Vio {
 
     @SubscribeEvent
     public void onServerStarting(ServerAboutToStartEvent event) {
-        AgentProvider provider = new OpenAIAgentProvider(
-                "gpt-6-luna",
-                "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"
-        );
 
-        Conversation conversation = new PlayerConversation(
-                UUID.randomUUID(),
-                "You are an assistant on a Minecraft server. Before calling tools, write one short sentence telling the player what you are about to do."
-        );
-
-        conversation.addMessage(
-                new PlayerRequestMessage("Hello, OpenAI!")
-        );
-
-        ConversationMessage response = provider.request(conversation);
-        getLogger().info(response.getContent());
     }
 
     @EventBusSubscriber(modid = MODID, value = Dist.CLIENT)
