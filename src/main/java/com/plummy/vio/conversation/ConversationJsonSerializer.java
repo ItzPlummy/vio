@@ -3,9 +3,18 @@ package com.plummy.vio.conversation;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.plummy.vio.message.ConversationMessage;
-import com.plummy.vio.registry.VisitorRegistry;
+import com.plummy.vio.message.MessageJsonSerializer;
 
 public class ConversationJsonSerializer implements ConversationVisitor<JsonObject> {
+
+    private static final ConversationJsonSerializer INSTANCE = new ConversationJsonSerializer();
+
+    public static ConversationJsonSerializer getInstance() {
+        return INSTANCE;
+    }
+
+    private ConversationJsonSerializer() {
+    }
 
     @Override
     public JsonObject visitPlayerConversation(PlayerConversation conversation) {
@@ -13,7 +22,7 @@ public class ConversationJsonSerializer implements ConversationVisitor<JsonObjec
 
         JsonArray messages = new JsonArray();
         for (ConversationMessage message : conversation.getMessages()) {
-            messages.add(message.accept(VisitorRegistry.MESSAGE_JSON_SERIALIZER));
+            messages.add(message.accept(MessageJsonSerializer.getInstance()));
         }
 
         json.addProperty("type", conversation.getType().getValue());

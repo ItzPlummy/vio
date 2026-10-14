@@ -1,8 +1,6 @@
 package com.plummy.vio.storage;
 
-import com.plummy.vio.core.Keyed;
-
-public interface Storage<K, T extends Keyed<K>> {
+public interface Storage<K, T extends Storage.Item<K>> {
 
     T get(K key);
 
@@ -11,4 +9,9 @@ public interface Storage<K, T extends Keyed<K>> {
     void save(T value);
 
     void delete(K key);
+
+    public static interface Item<T> {
+
+        T getKey();
+    }
 }

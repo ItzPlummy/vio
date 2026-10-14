@@ -1,12 +1,12 @@
 package com.plummy.vio.conversation;
 
-import com.plummy.vio.core.Keyed;
+import com.plummy.vio.storage.Storage;
 import com.plummy.vio.message.ConversationMessage;
 
 import java.util.List;
 import java.util.UUID;
 
-public interface Conversation extends Keyed<UUID> {
+public interface Conversation extends Storage.Item<UUID> {
 
     UUID getId();
 
@@ -20,9 +20,5 @@ public interface Conversation extends Keyed<UUID> {
 
     default UUID getKey() {
         return getId();
-    }
-
-    default void addMessages(List<ConversationMessage> messages) {
-        messages.forEach(this::addMessage);
     }
 }

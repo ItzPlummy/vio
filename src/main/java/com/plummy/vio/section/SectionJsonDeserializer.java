@@ -3,12 +3,22 @@ package com.plummy.vio.section;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.plummy.vio.access.AccessLevel;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class SectionJsonDeserializer {
+
+    private static final SectionJsonDeserializer INSTANCE = new SectionJsonDeserializer();
+
+    public static SectionJsonDeserializer getInstance() {
+        return INSTANCE;
+    }
+
+    private SectionJsonDeserializer() {
+    }
 
     public Section deserialize(JsonObject json) {
         return switch (SectionType.fromValue(json.get("type").getAsString())) {
@@ -28,7 +38,9 @@ public class SectionJsonDeserializer {
                     json.get("y").getAsDouble(),
                     json.get("z").getAsDouble(),
                     json.get("yaw").getAsDouble(),
-                    json.get("pitch").getAsDouble()
+                    json.get("pitch").getAsDouble(),
+                    // Conversations saved before access levels existed have no level, so they fall back to the default one.
+                    json.has("access_level") ? AccessLevel.fromValue(json.get("access_level").getAsString()) : AccessLevel.BASIC
             );
             case SERVER_CONTEXT -> {
                 List<String> dimensions = new ArrayList<>();

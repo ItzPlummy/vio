@@ -9,6 +9,7 @@ public class ServerConfig {
     public static final ModConfigSpec SPEC;
 
     public static final ModConfigSpec.ConfigValue<String> PROVIDER;
+    public static final ModConfigSpec.ConfigValue<String> ACCESS_LEVEL;
 
     public static final ModConfigSpec.ConfigValue<String> OPENAI_MODEL;
     public static final ModConfigSpec.ConfigValue<String> ANTHROPIC_MODEL;
@@ -20,6 +21,10 @@ public class ServerConfig {
         PROVIDER = builder
                 .comment("LLM provider, currently supported: [openai, anthropic, ollama]")
                 .defineInList("provider", "openai", Arrays.asList("openai", "anthropic", "ollama"));
+
+        ACCESS_LEVEL = builder
+                .comment("Default access level for players without their own, set with /vio access: [none, basic, full]")
+                .defineInList("access_level", "basic", Arrays.asList("none", "basic", "full"));
 
         builder.push("openai");
         OPENAI_MODEL = builder

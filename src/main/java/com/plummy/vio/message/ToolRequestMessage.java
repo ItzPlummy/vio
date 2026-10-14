@@ -2,7 +2,7 @@ package com.plummy.vio.message;
 
 import com.plummy.vio.section.ActivityDescriptionSection;
 import com.plummy.vio.section.Section;
-import com.plummy.vio.tool.ToolExecutionRequest;
+import com.plummy.vio.tool.Tool;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -12,14 +12,14 @@ import java.util.SequencedMap;
 public class ToolRequestMessage implements ConversationMessage {
 
     private final ActivityDescriptionSection activityDescription;
-    private final SequencedMap<String, ToolExecutionRequest> toolExecutionRequests;
+    private final SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests;
 
-    public ToolRequestMessage(ActivityDescriptionSection activityDescription, SequencedMap<String, ToolExecutionRequest> toolExecutionRequests) {
+    public ToolRequestMessage(ActivityDescriptionSection activityDescription, SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests) {
         this.activityDescription = activityDescription;
         this.toolExecutionRequests = new LinkedHashMap<>(toolExecutionRequests);
     }
 
-    public static ToolRequestMessage of(String activityDescription, SequencedMap<String, ToolExecutionRequest> toolExecutionRequests) {
+    public static ToolRequestMessage of(String activityDescription, SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests) {
         return new ToolRequestMessage(new ActivityDescriptionSection(activityDescription), toolExecutionRequests);
     }
 
@@ -44,7 +44,7 @@ public class ToolRequestMessage implements ConversationMessage {
         return activityDescription;
     }
 
-    public SequencedMap<String, ToolExecutionRequest> getToolExecutionRequests() {
+    public SequencedMap<String, Tool.ExecutionRequest> getToolExecutionRequests() {
         return Collections.unmodifiableSequencedMap(toolExecutionRequests);
     }
 }

@@ -1,5 +1,6 @@
 package com.plummy.vio.tool;
 
+import com.plummy.vio.access.AccessLevel;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.LinkedHashMap;
@@ -18,14 +19,14 @@ public class SetTimeTool implements Tool {
     }
 
     @Override
-    public SequencedMap<String, ToolArgumentDefinition> getArgumentSchema() {
-        SequencedMap<String, ToolArgumentDefinition> arguments = new LinkedHashMap<>();
+    public SequencedMap<String, ArgumentDefinition> getArgumentSchema() {
+        SequencedMap<String, ArgumentDefinition> arguments = new LinkedHashMap<>();
 
         arguments.put(
                 "time",
-                new ToolArgumentDefinition(
-                        ToolArgumentType.INTEGER,
-                        "Time of day in ticks, 0-23999. 0 = sunrise, 6000 = noon, 13000 = night, 18000 = midnight."
+                new ArgumentDefinition(
+                        ArgumentType.INTEGER,
+                        "Time of day in ticks, 0-23999. 0 = sunrise, 6000 = noon, 12000 = night, 18000 = midnight."
                 )
         );
 
@@ -33,13 +34,18 @@ public class SetTimeTool implements Tool {
     }
 
     @Override
-    public ToolExecutionResult execute(ToolContext context, ToolArguments arguments) {
+    public AccessLevel getAccessLevel() {
+        return AccessLevel.FULL;
+    }
+
+    @Override
+    public ExecutionResult execute(Context context, Arguments arguments) {
         int time = arguments.getInt("time", 0, 23999);
 
         for (ServerLevel level : context.getServer().getAllLevels()) {
             level.setDayTime(time);
         }
 
-        return ToolExecutionResult.success("Time set to " + time + " in all dimensions.");
+        return ExecutionResult.success("Time set to " + time + " in all dimensions.");
     }
 }

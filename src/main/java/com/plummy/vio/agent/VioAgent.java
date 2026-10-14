@@ -1,6 +1,8 @@
 package com.plummy.vio.agent;
 
 import com.plummy.vio.Vio;
+import com.plummy.vio.access.AccessLevel;
+import com.plummy.vio.access.AccessManager;
 import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.conversation.PlayerConversation;
 import com.plummy.vio.message.*;
@@ -26,9 +28,9 @@ public class VioAgent implements Agent {
 
     private final AgentProvider provider;
     private final Storage<UUID, Conversation> storage;
+    private final AccessManager accessManager;
     private final ToolExecutor toolExecutor;
     private final Supplier<SystemMessage> systemMessage;
-    private final Collection<Tool> tools;
     private final AgentListener listener;
 
     private final ExecutorService worker = Executors.newFixedThreadPool(WORKER_THREADS, runnable -> {
@@ -39,18 +41,23 @@ public class VioAgent implements Agent {
 
     private final Set<UUID> busyPlayers = ConcurrentHashMap.newKeySet();
 
-    public VioAgent(AgentProvider provider, Storage<UUID, Conversation> storage, ToolExecutor toolExecutor, Supplier<SystemMessage> systemMessage, Collection<Tool> tools, AgentListener listener) {
+    public VioAgent(AgentProvider provider, Storage<UUID, Conversation> storage, AccessManager accessManager, ToolExecutor toolExecutor, Supplier<SystemMessage> systemMessage, AgentListener listener) {
         this.provider = provider;
         this.storage = storage;
+        this.accessManager = accessManager;
         this.toolExecutor = toolExecutor;
         this.systemMessage = systemMessage;
-        this.tools = tools;
         this.listener = listener;
     }
 
     @Override
     public SubmitResult submit(ServerPlayer player, String request) {
         UUID playerId = player.getUUID();
+        AccessLevel accessLevel = accessManager.getAccessLevel(playerId);
+
+        if (accessLevel == AccessLevel.NONE) {
+            return SubmitResult.DENIED;
+        }
 
         if (!busyPlayers.add(playerId)) {
             return SubmitResult.BUSY;
@@ -65,9 +72,11 @@ public class VioAgent implements Agent {
 
         PlayerRequestMessage message = PlayerRequestMessage.of(
                 request,
-                PlayerContextSection.fromPlayer(player),
+                PlayerContextSection.fromPlayer(player, accessLevel),
                 ServerContextSection.fromServer(server)
         );
+
+        Collection<Tool> tools = toolExecutor.getAvailableTools(accessLevel);
 
         try {
             worker.execute(() -> process(server, playerId, message, tools));
@@ -132,7 +141,7 @@ public class VioAgent implements Agent {
                 }
 
                 notify(server, playerId, (listener, player) -> listener.onActivity(player, toolRequest.getActivityDescription()));
-                conversation.addMessage(executeTools(server, playerId, toolRequest));
+                conversation.addMessage(new ToolResponseMessage(toolExecutor.execute(server, playerId, toolRequest.getToolExecutionRequests())));
 
                 if (findPlayer(server, playerId) == null) {
                     return;
@@ -154,26 +163,6 @@ public class VioAgent implements Agent {
 
             busyPlayers.remove(playerId);
         }
-    }
-
-    private ToolResponseMessage executeTools(MinecraftServer server, UUID playerId, ToolRequestMessage toolRequest) {
-        ServerPlayer player = findPlayer(server, playerId);
-
-        SequencedMap<String, CompletableFuture<ToolExecutionResult>> futures = new LinkedHashMap<>();
-
-        for (Map.Entry<String, ToolExecutionRequest> entry : toolRequest.getToolExecutionRequests().entrySet()) {
-            futures.put(entry.getKey(), player == null
-                    ? CompletableFuture.completedFuture(ToolExecutionResult.failure("The player disconnected."))
-                    : toolExecutor.execute(entry.getValue(), new ToolContext(player)));
-        }
-
-        SequencedMap<String, ToolExecutionResult> results = new LinkedHashMap<>();
-
-        for (Map.Entry<String, CompletableFuture<ToolExecutionResult>> entry : futures.entrySet()) {
-            results.put(entry.getKey(), entry.getValue().join());
-        }
-
-        return new ToolResponseMessage(results);
     }
 
     private void save(MinecraftServer server, UUID playerId, Conversation conversation) {

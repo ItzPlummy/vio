@@ -1,6 +1,7 @@
 package com.plummy.vio;
 
 import com.mojang.logging.LogUtils;
+import com.plummy.vio.access.AccessManager;
 import com.plummy.vio.agent.Agent;
 import com.plummy.vio.agent.ChatAgentListener;
 import com.plummy.vio.agent.VioAgent;
@@ -11,6 +12,7 @@ import com.plummy.vio.config.SystemPromptConfig;
 import com.plummy.vio.provider.OpenAIAgentProvider;
 import com.plummy.vio.registry.ToolRegistry;
 import com.plummy.vio.storage.ConversationStorage;
+import com.plummy.vio.storage.PlayerAccessStorage;
 import com.plummy.vio.tool.ToolExecutor;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -20,6 +22,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraft.server.MinecraftServer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -28,7 +31,6 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import org.slf4j.Logger;
 
 import java.net.http.HttpClient;
-import java.util.List;
 
 @Mod(Vio.MODID)
 public class Vio {
@@ -39,6 +41,7 @@ public class Vio {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static Agent agent;
+    private static AccessManager accessManager;
 
     public Vio(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
@@ -61,12 +64,16 @@ public class Vio {
             LOGGER.warn("Provider '{}' is not implemented yet, using openai", ServerConfig.PROVIDER.get());
         }
 
+        MinecraftServer server = event.getServer();
+
+        accessManager = new AccessManager(PlayerAccessStorage.fromServer(server));
+
         agent = new VioAgent(
                 new OpenAIAgentProvider(ServerConfig.OPENAI_MODEL.get(), KeysConfig.OPENAI.get()),
-                ConversationStorage.fromServer(event.getServer()),
-                new ToolExecutor(),
+                ConversationStorage.fromServer(server),
+                accessManager,
+                new ToolExecutor(ToolRegistry.getAll(), accessManager),
                 SystemPromptConfig::load,
-                ToolRegistry.getAll(),
                 new ChatAgentListener()
         );
     }
@@ -77,6 +84,8 @@ public class Vio {
             agent.shutdown();
             agent = null;
         }
+
+        accessManager = null;
     }
 
     @SubscribeEvent
@@ -95,6 +104,10 @@ public class Vio {
 
     public static Agent getAgent() {
         return agent;
+    }
+
+    public static AccessManager getAccessManager() {
+        return accessManager;
     }
 
     public static HttpClient getHttpClient() {

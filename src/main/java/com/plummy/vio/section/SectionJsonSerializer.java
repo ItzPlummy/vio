@@ -5,6 +5,15 @@ import com.google.gson.JsonObject;
 
 public class SectionJsonSerializer implements SectionVisitor<JsonObject> {
 
+    private static final SectionJsonSerializer INSTANCE = new SectionJsonSerializer();
+
+    public static SectionJsonSerializer getInstance() {
+        return INSTANCE;
+    }
+
+    private SectionJsonSerializer() {
+    }
+
     @Override
     public JsonObject visitTextSection(TextSection section) {
         JsonObject json = new JsonObject();
@@ -47,6 +56,7 @@ public class SectionJsonSerializer implements SectionVisitor<JsonObject> {
         json.addProperty("z", section.getZ());
         json.addProperty("yaw", section.getYaw());
         json.addProperty("pitch", section.getPitch());
+        json.addProperty("access_level", section.getAccessLevel().getValue());
 
         return json;
     }

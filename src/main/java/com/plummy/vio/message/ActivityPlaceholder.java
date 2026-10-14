@@ -11,7 +11,7 @@ public class ActivityPlaceholder {
             "Brewing"
     );
 
-    public static String random() {
+    public static String getRandom() {
         return PLACEHOLDERS.get(ThreadLocalRandom.current().nextInt(PLACEHOLDERS.size())) + "...";
     }
 }

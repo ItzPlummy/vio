@@ -1,30 +1,21 @@
 package com.plummy.vio.storage;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.plummy.vio.Vio;
-import com.plummy.vio.core.Keyed;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class JsonStorage<K, T extends Keyed<K>> implements Storage<K, T> {
-
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+public abstract class JsonDirectoryStorage<K, T extends Storage.Item<K>> extends AbstractJsonStorage<K, T> {
 
     private final Path directory;
     private final Map<K, T> cache = new ConcurrentHashMap<>();
 
-    protected JsonStorage(Path directory) {
+    protected JsonDirectoryStorage(Path directory) {
         this.directory = directory;
     }
 
@@ -47,23 +38,7 @@ public abstract class JsonStorage<K, T extends Keyed<K>> implements Storage<K, T
     @Override
     public void save(T value) {
         cache.put(value.getKey(), value);
-
-        Path path = getPath(value.getKey());
-
-        try {
-            Files.createDirectories(directory);
-
-            Path temporary = Files.createTempFile(directory, getFileName(value.getKey()), ".tmp");
-            Files.writeString(temporary, GSON.toJson(serialize(value)), StandardCharsets.UTF_8);
-
-            try {
-                Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to save " + path, e);
-        }
+        writeJson(getPath(value.getKey()), serialize(value));
     }
 
     @Override
@@ -91,7 +66,7 @@ public abstract class JsonStorage<K, T extends Keyed<K>> implements Storage<K, T
         }
 
         try {
-            return deserialize(JsonParser.parseString(Files.readString(path, StandardCharsets.UTF_8)).getAsJsonObject());
+            return deserialize(readJson(path));
         } catch (IOException | RuntimeException e) {
             Vio.getLogger().warn("Failed to load {}, ignoring it", path, e);
             return null;

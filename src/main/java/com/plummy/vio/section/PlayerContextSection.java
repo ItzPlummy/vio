@@ -1,5 +1,6 @@
 package com.plummy.vio.section;
 
+import com.plummy.vio.access.AccessLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.UUID;
@@ -13,8 +14,9 @@ public class PlayerContextSection implements Section {
     private final double z;
     private final double yaw;
     private final double pitch;
+    private final AccessLevel accessLevel;
 
-    public PlayerContextSection(UUID id, String name, double x, double y, double z, double yaw, double pitch) {
+    public PlayerContextSection(UUID id, String name, double x, double y, double z, double yaw, double pitch, AccessLevel accessLevel) {
         this.id = id;
         this.name = name;
         this.x = x;
@@ -22,10 +24,11 @@ public class PlayerContextSection implements Section {
         this.z = z;
         this.yaw = yaw;
         this.pitch = pitch;
+        this.accessLevel = accessLevel;
     }
 
-    public static PlayerContextSection fromPlayer(ServerPlayer player) {
-        return new PlayerContextSection(player.getUUID(), player.getName().getString(), player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+    public static PlayerContextSection fromPlayer(ServerPlayer player, AccessLevel accessLevel) {
+        return new PlayerContextSection(player.getUUID(), player.getName().getString(), player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot(), accessLevel);
     }
 
     @Override
@@ -64,5 +67,9 @@ public class PlayerContextSection implements Section {
 
     public double getPitch() {
         return pitch;
+    }
+
+    public AccessLevel getAccessLevel() {
+        return accessLevel;
     }
 }

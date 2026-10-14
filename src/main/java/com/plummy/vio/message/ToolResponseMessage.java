@@ -1,7 +1,7 @@
 package com.plummy.vio.message;
 
 import com.plummy.vio.section.Section;
-import com.plummy.vio.tool.ToolExecutionResult;
+import com.plummy.vio.tool.Tool;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -10,9 +10,9 @@ import java.util.SequencedMap;
 
 public class ToolResponseMessage implements ConversationMessage {
 
-    private final SequencedMap<String, ToolExecutionResult> toolExecutionResults;
+    private final SequencedMap<String, Tool.ExecutionResult> toolExecutionResults;
 
-    public ToolResponseMessage(SequencedMap<String, ToolExecutionResult> toolExecutionResults) {
+    public ToolResponseMessage(SequencedMap<String, Tool.ExecutionResult> toolExecutionResults) {
         this.toolExecutionResults = new LinkedHashMap<>(toolExecutionResults);
     }
 
@@ -31,7 +31,7 @@ public class ToolResponseMessage implements ConversationMessage {
         return visitor.visitToolResponseMessage(this);
     }
 
-    public SequencedMap<String, ToolExecutionResult> getToolExecutionResults() {
+    public SequencedMap<String, Tool.ExecutionResult> getToolExecutionResults() {
         return Collections.unmodifiableSequencedMap(toolExecutionResults);
     }
 }

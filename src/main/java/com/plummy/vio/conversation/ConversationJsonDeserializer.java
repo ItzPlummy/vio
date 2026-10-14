@@ -3,11 +3,20 @@ package com.plummy.vio.conversation;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.plummy.vio.message.ConversationMessage;
-import com.plummy.vio.registry.DeserializerRegistry;
+import com.plummy.vio.message.MessageJsonDeserializer;
 
 import java.util.UUID;
 
 public class ConversationJsonDeserializer {
+
+    private static final ConversationJsonDeserializer INSTANCE = new ConversationJsonDeserializer();
+
+    public static ConversationJsonDeserializer getInstance() {
+        return INSTANCE;
+    }
+
+    private ConversationJsonDeserializer() {
+    }
 
     public Conversation deserialize(JsonObject json) {
         Conversation conversation = switch (ConversationType.fromValue(json.get("type").getAsString())) {
@@ -17,9 +26,7 @@ public class ConversationJsonDeserializer {
         };
 
         for (JsonElement message : json.getAsJsonArray("messages")) {
-            conversation.addMessage(
-                    DeserializerRegistry.MESSAGE_JSON_DESERIALIZER.deserialize(message.getAsJsonObject(), ConversationMessage.class)
-            );
+            conversation.addMessage(MessageJsonDeserializer.getInstance().deserialize(message.getAsJsonObject(), ConversationMessage.class));
         }
 
         return conversation;

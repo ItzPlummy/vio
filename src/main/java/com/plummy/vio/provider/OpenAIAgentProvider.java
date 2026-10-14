@@ -7,29 +7,20 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.plummy.vio.Vio;
 import com.plummy.vio.conversation.Conversation;
-import com.plummy.vio.message.AgentResponseMessage;
-import com.plummy.vio.message.ConversationMessage;
-import com.plummy.vio.message.SystemMessage;
-import com.plummy.vio.message.ToolRequestMessage;
-import com.plummy.vio.registry.VisitorRegistry;
-import com.plummy.vio.tool.Tool;
-import com.plummy.vio.tool.ToolArgumentException;
-import com.plummy.vio.tool.ToolArguments;
-import com.plummy.vio.tool.ToolExecutionRequest;
-import com.plummy.vio.tool.ToolArgumentDefinition;
+import com.plummy.vio.message.*;
+import com.plummy.vio.section.SectionContentSerializer;
+import com.plummy.vio.tool.*;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.SequencedMap;
+import java.util.*;
 
 public class OpenAIAgentProvider implements AgentProvider {
 
+    private static final OpenAIMessageJsonSerializer OPENAI_MESSAGE_JSON_SERIALIZER = new OpenAIMessageJsonSerializer();
     private static final String OPENAI_URI = "https://api.openai.com/v1/responses";
 
     private final String model;
@@ -69,7 +60,7 @@ public class OpenAIAgentProvider implements AgentProvider {
 
         try {
             return parseResponseBody(JsonParser.parseString(response.body()).getAsJsonObject());
-        } catch (JsonParseException | IllegalStateException | NullPointerException | ToolArgumentException e) {
+        } catch (JsonParseException | IllegalStateException | NullPointerException | Tool.ArgumentException e) {
             throw new AgentProviderException("Malformed OpenAI response: " + response.body(), e);
         }
     }
@@ -79,7 +70,7 @@ public class OpenAIAgentProvider implements AgentProvider {
 
         JsonArray input = new JsonArray();
         for (ConversationMessage message : conversation.getMessages()) {
-            message.accept(VisitorRegistry.OPENAI_MESSAGE_JSON_SERIALIZER).forEach(input::add);
+            message.accept(OPENAI_MESSAGE_JSON_SERIALIZER).forEach(input::add);
         }
 
         JsonArray toolDefinitions = new JsonArray();
@@ -91,7 +82,7 @@ public class OpenAIAgentProvider implements AgentProvider {
         reasoning.addProperty("effort", "low");
 
         json.addProperty("model", getModel());
-        json.addProperty("instructions", systemMessage.getContent());
+        json.addProperty("instructions", SectionContentSerializer.getInstance().getMessageContent(systemMessage));
         json.add("input", input);
         json.add("tools", toolDefinitions);
 
@@ -106,7 +97,7 @@ public class OpenAIAgentProvider implements AgentProvider {
         JsonObject properties = new JsonObject();
         JsonArray required = new JsonArray();
 
-        for (Map.Entry<String, ToolArgumentDefinition> entry : tool.getArgumentSchema().entrySet()) {
+        for (Map.Entry<String, Tool.ArgumentDefinition> entry : tool.getArgumentSchema().entrySet()) {
             JsonObject property = new JsonObject();
 
             property.addProperty("type", entry.getValue().getType().getValue());
@@ -142,7 +133,7 @@ public class OpenAIAgentProvider implements AgentProvider {
         }
 
         StringBuilder text = new StringBuilder();
-        SequencedMap<String, ToolExecutionRequest> toolExecutionRequests = new LinkedHashMap<>();
+        SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests = new LinkedHashMap<>();
 
         for (JsonElement element : json.getAsJsonArray("output")) {
             JsonObject item = element.getAsJsonObject();
@@ -161,9 +152,9 @@ public class OpenAIAgentProvider implements AgentProvider {
                 case "function_call" -> toolExecutionRequests.put(
                         item.get("call_id").getAsString(),
 
-                        new ToolExecutionRequest(
+                        new Tool.ExecutionRequest(
                                 item.get("name").getAsString(),
-                                ToolArguments.parse(item.get("arguments").getAsString())
+                                Tool.Arguments.parse(item.get("arguments").getAsString())
                         )
                 );
             }
@@ -186,5 +177,93 @@ public class OpenAIAgentProvider implements AgentProvider {
 
     public HttpClient getHttpClient() {
         return httpClient;
+    }
+
+    private static class OpenAIMessageJsonSerializer implements MessageVisitor<List<JsonObject>> {
+
+        @Override
+        public List<JsonObject> visitSystemMessage(SystemMessage message) {
+            JsonObject json = new JsonObject();
+
+            json.addProperty("type", "message");
+            json.addProperty("role", "system");
+            json.addProperty("content", SectionContentSerializer.getInstance().getMessageContent(message));
+
+            return List.of(json);
+        }
+
+        @Override
+        public List<JsonObject> visitPlayerRequestMessage(PlayerRequestMessage message) {
+            JsonObject json = new JsonObject();
+
+            json.addProperty("type", "message");
+            json.addProperty("role", "user");
+            json.addProperty("content", SectionContentSerializer.getInstance().getMessageContent(message));
+
+            return List.of(json);
+        }
+
+        @Override
+        public List<JsonObject> visitToolRequestMessage(ToolRequestMessage message) {
+            List<JsonObject> items = new ArrayList<>();
+
+            String activityDescription = message.getActivityDescription().getActivityDescription();
+
+            if (!activityDescription.isBlank()) {
+                JsonObject json = new JsonObject();
+
+                json.addProperty("type", "message");
+                json.addProperty("role", "assistant");
+                json.addProperty("content", activityDescription);
+
+                items.add(json);
+            }
+
+            for (Map.Entry<String, Tool.ExecutionRequest> entry : message.getToolExecutionRequests().entrySet()) {
+                JsonObject json = new JsonObject();
+
+                json.addProperty("type", "function_call");
+                json.addProperty("call_id", entry.getKey());
+                json.addProperty("name", entry.getValue().getName());
+                json.addProperty("arguments", entry.getValue().getArguments().getArguments().toString());
+
+                items.add(json);
+            }
+
+            return items;
+        }
+
+        @Override
+        public List<JsonObject> visitToolResponseMessage(ToolResponseMessage message) {
+            List<JsonObject> items = new ArrayList<>();
+
+            for (Map.Entry<String, Tool.ExecutionResult> entry : message.getToolExecutionResults().entrySet()) {
+                JsonObject output = new JsonObject();
+
+                output.addProperty("status", entry.getValue().getStatus().getValue());
+                output.addProperty("result", entry.getValue().getResult());
+
+                JsonObject json = new JsonObject();
+
+                json.addProperty("type", "function_call_output");
+                json.addProperty("call_id", entry.getKey());
+                json.addProperty("output", output.toString());
+
+                items.add(json);
+            }
+
+            return items;
+        }
+
+        @Override
+        public List<JsonObject> visitAgentResponseMessage(AgentResponseMessage message) {
+            JsonObject json = new JsonObject();
+
+            json.addProperty("type", "message");
+            json.addProperty("role", "assistant");
+            json.addProperty("content", SectionContentSerializer.getInstance().getMessageContent(message));
+
+            return List.of(json);
+        }
     }
 }

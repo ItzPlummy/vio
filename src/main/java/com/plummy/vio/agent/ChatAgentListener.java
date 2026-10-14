@@ -3,6 +3,7 @@ package com.plummy.vio.agent;
 import com.plummy.vio.message.ActivityPlaceholder;
 import com.plummy.vio.message.AgentResponseMessage;
 import com.plummy.vio.section.ActivityDescriptionSection;
+import com.plummy.vio.section.SectionContentSerializer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -13,7 +14,7 @@ public class ChatAgentListener implements AgentListener {
     @Override
     public void onActivity(ServerPlayer player, ActivityDescriptionSection activity) {
         String text = activity.getActivityDescription().isBlank()
-                ? ActivityPlaceholder.random()
+                ? ActivityPlaceholder.getRandom()
                 : activity.getActivityDescription();
 
         player.sendSystemMessage(prefix().append(Component.literal(text).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)));
@@ -21,7 +22,7 @@ public class ChatAgentListener implements AgentListener {
 
     @Override
     public void onResponse(ServerPlayer player, AgentResponseMessage response) {
-        player.sendSystemMessage(prefix().append(Component.literal(response.getContent())));
+        player.sendSystemMessage(prefix().append(Component.literal(SectionContentSerializer.getInstance().getMessageContent(response))));
     }
 
     @Override
