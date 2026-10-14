@@ -28,6 +28,11 @@ public class PlayerConversation implements Conversation {
     }
 
     @Override
+    public ConversationType getType() {
+        return ConversationType.PLAYER;
+    }
+
+    @Override
     public SystemMessage getSystemMessage() {
         return systemMessage;
     }

@@ -11,6 +11,8 @@ public interface Conversation extends Keyed<UUID> {
 
     UUID getId();
 
+    ConversationType getType();
+
     SystemMessage getSystemMessage();
 
     List<ConversationMessage> getMessages();
