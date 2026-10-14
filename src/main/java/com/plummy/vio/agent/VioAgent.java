@@ -11,11 +11,14 @@ import com.plummy.vio.provider.AgentProviderException;
 import com.plummy.vio.section.PlayerContextSection;
 import com.plummy.vio.section.ServerContextSection;
 import com.plummy.vio.storage.Storage;
-import com.plummy.vio.tool.*;
+import com.plummy.vio.tool.Tool;
+import com.plummy.vio.tool.ToolExecutor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -156,7 +159,6 @@ public class VioAgent implements Agent {
             Vio.getLogger().error("Agent request for {} failed", playerId, e);
             notify(server, playerId, (listener, player) -> listener.onError(player, "Something went wrong. Details are in the server log."));
         } finally {
-            // Every round is complete at this point (a tool request is always followed by its response), so saving is always safe.
             if (conversation != null) {
                 save(server, playerId, conversation);
             }

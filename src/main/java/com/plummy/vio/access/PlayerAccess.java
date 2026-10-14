@@ -1,7 +1,6 @@
 package com.plummy.vio.access;
 
 import com.plummy.vio.storage.Storage;
-import com.plummy.vio.storage.Storage.Item;
 
 import java.util.UUID;
 

@@ -2,14 +2,17 @@ package com.plummy.vio.conversation;
 
 import com.plummy.vio.message.ConversationMessage;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.UUID;
 
 public class PlayerConversation implements Conversation {
 
+    private static final int MESSAGE_LIMIT = 20;
+
     private final UUID playerId;
-    private final List<ConversationMessage> messages = new ArrayList<>();
+    private final Deque<ConversationMessage> messages = new ArrayDeque<>();
 
     public PlayerConversation(UUID playerId) {
         this.playerId = playerId;
@@ -27,12 +30,16 @@ public class PlayerConversation implements Conversation {
 
     @Override
     public List<ConversationMessage> getMessages() {
-        return messages;
+        return List.copyOf(messages);
     }
 
     @Override
     public void addMessage(ConversationMessage message) {
         messages.add(message);
+
+        if (messages.size() > MESSAGE_LIMIT) {
+            messages.removeFirst();
+        }
     }
 
     @Override

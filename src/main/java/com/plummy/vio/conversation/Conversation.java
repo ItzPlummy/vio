@@ -1,7 +1,7 @@
 package com.plummy.vio.conversation;
 
-import com.plummy.vio.storage.Storage;
 import com.plummy.vio.message.ConversationMessage;
+import com.plummy.vio.storage.Storage;
 
 import java.util.List;
 import java.util.UUID;

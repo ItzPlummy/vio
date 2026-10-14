@@ -1,15 +1,11 @@
 package com.plummy.vio.provider;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.plummy.vio.Vio;
 import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.message.*;
 import com.plummy.vio.section.SectionContentSerializer;
-import com.plummy.vio.tool.*;
+import com.plummy.vio.tool.Tool;
 
 import java.io.IOException;
 import java.net.URI;
