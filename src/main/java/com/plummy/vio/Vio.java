@@ -8,7 +8,7 @@ import com.plummy.vio.agent.VioAgent;
 import com.plummy.vio.command.VioCommand;
 import com.plummy.vio.config.KeysConfig;
 import com.plummy.vio.config.ServerConfig;
-import com.plummy.vio.config.SystemPromptConfig;
+import com.plummy.vio.config.SystemMessageProvider;
 import com.plummy.vio.provider.AgentProvider;
 import com.plummy.vio.provider.OpenAIAgentProvider;
 import com.plummy.vio.registry.ToolRegistry;
@@ -56,8 +56,6 @@ public class Vio {
 
     @SubscribeEvent
     public void onServerStarting(ServerAboutToStartEvent event) {
-        SystemPromptConfig.createDefaultIfMissing();
-
         switch (ServerConfig.PROVIDER.get()) {
             case "openai" -> agentProvider = new OpenAIAgentProvider(ServerConfig.OPENAI_MODEL.get(), KeysConfig.OPENAI.get());
             default -> throw new IllegalArgumentException("Provider '" + ServerConfig.PROVIDER.get() + "' is not implemented yet");
@@ -74,7 +72,7 @@ public class Vio {
                 getConversationStorage(),
                 accessManager,
                 new ToolExecutor(ToolRegistry.getAll(), accessManager),
-                SystemPromptConfig::load,
+                SystemMessageProvider.load(),
                 new ChatAgentListener()
         );
     }

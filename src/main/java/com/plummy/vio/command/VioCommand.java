@@ -54,7 +54,8 @@ public class VioCommand {
             return 0;
         }
 
-        switch (agent.submit(player, request)) {
+        // Placeholder until clients send their language with the request packet.
+        switch (agent.submit(player, request, "en")) {
             case BUSY -> {
                 context.getSource().sendFailure(Component.literal("Vio is still working on your previous request."));
                 return 0;

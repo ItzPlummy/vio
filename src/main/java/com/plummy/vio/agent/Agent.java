@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public interface Agent {
 
-    SubmitResult submit(ServerPlayer player, String request);
+    SubmitResult submit(ServerPlayer player, String request, String languageCode);
 
     boolean isBusy(UUID playerId);
 

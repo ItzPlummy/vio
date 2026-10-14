@@ -3,6 +3,7 @@ package com.plummy.vio.agent;
 import com.plummy.vio.Vio;
 import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.access.AccessManager;
+import com.plummy.vio.config.SystemMessageProvider;
 import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.conversation.PlayerConversation;
 import com.plummy.vio.message.*;
@@ -21,7 +22,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
 public class VioAgent implements Agent {
 
@@ -30,10 +30,10 @@ public class VioAgent implements Agent {
     private static final long PLAYER_LOOKUP_TIMEOUT_SECONDS = 5;
 
     private final AgentProvider provider;
-    private final Storage<UUID, Conversation> storage;
+    private final Storage<UUID, Conversation> conversationStorage;
     private final AccessManager accessManager;
     private final ToolExecutor toolExecutor;
-    private final Supplier<SystemMessage> systemMessage;
+    private final SystemMessageProvider systemMessageProvider;
     private final AgentListener listener;
 
     private final ExecutorService worker = Executors.newFixedThreadPool(WORKER_THREADS, runnable -> {
@@ -44,17 +44,17 @@ public class VioAgent implements Agent {
 
     private final Set<UUID> busyPlayers = ConcurrentHashMap.newKeySet();
 
-    public VioAgent(AgentProvider provider, Storage<UUID, Conversation> storage, AccessManager accessManager, ToolExecutor toolExecutor, Supplier<SystemMessage> systemMessage, AgentListener listener) {
+    public VioAgent(AgentProvider provider, Storage<UUID, Conversation> conversationStorage, AccessManager accessManager, ToolExecutor toolExecutor, SystemMessageProvider systemMessageProvider, AgentListener listener) {
         this.provider = provider;
-        this.storage = storage;
+        this.conversationStorage = conversationStorage;
         this.accessManager = accessManager;
         this.toolExecutor = toolExecutor;
-        this.systemMessage = systemMessage;
+        this.systemMessageProvider = systemMessageProvider;
         this.listener = listener;
     }
 
     @Override
-    public SubmitResult submit(ServerPlayer player, String request) {
+    public SubmitResult submit(ServerPlayer player, String request, String languageCode) {
         UUID playerId = player.getUUID();
         AccessLevel accessLevel = accessManager.getAccessLevel(playerId);
 
@@ -80,9 +80,10 @@ public class VioAgent implements Agent {
         );
 
         Collection<Tool> tools = toolExecutor.getAvailableTools(accessLevel);
+        SystemMessage systemMessage = systemMessageProvider.getPrompt(languageCode);
 
         try {
-            worker.execute(() -> process(server, playerId, message, tools));
+            worker.execute(() -> process(server, playerId, systemMessage, message, tools));
         } catch (RejectedExecutionException e) {
             busyPlayers.remove(playerId);
             return SubmitResult.BUSY;
@@ -103,7 +104,7 @@ public class VioAgent implements Agent {
         }
 
         try {
-            storage.delete(playerId);
+            conversationStorage.delete(playerId);
         } finally {
             busyPlayers.remove(playerId);
         }
@@ -116,11 +117,11 @@ public class VioAgent implements Agent {
         worker.shutdownNow();
     }
 
-    private void process(MinecraftServer server, UUID playerId, PlayerRequestMessage message, Collection<Tool> tools) {
+    private void process(MinecraftServer server, UUID playerId, SystemMessage systemMessage, PlayerRequestMessage message, Collection<Tool> tools) {
         Conversation conversation = null;
 
         try {
-            conversation = storage.get(playerId);
+            conversation = conversationStorage.get(playerId);
 
             if (conversation == null) {
                 conversation = new PlayerConversation(playerId);
@@ -128,10 +129,8 @@ public class VioAgent implements Agent {
 
             conversation.addMessage(message);
 
-            SystemMessage currentSystemMessage = systemMessage.get();
-
             for (int round = 0; round < MAX_ROUNDS; round++) {
-                ConversationMessage response = provider.request(currentSystemMessage, conversation, tools);
+                ConversationMessage response = provider.request(systemMessage, conversation, tools);
                 conversation.addMessage(response);
 
                 if (response instanceof AgentResponseMessage agentResponse) {
@@ -169,7 +168,7 @@ public class VioAgent implements Agent {
 
     private void save(MinecraftServer server, UUID playerId, Conversation conversation) {
         try {
-            storage.save(conversation);
+            conversationStorage.save(conversation);
         } catch (RuntimeException e) {
             Vio.getLogger().error("Failed to save conversation of {}", playerId, e);
             notify(server, playerId, (listener, player) -> listener.onError(player, "Failed to save the conversation. Details are in the server log."));
