@@ -9,7 +9,7 @@ import com.plummy.vio.Vio;
 import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.message.AgentResponseMessage;
 import com.plummy.vio.message.ConversationMessage;
-import com.plummy.vio.registries.VisitorRegistry;
+import com.plummy.vio.registry.VisitorRegistry;
 
 import java.io.IOException;
 import java.net.URI;

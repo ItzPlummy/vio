@@ -1,7 +1,7 @@
 package com.plummy.vio.message;
 
 import com.google.gson.JsonObject;
-import com.plummy.vio.registries.VisitorRegistry;
+import com.plummy.vio.registry.VisitorRegistry;
 
 public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
 

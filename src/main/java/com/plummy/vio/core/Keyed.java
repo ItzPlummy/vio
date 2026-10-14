@@ -1,4 +1,4 @@
-package com.plummy.vio.interfaces;
+package com.plummy.vio.core;
 
 public interface Keyed<T> {
 

@@ -1,6 +1,6 @@
 package com.plummy.vio.conversation;
 
-import com.plummy.vio.interfaces.Keyed;
+import com.plummy.vio.core.Keyed;
 import com.plummy.vio.message.ConversationMessage;
 import com.plummy.vio.message.SystemMessage;
 

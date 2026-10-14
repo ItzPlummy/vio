@@ -3,7 +3,7 @@ package com.plummy.vio.conversation;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.plummy.vio.message.ConversationMessage;
-import com.plummy.vio.registries.VisitorRegistry;
+import com.plummy.vio.registry.VisitorRegistry;
 
 public class ConversationJsonSerializer implements ConversationVisitor<JsonObject> {
 

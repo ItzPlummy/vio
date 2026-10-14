@@ -1,6 +1,6 @@
 package com.plummy.vio.message;
 
-import com.plummy.vio.registries.VisitorRegistry;
+import com.plummy.vio.registry.VisitorRegistry;
 import com.plummy.vio.section.Section;
 
 import java.util.List;

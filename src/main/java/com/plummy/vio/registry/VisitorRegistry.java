@@ -1,4 +1,4 @@
-package com.plummy.vio.registries;
+package com.plummy.vio.registry;
 
 import com.google.gson.JsonObject;
 import com.plummy.vio.conversation.ConversationJsonSerializer;
@@ -13,10 +13,10 @@ import com.plummy.vio.section.SectionVisitor;
 public class VisitorRegistry {
 
     public static final ConversationVisitor<JsonObject> CONVERSATION_JSON_SERIALIZER = new ConversationJsonSerializer();
+
     public static final MessageVisitor<JsonObject> MESSAGE_JSON_SERIALIZER = new MessageJsonSerializer();
-    public static final SectionVisitor<JsonObject> SECTION_JSON_SERIALIZER = new SectionJsonSerializer();
-
-    public static final SectionVisitor<String> SECTION_CONTENT_SERIALIZER = new SectionContentSerializer();
-
     public static final MessageVisitor<JsonObject> OPENAI_MESSAGE_JSON_SERIALIZER = new OpenAIMessageJsonSerializer();
+
+    public static final SectionVisitor<JsonObject> SECTION_JSON_SERIALIZER = new SectionJsonSerializer();
+    public static final SectionVisitor<String> SECTION_CONTENT_SERIALIZER = new SectionContentSerializer();
 }
