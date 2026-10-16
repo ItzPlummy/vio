@@ -28,7 +28,7 @@ import java.util.function.BiConsumer;
 
 public class VioAgent implements Agent {
 
-    private static final int MAX_ROUNDS = 8;
+    private static final int MAX_ROUNDS = 15;
     private static final int WORKER_THREADS = 4;
     private static final long PLAYER_LOOKUP_TIMEOUT_SECONDS = 5;
 
