@@ -5,6 +5,7 @@ import com.plummy.vio.section.PlayerRequestSection;
 import com.plummy.vio.section.Section;
 import com.plummy.vio.section.ServerContextSection;
 
+import java.time.Instant;
 import java.util.List;
 
 public class PlayerRequestMessage implements ConversationMessage {
@@ -12,15 +13,17 @@ public class PlayerRequestMessage implements ConversationMessage {
     private final PlayerRequestSection request;
     private final PlayerContextSection playerContext;
     private final ServerContextSection serverContext;
+    private final Instant time;
 
-    public PlayerRequestMessage(PlayerRequestSection request, PlayerContextSection playerContext, ServerContextSection serverContext) {
+    public PlayerRequestMessage(PlayerRequestSection request, PlayerContextSection playerContext, ServerContextSection serverContext, Instant time) {
         this.request = request;
         this.playerContext = playerContext;
         this.serverContext = serverContext;
+        this.time = time;
     }
 
-    public static PlayerRequestMessage of(String request, PlayerContextSection playerContext, ServerContextSection serverContext) {
-        return new PlayerRequestMessage(new PlayerRequestSection(request), playerContext, serverContext);
+    public static PlayerRequestMessage of(String request, PlayerContextSection playerContext, ServerContextSection serverContext, Instant time) {
+        return new PlayerRequestMessage(new PlayerRequestSection(request), playerContext, serverContext, time);
     }
 
     @Override
@@ -40,6 +43,11 @@ public class PlayerRequestMessage implements ConversationMessage {
     @Override
     public <T> T accept(MessageVisitor<T> visitor) {
         return visitor.visitPlayerRequestMessage(this);
+    }
+
+    @Override
+    public Instant getTime() {
+        return time;
     }
 
     public PlayerRequestSection getRequest() {

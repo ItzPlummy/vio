@@ -2,7 +2,6 @@ package com.plummy.vio.command;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -11,6 +10,8 @@ import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.access.AccessManager;
 import com.plummy.vio.access.PlayerAccess;
 import com.plummy.vio.agent.Agent;
+import com.plummy.vio.network.Networking;
+import com.plummy.vio.network.payload.ClearHistoryPayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -39,38 +40,7 @@ public class VioCommand {
                         .executes(VioCommand::reset))
                 .then(Commands.literal("access")
                         .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                        .then(player))
-                .then(Commands.argument("request", StringArgumentType.greedyString())
-                        .executes(VioCommand::submit)));
-    }
-
-    private static int submit(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
-        String request = StringArgumentType.getString(context, "request");
-        Agent agent = Vio.getAgent();
-
-        if (agent == null) {
-            context.getSource().sendFailure(Component.literal("Vio is not running."));
-            return 0;
-        }
-
-        switch (agent.submit(player, request, player.clientInformation().language())) {
-            case BUSY -> {
-                context.getSource().sendFailure(Component.literal("Vio is still working on your previous request."));
-                return 0;
-            }
-            case DENIED -> {
-                context.getSource().sendFailure(Component.literal("You don't have access to Vio."));
-                return 0;
-            }
-            case ACCEPTED -> {
-                // Commands are not echoed to chat, so show the player what they asked.
-                context.getSource().sendSystemMessage(Component.literal("> " + request).withStyle(ChatFormatting.GRAY));
-                return 1;
-            }
-        }
-
-        return 0;
+                        .then(player)));
     }
 
     private static int reset(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -87,6 +57,7 @@ public class VioCommand {
             return 0;
         }
 
+        Networking.send(player, ClearHistoryPayload.getInstance());
         context.getSource().sendSystemMessage(Component.literal("Conversation reset.").withStyle(ChatFormatting.GRAY));
         return 1;
     }

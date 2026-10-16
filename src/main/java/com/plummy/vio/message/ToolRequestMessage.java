@@ -4,6 +4,7 @@ import com.plummy.vio.section.ActivityDescriptionSection;
 import com.plummy.vio.section.Section;
 import com.plummy.vio.tool.Tool;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,10 +14,12 @@ public class ToolRequestMessage implements ConversationMessage {
 
     private final ActivityDescriptionSection activityDescription;
     private final SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests;
+    private final Instant time;
 
-    public ToolRequestMessage(ActivityDescriptionSection activityDescription, SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests) {
+    public ToolRequestMessage(ActivityDescriptionSection activityDescription, SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests, Instant time) {
         this.activityDescription = activityDescription;
         this.toolExecutionRequests = new LinkedHashMap<>(toolExecutionRequests);
+        this.time = time;
     }
 
     public static ToolRequestMessage of(SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests) {
@@ -27,7 +30,7 @@ public class ToolRequestMessage implements ConversationMessage {
                 .findFirst()
                 .orElse("");
 
-        return new ToolRequestMessage(new ActivityDescriptionSection(activityDescription), toolExecutionRequests);
+        return new ToolRequestMessage(new ActivityDescriptionSection(activityDescription), toolExecutionRequests, ConversationMessage.now());
     }
 
     @Override
@@ -45,6 +48,11 @@ public class ToolRequestMessage implements ConversationMessage {
     @Override
     public <T> T accept(MessageVisitor<T> visitor) {
         return visitor.visitToolRequestMessage(this);
+    }
+
+    @Override
+    public Instant getTime() {
+        return time;
     }
 
     public ActivityDescriptionSection getActivityDescription() {

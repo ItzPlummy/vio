@@ -3,12 +3,12 @@ package com.plummy.vio;
 import com.mojang.logging.LogUtils;
 import com.plummy.vio.access.AccessManager;
 import com.plummy.vio.agent.Agent;
-import com.plummy.vio.agent.ChatAgentListener;
 import com.plummy.vio.agent.VioAgent;
 import com.plummy.vio.command.VioCommand;
 import com.plummy.vio.config.KeysConfig;
 import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.config.SystemMessageProvider;
+import com.plummy.vio.network.NetworkAgentListener;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderFactory;
 import com.plummy.vio.storage.ConversationStorage;
@@ -73,7 +73,7 @@ public class Vio {
                 new BasicToolExecutor(),
                 new ServerToolExecutor(server),
                 SystemMessageProvider.load(),
-                new ChatAgentListener()
+                new NetworkAgentListener()
         );
     }
 

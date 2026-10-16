@@ -16,9 +16,11 @@ import com.plummy.vio.storage.Storage;
 import com.plummy.vio.tool.BasicToolExecutor;
 import com.plummy.vio.tool.ServerToolExecutor;
 import com.plummy.vio.tool.Tool;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
@@ -59,7 +61,7 @@ public class VioAgent implements Agent {
     }
 
     @Override
-    public SubmitResult submit(ServerPlayer player, String request, String languageCode) {
+    public SubmitResult submit(ServerPlayer player, String request, Instant time, String languageCode) {
         UUID playerId = player.getUUID();
         AccessLevel accessLevel = accessManager.getAccessLevel(playerId);
 
@@ -75,13 +77,14 @@ public class VioAgent implements Agent {
 
         if (server == null) {
             busyPlayers.remove(playerId);
-            return SubmitResult.BUSY;
+            return SubmitResult.UNAVAILABLE;
         }
 
         PlayerRequestMessage message = PlayerRequestMessage.of(
                 request,
                 PlayerContextSection.fromPlayer(player, accessLevel),
-                ServerContextSection.fromServer(server)
+                ServerContextSection.fromServer(server),
+                time
         );
 
         SystemMessage systemMessage = systemMessageProvider.getPrompt(languageCode);
@@ -90,7 +93,7 @@ public class VioAgent implements Agent {
             worker.execute(() -> process(server, playerId, accessLevel, systemMessage, message));
         } catch (RejectedExecutionException e) {
             busyPlayers.remove(playerId);
-            return SubmitResult.BUSY;
+            return SubmitResult.UNAVAILABLE;
         }
 
         return SubmitResult.ACCEPTED;
@@ -146,22 +149,22 @@ public class VioAgent implements Agent {
                     throw new IllegalStateException("Unexpected provider response: " + response.getType());
                 }
 
-                notify(server, playerId, (listener, player) -> listener.onActivity(player, toolRequest.getActivityDescription()));
+                notify(server, playerId, (listener, player) -> listener.onActivity(player, toolRequest));
 
-                conversation.addMessage(new ToolResponseMessage(executeTools(accessLevel, toolRequest.getToolExecutionRequests())));
+                conversation.addMessage(ToolResponseMessage.of(executeTools(accessLevel, toolRequest.getToolExecutionRequests())));
 
                 if (findPlayer(server, playerId) == null) {
                     return;
                 }
             }
 
-            notify(server, playerId, (listener, player) -> listener.onError(player, "Stopped after " + MAX_ROUNDS + " steps without a final answer."));
+            notify(server, playerId, (listener, player) -> listener.onError(player, error("max_rounds", MAX_ROUNDS)));
         } catch (ProviderException e) {
             Vio.getLogger().error("Agent request for {} failed", playerId, e);
-            notify(server, playerId, (listener, player) -> listener.onError(player, "The AI provider request failed. Details are in the server log."));
+            notify(server, playerId, (listener, player) -> listener.onError(player, error("provider")));
         } catch (RuntimeException e) {
             Vio.getLogger().error("Agent request for {} failed", playerId, e);
-            notify(server, playerId, (listener, player) -> listener.onError(player, "Something went wrong. Details are in the server log."));
+            notify(server, playerId, (listener, player) -> listener.onError(player, error("internal")));
         } finally {
             if (conversation != null) {
                 save(server, playerId, conversation);
@@ -176,8 +179,13 @@ public class VioAgent implements Agent {
             conversationStorage.save(conversation);
         } catch (RuntimeException e) {
             Vio.getLogger().error("Failed to save conversation of {}", playerId, e);
-            notify(server, playerId, (listener, player) -> listener.onError(player, "Failed to save the conversation. Details are in the server log."));
+            notify(server, playerId, (listener, player) -> listener.onError(player, error("save")));
         }
+    }
+
+    // Translated on the client, in the player's language.
+    private static Component error(String name, Object... args) {
+        return Component.translatable("vio.agent.error." + name, args);
     }
 
     private static ServerPlayer findPlayer(MinecraftServer server, UUID playerId) {

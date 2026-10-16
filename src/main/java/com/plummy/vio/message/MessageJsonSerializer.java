@@ -32,6 +32,7 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", message.getType().getValue());
+        json.addProperty("time", message.getTime().toString());
         json.add("player_context", message.getPlayerContext().accept(SectionJsonSerializer.getInstance()));
         json.add("server_context", message.getServerContext().accept(SectionJsonSerializer.getInstance()));
         json.add("request", message.getRequest().accept(SectionJsonSerializer.getInstance()));
@@ -55,6 +56,7 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
         }
 
         json.addProperty("type", message.getType().getValue());
+        json.addProperty("time", message.getTime().toString());
         json.add("activity_description", message.getActivityDescription().accept(SectionJsonSerializer.getInstance()));
         json.add("tool_execution_requests", toolExecutionRequests);
 
@@ -77,6 +79,7 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
         }
 
         json.addProperty("type", message.getType().getValue());
+        json.addProperty("time", message.getTime().toString());
         json.add("tool_execution_results", toolExecutionResults);
 
         return json;
@@ -87,6 +90,7 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", message.getType().getValue());
+        json.addProperty("time", message.getTime().toString());
         json.add("response", message.getResponse().accept(SectionJsonSerializer.getInstance()));
 
         return json;

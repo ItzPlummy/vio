@@ -4,5 +4,6 @@ public enum SubmitResult {
 
     ACCEPTED,
     BUSY,
-    DENIED
+    DENIED,
+    UNAVAILABLE
 }
