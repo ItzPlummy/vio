@@ -1,10 +1,7 @@
 package com.plummy.vio.tool;
 
 import com.plummy.vio.access.AccessLevel;
-import com.plummy.vio.registry.ToolRegistry;
 
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,41 +18,17 @@ public class BasicToolExecutor extends AbstractToolExecutor<BasicTool> {
             }
     );
 
-    @Override
-    public List<BasicTool> getAvailableTools(AccessLevel accessLevel) {
-        return ToolRegistry.getAll(BasicTool.class).stream().toList();
+    public BasicToolExecutor() {
+        super(BasicTool.class);
     }
 
     @Override
     public Tool.ExecutionResult execute(AccessLevel accessLevel, Tool.ExecutionRequest request) {
-        try {
-            return worker.submit(
-                    () -> {
-                        BasicTool tool = ToolRegistry.get(request.getName(), BasicTool.class);
+        return await(worker.submit(() -> executeNow(accessLevel, request)));
+    }
 
-                        if (tool == null) {
-                            return Tool.ExecutionResult.invalidArguments("Unknown tool: %s.".formatted(request.getName()));
-                        }
-
-                        if (!accessLevel.isAtLeast(tool.getAccessLevel())) {
-                            return Tool.ExecutionResult.denied("Tool '%s' requires access level '%s', the player has '%s'.".formatted(tool.getName(), tool.getAccessLevel(), accessLevel));
-                        }
-
-                        try {
-                            return tool.execute(request.getArguments());
-                        } catch (Tool.ArgumentException e) {
-                            return Tool.ExecutionResult.invalidArguments(e.getMessage());
-                        } catch (RuntimeException e) {
-                            return Tool.ExecutionResult.failure("Internal error while executing the tool.");
-                        }
-                    }
-            ).get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return Tool.ExecutionResult.failure("Execution interrupted.");
-        } catch (ExecutionException e) {
-            System.out.println(e.getMessage());
-            return Tool.ExecutionResult.failure("Internal error while executing the tools.");
-        }
+    @Override
+    protected Tool.ExecutionResult invoke(BasicTool tool, Tool.Arguments arguments) {
+        return tool.execute(arguments);
     }
 }

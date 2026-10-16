@@ -19,7 +19,14 @@ public class ToolRequestMessage implements ConversationMessage {
         this.toolExecutionRequests = new LinkedHashMap<>(toolExecutionRequests);
     }
 
-    public static ToolRequestMessage of(String activityDescription, SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests) {
+    public static ToolRequestMessage of(SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests) {
+        // With parallel calls the first status describes the round; a blank one falls back to a placeholder when shown.
+        String activityDescription = toolExecutionRequests.values().stream()
+                .map(request -> request.getArguments().getStatus())
+                .filter(status -> !status.isBlank())
+                .findFirst()
+                .orElse("");
+
         return new ToolRequestMessage(new ActivityDescriptionSection(activityDescription), toolExecutionRequests);
     }
 

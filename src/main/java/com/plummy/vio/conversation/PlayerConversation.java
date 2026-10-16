@@ -1,6 +1,7 @@
 package com.plummy.vio.conversation;
 
 import com.plummy.vio.message.ConversationMessage;
+import com.plummy.vio.message.PlayerRequestMessage;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -37,7 +38,8 @@ public class PlayerConversation implements Conversation {
     public void addMessage(ConversationMessage message) {
         messages.add(message);
 
-        if (messages.size() > MESSAGE_LIMIT) {
+        // Trim whole turns, so the history never starts with a tool call, tool output or answer whose player request was dropped.
+        while (!messages.isEmpty() && (messages.size() > MESSAGE_LIMIT || !(messages.getFirst() instanceof PlayerRequestMessage))) {
             messages.removeFirst();
         }
     }

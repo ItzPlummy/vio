@@ -37,7 +37,10 @@ public class Vio {
 
     public static final String MODID = "vio";
 
-    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+    // NORMAL follows redirects except HTTPS -> HTTP downgrades.
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build();
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static Agent agent;

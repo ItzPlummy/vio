@@ -2,6 +2,7 @@ package com.plummy.vio.provider;
 
 import com.google.gson.*;
 import com.plummy.vio.Vio;
+import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.message.*;
 import com.plummy.vio.registry.ToolRegistry;
@@ -43,12 +44,12 @@ public class OpenAIProvider implements Provider {
     }
 
     @Override
-    public ConversationMessage request(SystemMessage systemMessage, Conversation conversation) {
+    public ConversationMessage request(AccessLevel accessLevel, SystemMessage systemMessage, Conversation conversation) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(OPENAI_URI))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + getApiKey())
-                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(systemMessage, conversation).toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, systemMessage, conversation).toString()))
                 .build();
 
         HttpResponse<String> response;
@@ -73,7 +74,7 @@ public class OpenAIProvider implements Provider {
         }
     }
 
-    private JsonObject buildRequestBody(SystemMessage systemMessage, Conversation conversation) {
+    private JsonObject buildRequestBody(AccessLevel accessLevel, SystemMessage systemMessage, Conversation conversation) {
         JsonObject json = new JsonObject();
 
         JsonArray input = new JsonArray();
@@ -83,7 +84,7 @@ public class OpenAIProvider implements Provider {
 
         JsonArray toolDefinitions = new JsonArray();
 
-        for (Tool tool : ToolRegistry.getAll()) {
+        for (Tool tool : ToolRegistry.getAll(accessLevel)) {
             toolDefinitions.add(buildToolDefinition(tool));
         }
 
@@ -106,7 +107,7 @@ public class OpenAIProvider implements Provider {
         JsonObject properties = new JsonObject();
         JsonArray required = new JsonArray();
 
-        for (Map.Entry<String, Tool.ArgumentDefinition> entry : tool.getArgumentSchema().entrySet()) {
+        for (Map.Entry<String, Tool.ArgumentDefinition> entry : tool.getFullArgumentSchema().entrySet()) {
             JsonObject property = new JsonObject();
 
             property.addProperty("type", entry.getValue().getType().getValue());
@@ -173,7 +174,8 @@ public class OpenAIProvider implements Provider {
             return AgentResponseMessage.of(text.toString());
         }
 
-        return ToolRequestMessage.of(text.toString(), toolExecutionRequests);
+        // Text before tool calls is the model thinking out loud; the player sees the calls' status argument instead.
+        return ToolRequestMessage.of(toolExecutionRequests);
     }
 
     private static class OpenAIMessageJsonSerializer implements MessageVisitor<List<JsonObject>> {
@@ -202,19 +204,8 @@ public class OpenAIProvider implements Provider {
 
         @Override
         public List<JsonObject> visitToolRequestMessage(ToolRequestMessage message) {
+            // The status is already inside each call's arguments, so no assistant message is replayed.
             List<JsonObject> items = new ArrayList<>();
-
-            String activityDescription = message.getActivityDescription().getActivityDescription();
-
-            if (!activityDescription.isBlank()) {
-                JsonObject json = new JsonObject();
-
-                json.addProperty("type", "message");
-                json.addProperty("role", "assistant");
-                json.addProperty("content", activityDescription);
-
-                items.add(json);
-            }
 
             for (Map.Entry<String, Tool.ExecutionRequest> entry : message.getToolExecutionRequests().entrySet()) {
                 JsonObject json = new JsonObject();

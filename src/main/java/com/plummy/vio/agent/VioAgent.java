@@ -87,7 +87,7 @@ public class VioAgent implements Agent {
         SystemMessage systemMessage = systemMessageProvider.getPrompt(languageCode);
 
         try {
-            worker.execute(() -> process(server, playerId, systemMessage, message));
+            worker.execute(() -> process(server, playerId, accessLevel, systemMessage, message));
         } catch (RejectedExecutionException e) {
             busyPlayers.remove(playerId);
             return SubmitResult.BUSY;
@@ -121,7 +121,7 @@ public class VioAgent implements Agent {
         worker.shutdownNow();
     }
 
-    private void process(MinecraftServer server, UUID playerId, SystemMessage systemMessage, PlayerRequestMessage message) {
+    private void process(MinecraftServer server, UUID playerId, AccessLevel accessLevel, SystemMessage systemMessage, PlayerRequestMessage message) {
         Conversation conversation = null;
 
         try {
@@ -134,7 +134,7 @@ public class VioAgent implements Agent {
             conversation.addMessage(message);
 
             for (int round = 0; round < MAX_ROUNDS; round++) {
-                ConversationMessage response = provider.request(systemMessage, conversation);
+                ConversationMessage response = provider.request(accessLevel, systemMessage, conversation);
                 conversation.addMessage(response);
 
                 if (response instanceof AgentResponseMessage agentResponse) {
@@ -148,7 +148,7 @@ public class VioAgent implements Agent {
 
                 notify(server, playerId, (listener, player) -> listener.onActivity(player, toolRequest.getActivityDescription()));
 
-                conversation.addMessage(new ToolResponseMessage(executeTools(accessManager.getAccessLevel(playerId), toolRequest.getToolExecutionRequests())));
+                conversation.addMessage(new ToolResponseMessage(executeTools(accessLevel, toolRequest.getToolExecutionRequests())));
 
                 if (findPlayer(server, playerId) == null) {
                     return;
@@ -213,10 +213,18 @@ public class VioAgent implements Agent {
         SequencedMap<String, Tool.ExecutionResult> results = new LinkedHashMap<>();
 
         for (Map.Entry<String, Tool.ExecutionRequest> entry : tools.entrySet()) {
-            Tool.ExecutionResult result = switch (ToolRegistry.get(entry.getValue().getName()).getType()) {
-                case BASIC -> basicToolExecutor.execute(accessLevel, entry.getValue());
-                case SERVER -> serverToolExecutor.execute(accessLevel, entry.getValue());
-            };
+            Tool tool = ToolRegistry.get(entry.getValue().getName());
+
+            Tool.ExecutionResult result;
+
+            if (tool == null) {
+                result = Tool.ExecutionResult.invalidArguments("Unknown tool: %s.".formatted(entry.getValue().getName()));
+            } else {
+                result = switch (tool.getType()) {
+                    case BASIC -> basicToolExecutor.execute(accessLevel, entry.getValue());
+                    case SERVER -> serverToolExecutor.execute(accessLevel, entry.getValue());
+                };
+            }
 
             results.put(entry.getKey(), result);
         }

@@ -1,15 +1,28 @@
 package com.plummy.vio.provider;
 
+import com.google.gson.*;
 import com.plummy.vio.Vio;
+import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.conversation.Conversation;
-import com.plummy.vio.message.ConversationMessage;
-import com.plummy.vio.message.SystemMessage;
+import com.plummy.vio.message.*;
+import com.plummy.vio.registry.ToolRegistry;
+import com.plummy.vio.section.SectionContentSerializer;
 import com.plummy.vio.tool.Tool;
 
+import java.io.IOException;
+import java.net.URI;
 import java.net.http.HttpClient;
-import java.util.Collection;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.*;
 
 public class AnthropicProvider implements Provider {
+
+    private static final String ANTHROPIC_URI = "https://api.anthropic.com/v1/messages";
+    private static final String ANTHROPIC_VERSION = "2023-06-01";
+    private static final String REFUSAL_RESPONSE = "Sorry, I can't help with that one.";
+
+    private static final AnthropicMessageJsonSerializer ANTHROPIC_MESSAGE_JSON_SERIALIZER = new AnthropicMessageJsonSerializer();
 
     private final String model;
     private final String apiKey;
@@ -34,7 +47,236 @@ public class AnthropicProvider implements Provider {
     }
 
     @Override
-    public ConversationMessage request(SystemMessage systemMessage, Conversation conversation) {
-        return null;
+    public ConversationMessage request(AccessLevel accessLevel, SystemMessage systemMessage, Conversation conversation) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(ANTHROPIC_URI))
+                .header("Content-Type", "application/json")
+                .header("x-api-key", getApiKey())
+                .header("anthropic-version", ANTHROPIC_VERSION)
+                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, systemMessage, conversation).toString()))
+                .build();
+
+        HttpResponse<String> response;
+
+        try {
+            response = getHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException e) {
+            throw new ProviderException("Anthropic request failed", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ProviderException("Anthropic request interrupted", e);
+        }
+
+        if (response.statusCode() != 200) {
+            throw new ProviderException("Anthropic returned " + response.statusCode() + ": " + response.body());
+        }
+
+        try {
+            return parseResponseBody(JsonParser.parseString(response.body()).getAsJsonObject());
+        } catch (JsonParseException | IllegalStateException | NullPointerException | ClassCastException e) {
+            throw new ProviderException("Malformed Anthropic response: " + response.body(), e);
+        }
+    }
+
+    private JsonObject buildRequestBody(AccessLevel accessLevel, SystemMessage systemMessage, Conversation conversation) {
+        JsonObject json = new JsonObject();
+
+        JsonArray messages = new JsonArray();
+        for (ConversationMessage message : conversation.getMessages()) {
+            message.accept(ANTHROPIC_MESSAGE_JSON_SERIALIZER).forEach(messages::add);
+        }
+
+        JsonArray toolDefinitions = new JsonArray();
+
+        for (Tool tool : ToolRegistry.getAll(accessLevel)) {
+            toolDefinitions.add(buildToolDefinition(tool));
+        }
+
+        // Thinking blocks would have to be stored and replayed unchanged, so thinking is off.
+        // Only accepted at effort high or below, and rejected by models that can't disable thinking (Opus 5.5, Sonnet 5.5).
+        JsonObject thinking = new JsonObject();
+        thinking.addProperty("type", "disabled");
+
+        JsonObject outputConfig = new JsonObject();
+        outputConfig.addProperty("effort", "low");
+
+        // Every agent round resends the whole conversation, so cache it up to the last block.
+        JsonObject cacheControl = new JsonObject();
+        cacheControl.addProperty("type", "ephemeral");
+
+        json.addProperty("model", getModel());
+        json.addProperty("system", SectionContentSerializer.getInstance().getMessageContent(systemMessage));
+        json.add("messages", messages);
+
+        if (!toolDefinitions.isEmpty()) {
+            json.add("tools", toolDefinitions);
+        }
+
+        json.add("thinking", thinking);
+        json.add("output_config", outputConfig);
+        json.add("cache_control", cacheControl);
+        json.addProperty("max_tokens", 16000);
+
+        return json;
+    }
+
+    private static JsonObject buildToolDefinition(Tool tool) {
+        JsonObject properties = new JsonObject();
+        JsonArray required = new JsonArray();
+
+        for (Map.Entry<String, Tool.ArgumentDefinition> entry : tool.getFullArgumentSchema().entrySet()) {
+            JsonObject property = new JsonObject();
+
+            property.addProperty("type", entry.getValue().getType().getValue());
+            property.addProperty("description", entry.getValue().getDescription());
+
+            properties.add(entry.getKey(), property);
+            required.add(entry.getKey());
+        }
+
+        JsonObject inputSchema = new JsonObject();
+
+        inputSchema.addProperty("type", "object");
+        inputSchema.add("properties", properties);
+        inputSchema.add("required", required);
+        inputSchema.addProperty("additionalProperties", false);
+
+        JsonObject json = new JsonObject();
+
+        json.addProperty("name", tool.getName());
+        json.addProperty("description", tool.getDescription());
+        json.add("input_schema", inputSchema);
+        json.addProperty("strict", true);
+
+        return json;
+    }
+
+    private ConversationMessage parseResponseBody(JsonObject json) {
+        JsonElement stopReasonElement = json.get("stop_reason");
+        String stopReason = stopReasonElement == null || stopReasonElement.isJsonNull() ? "" : stopReasonElement.getAsString();
+
+        switch (stopReason) {
+            case "refusal" -> {
+                Vio.getLogger().warn("Anthropic declined the request: {}", json.get("stop_details"));
+                return AgentResponseMessage.of(REFUSAL_RESPONSE);
+            }
+            case "max_tokens" -> throw new ProviderException("Anthropic response hit max_tokens");
+        }
+
+        StringBuilder text = new StringBuilder();
+        SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests = new LinkedHashMap<>();
+
+        for (JsonElement element : json.getAsJsonArray("content")) {
+            JsonObject block = element.getAsJsonObject();
+
+            switch (block.get("type").getAsString()) {
+                case "text" -> text.append(block.get("text").getAsString());
+                case "tool_use" -> toolExecutionRequests.put(
+                        block.get("id").getAsString(),
+
+                        new Tool.ExecutionRequest(
+                                block.get("name").getAsString(),
+                                new Tool.Arguments(block.getAsJsonObject("input"))
+                        )
+                );
+            }
+        }
+
+        if (toolExecutionRequests.isEmpty()) {
+            return AgentResponseMessage.of(text.toString());
+        }
+
+        // Text before tool calls is the model thinking out loud; the player sees the calls' status argument instead.
+        return ToolRequestMessage.of(toolExecutionRequests);
+    }
+
+    private static class AnthropicMessageJsonSerializer implements MessageVisitor<List<JsonObject>> {
+
+        @Override
+        public List<JsonObject> visitSystemMessage(SystemMessage message) {
+            throw new IllegalArgumentException("System messages go in the top-level system field, not in messages");
+        }
+
+        @Override
+        public List<JsonObject> visitPlayerRequestMessage(PlayerRequestMessage message) {
+            return List.of(buildMessage("user", SectionContentSerializer.getInstance().getMessageContent(message)));
+        }
+
+        @Override
+        public List<JsonObject> visitToolRequestMessage(ToolRequestMessage message) {
+            // The status is already inside each call's arguments, so no text block is replayed.
+            JsonArray content = new JsonArray();
+
+            for (Map.Entry<String, Tool.ExecutionRequest> entry : message.getToolExecutionRequests().entrySet()) {
+                JsonObject block = new JsonObject();
+
+                block.addProperty("type", "tool_use");
+                block.addProperty("id", entry.getKey());
+                block.addProperty("name", entry.getValue().getName());
+                block.add("input", entry.getValue().getArguments().getArguments());
+
+                content.add(block);
+            }
+
+            return List.of(buildMessage("assistant", content));
+        }
+
+        @Override
+        public List<JsonObject> visitToolResponseMessage(ToolResponseMessage message) {
+            JsonArray content = new JsonArray();
+
+            for (Map.Entry<String, Tool.ExecutionResult> entry : message.getToolExecutionResults().entrySet()) {
+                JsonObject output = new JsonObject();
+
+                output.addProperty("status", entry.getValue().getStatus().getValue());
+                output.addProperty("result", entry.getValue().getResult());
+
+                JsonObject block = new JsonObject();
+
+                block.addProperty("type", "tool_result");
+                block.addProperty("tool_use_id", entry.getKey());
+                block.addProperty("content", output.toString());
+
+                Tool.ExecutionStatus status = entry.getValue().getStatus();
+
+                if (status != Tool.ExecutionStatus.SUCCESS && status != Tool.ExecutionStatus.PARTIAL) {
+                    block.addProperty("is_error", true);
+                }
+
+                content.add(block);
+            }
+
+            return List.of(buildMessage("user", content));
+        }
+
+        @Override
+        public List<JsonObject> visitAgentResponseMessage(AgentResponseMessage message) {
+            String text = SectionContentSerializer.getInstance().getMessageContent(message);
+
+            // The API rejects empty assistant content; dropping the turn is fine, since consecutive user turns are merged.
+            if (text.isBlank()) {
+                return List.of();
+            }
+
+            return List.of(buildMessage("assistant", text));
+        }
+
+        private static JsonObject buildMessage(String role, String text) {
+            JsonObject json = new JsonObject();
+
+            json.addProperty("role", role);
+            json.addProperty("content", text);
+
+            return json;
+        }
+
+        private static JsonObject buildMessage(String role, JsonArray content) {
+            JsonObject json = new JsonObject();
+
+            json.addProperty("role", role);
+            json.add("content", content);
+
+            return json;
+        }
     }
 }

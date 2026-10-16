@@ -95,6 +95,10 @@ public class WebFetchTool implements BasicTool {
             return ExecutionResult.failure("Failed to fetch URL: %s.".formatted(url));
         }
 
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            return ExecutionResult.failure("Fetching %s failed with HTTP status %d.".formatted(response.uri(), response.statusCode()));
+        }
+
         String body = response.body().substring(0, Math.min(response.body().length(), MAX_RESPONSE_SIZE));
 
         String contentType = response.headers().firstValue("Content-Type").orElse("");

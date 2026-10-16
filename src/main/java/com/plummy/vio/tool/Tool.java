@@ -3,9 +3,17 @@ package com.plummy.vio.tool;
 import com.google.gson.*;
 import com.plummy.vio.access.AccessLevel;
 
+import java.util.LinkedHashMap;
 import java.util.SequencedMap;
 
 public interface Tool {
+
+    // Added to every tool by providers, so the player-facing status comes from a schema field instead of free text before the call.
+    String STATUS_ARGUMENT = "status";
+    ArgumentDefinition STATUS_ARGUMENT_DEFINITION = new ArgumentDefinition(
+            ArgumentType.STRING,
+            "Status shown to the player while this tool runs, in the language of your replies: 2-5 words describing only this action, ending with '...', e.g. 'Checking inventory...'. No reasoning, explanations or results."
+    );
 
     ToolType getType();
 
@@ -16,6 +24,15 @@ public interface Tool {
     SequencedMap<String, ArgumentDefinition> getArgumentSchema();
 
     AccessLevel getAccessLevel();
+
+    default SequencedMap<String, ArgumentDefinition> getFullArgumentSchema() {
+        SequencedMap<String, ArgumentDefinition> schema = new LinkedHashMap<>();
+
+        schema.put(STATUS_ARGUMENT, STATUS_ARGUMENT_DEFINITION);
+        schema.putAll(getArgumentSchema());
+
+        return schema;
+    }
 
     class Arguments {
 
@@ -43,6 +60,17 @@ public interface Tool {
 
         public JsonObject getArguments() {
             return arguments;
+        }
+
+        // Lenient on purpose: a missing status only costs the player a placeholder, not the whole tool call.
+        public String getStatus() {
+            JsonElement element = arguments.get(STATUS_ARGUMENT);
+
+            if (element == null || !element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {
+                return "";
+            }
+
+            return element.getAsString().strip();
         }
 
         public int getInt(String name) {

@@ -1,5 +1,6 @@
 package com.plummy.vio.registry;
 
+import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.tool.*;
 
 import java.util.Collection;
@@ -18,6 +19,10 @@ public class ToolRegistry {
     public static BasicTool WEB_FETCH = register(new WebFetchTool());
 
     private static <T extends Tool> T register(T tool) {
+        if (tool.getArgumentSchema().containsKey(Tool.STATUS_ARGUMENT)) {
+            throw new IllegalStateException("Tool " + tool.getName() + " can't define the reserved '" + Tool.STATUS_ARGUMENT + "' argument");
+        }
+
         if (TOOLS.putIfAbsent(tool.getName(), tool) != null) {
             throw new IllegalStateException("Duplicate tool name: " + tool.getName());
         }
@@ -29,21 +34,11 @@ public class ToolRegistry {
         return TOOLS.get(name);
     }
 
-    public static <T> T get(String name, Class<T> toolClass) {
-        Tool tool = TOOLS.get(name);
-
-        if (!toolClass.isInstance(tool)) {
-            return null;
-        }
-
-        return toolClass.cast(tool);
-    }
-
     public static Collection<Tool> getAll() {
         return Collections.unmodifiableCollection(TOOLS.values());
     }
 
-    public static <T> Collection<T> getAll(Class<T> toolClass) {
-        return TOOLS.values().stream().filter(toolClass::isInstance).map(toolClass::cast).collect(Collectors.toList());
+    public static Collection<Tool> getAll(AccessLevel accessLevel) {
+        return TOOLS.values().stream().filter(tool -> accessLevel.isAtLeast(tool.getAccessLevel())).collect(Collectors.toList());
     }
 }
