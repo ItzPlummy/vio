@@ -8,7 +8,7 @@ import com.plummy.vio.section.ServerContextSection;
 import java.time.Instant;
 import java.util.List;
 
-public class PlayerRequestMessage implements ConversationMessage {
+public class PlayerRequestMessage implements Message {
 
     private final PlayerRequestSection request;
     private final PlayerContextSection playerContext;

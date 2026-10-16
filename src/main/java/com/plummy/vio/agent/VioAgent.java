@@ -3,7 +3,7 @@ package com.plummy.vio.agent;
 import com.plummy.vio.Vio;
 import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.access.AccessManager;
-import com.plummy.vio.config.SystemMessageProvider;
+import com.plummy.vio.config.Instructions;
 import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.conversation.PlayerConversation;
 import com.plummy.vio.message.*;
@@ -36,7 +36,7 @@ public class VioAgent implements Agent {
     private final AccessManager accessManager;
     private final BasicToolExecutor basicToolExecutor;
     private final ServerToolExecutor serverToolExecutor;
-    private final SystemMessageProvider systemMessageProvider;
+    private final Instructions instructions;
     private final AgentListener listener;
 
     private final ExecutorService worker = Executors.newFixedThreadPool(
@@ -50,18 +50,18 @@ public class VioAgent implements Agent {
 
     private final Set<UUID> busyPlayers = ConcurrentHashMap.newKeySet();
 
-    public VioAgent(Provider provider, Storage<UUID, Conversation> conversationStorage, AccessManager accessManager, BasicToolExecutor basicToolExecutor, ServerToolExecutor serverToolExecutor, SystemMessageProvider systemMessageProvider, AgentListener listener) {
+    public VioAgent(Provider provider, Storage<UUID, Conversation> conversationStorage, AccessManager accessManager, BasicToolExecutor basicToolExecutor, ServerToolExecutor serverToolExecutor, Instructions instructions, AgentListener listener) {
         this.provider = provider;
         this.conversationStorage = conversationStorage;
         this.accessManager = accessManager;
         this.basicToolExecutor = basicToolExecutor;
         this.serverToolExecutor = serverToolExecutor;
-        this.systemMessageProvider = systemMessageProvider;
+        this.instructions = instructions;
         this.listener = listener;
     }
 
     @Override
-    public SubmitResult submit(ServerPlayer player, String request, Instant time, String languageCode) {
+    public SubmitResult submit(ServerPlayer player, String request, Instant time) {
         UUID playerId = player.getUUID();
         AccessLevel accessLevel = accessManager.getAccessLevel(playerId);
 
@@ -87,10 +87,8 @@ public class VioAgent implements Agent {
                 time
         );
 
-        SystemMessage systemMessage = systemMessageProvider.getPrompt(languageCode);
-
         try {
-            worker.execute(() -> process(server, playerId, accessLevel, systemMessage, message));
+            worker.execute(() -> process(server, playerId, accessLevel, message));
         } catch (RejectedExecutionException e) {
             busyPlayers.remove(playerId);
             return SubmitResult.UNAVAILABLE;
@@ -124,7 +122,7 @@ public class VioAgent implements Agent {
         worker.shutdownNow();
     }
 
-    private void process(MinecraftServer server, UUID playerId, AccessLevel accessLevel, SystemMessage systemMessage, PlayerRequestMessage message) {
+    private void process(MinecraftServer server, UUID playerId, AccessLevel accessLevel, PlayerRequestMessage message) {
         Conversation conversation = null;
 
         try {
@@ -137,7 +135,7 @@ public class VioAgent implements Agent {
             conversation.addMessage(message);
 
             for (int round = 0; round < MAX_ROUNDS; round++) {
-                ConversationMessage response = provider.request(accessLevel, systemMessage, conversation);
+                Message response = provider.request(accessLevel, instructions.get(), conversation);
                 conversation.addMessage(response);
 
                 if (response instanceof AgentResponseMessage agentResponse) {

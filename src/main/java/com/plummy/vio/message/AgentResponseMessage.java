@@ -6,7 +6,7 @@ import com.plummy.vio.section.TextSection;
 import java.time.Instant;
 import java.util.List;
 
-public class AgentResponseMessage implements ConversationMessage {
+public class AgentResponseMessage implements Message {
 
     private final TextSection response;
     private final Instant time;
@@ -17,7 +17,7 @@ public class AgentResponseMessage implements ConversationMessage {
     }
 
     public static AgentResponseMessage of(String response) {
-        return new AgentResponseMessage(new TextSection(response), ConversationMessage.now());
+        return new AgentResponseMessage(new TextSection(response), Message.now());
     }
 
     @Override

@@ -5,9 +5,9 @@ import com.plummy.vio.access.AccessManager;
 import com.plummy.vio.agent.Agent;
 import com.plummy.vio.agent.VioAgent;
 import com.plummy.vio.command.VioCommand;
+import com.plummy.vio.config.Instructions;
 import com.plummy.vio.config.KeysConfig;
 import com.plummy.vio.config.ServerConfig;
-import com.plummy.vio.config.SystemMessageProvider;
 import com.plummy.vio.network.NetworkAgentListener;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderFactory;
@@ -72,7 +72,7 @@ public class Vio {
                 accessManager,
                 new BasicToolExecutor(),
                 new ServerToolExecutor(server),
-                SystemMessageProvider.load(),
+                Instructions.load(),
                 new NetworkAgentListener()
         );
     }

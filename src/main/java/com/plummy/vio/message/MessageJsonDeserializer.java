@@ -24,9 +24,6 @@ public class MessageJsonDeserializer {
 
     public Message deserialize(JsonObject json) {
         return switch (MessageType.fromValue(json.get("type").getAsString())) {
-            case SYSTEM -> new SystemMessage(
-                    SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("text"), TextSection.class)
-            );
             case PLAYER_REQUEST -> new PlayerRequestMessage(
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("request"), PlayerRequestSection.class),
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("player_context"), PlayerContextSection.class),

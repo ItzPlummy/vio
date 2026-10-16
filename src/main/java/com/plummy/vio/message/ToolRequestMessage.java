@@ -10,7 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.SequencedMap;
 
-public class ToolRequestMessage implements ConversationMessage {
+public class ToolRequestMessage implements Message {
 
     private final ActivityDescriptionSection activityDescription;
     private final SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests;
@@ -30,7 +30,7 @@ public class ToolRequestMessage implements ConversationMessage {
                 .findFirst()
                 .orElse("");
 
-        return new ToolRequestMessage(new ActivityDescriptionSection(activityDescription), toolExecutionRequests, ConversationMessage.now());
+        return new ToolRequestMessage(new ActivityDescriptionSection(activityDescription), toolExecutionRequests, Message.now());
     }
 
     @Override

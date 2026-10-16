@@ -47,13 +47,13 @@ public class AnthropicProvider implements Provider {
     }
 
     @Override
-    public ConversationMessage request(AccessLevel accessLevel, SystemMessage systemMessage, Conversation conversation) {
+    public Message request(AccessLevel accessLevel, String instructions, Conversation conversation) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(ANTHROPIC_URI))
                 .header("Content-Type", "application/json")
                 .header("x-api-key", getApiKey())
                 .header("anthropic-version", ANTHROPIC_VERSION)
-                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, systemMessage, conversation).toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, conversation).toString()))
                 .build();
 
         HttpResponse<String> response;
@@ -78,11 +78,11 @@ public class AnthropicProvider implements Provider {
         }
     }
 
-    private JsonObject buildRequestBody(AccessLevel accessLevel, SystemMessage systemMessage, Conversation conversation) {
+    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, Conversation conversation) {
         JsonObject json = new JsonObject();
 
         JsonArray messages = new JsonArray();
-        for (ConversationMessage message : conversation.getMessages()) {
+        for (Message message : conversation.getMessages()) {
             message.accept(ANTHROPIC_MESSAGE_JSON_SERIALIZER).forEach(messages::add);
         }
 
@@ -105,7 +105,7 @@ public class AnthropicProvider implements Provider {
         cacheControl.addProperty("type", "ephemeral");
 
         json.addProperty("model", getModel());
-        json.addProperty("system", SectionContentSerializer.getInstance().getMessageContent(systemMessage));
+        json.addProperty("system", instructions);
         json.add("messages", messages);
 
         if (!toolDefinitions.isEmpty()) {
@@ -151,7 +151,7 @@ public class AnthropicProvider implements Provider {
         return json;
     }
 
-    private ConversationMessage parseResponseBody(JsonObject json) {
+    private Message parseResponseBody(JsonObject json) {
         JsonElement stopReasonElement = json.get("stop_reason");
         String stopReason = stopReasonElement == null || stopReasonElement.isJsonNull() ? "" : stopReasonElement.getAsString();
 
@@ -191,11 +191,6 @@ public class AnthropicProvider implements Provider {
     }
 
     private static class AnthropicMessageJsonSerializer implements MessageVisitor<List<JsonObject>> {
-
-        @Override
-        public List<JsonObject> visitSystemMessage(SystemMessage message) {
-            throw new IllegalArgumentException("System messages go in the top-level system field, not in messages");
-        }
 
         @Override
         public List<JsonObject> visitPlayerRequestMessage(PlayerRequestMessage message) {

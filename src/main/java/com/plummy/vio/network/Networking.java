@@ -4,7 +4,7 @@ import com.plummy.vio.Vio;
 import com.plummy.vio.agent.Agent;
 import com.plummy.vio.agent.SubmitResult;
 import com.plummy.vio.client.network.ClientPayloadHandler;
-import com.plummy.vio.message.ConversationMessage;
+import com.plummy.vio.message.Message;
 import com.plummy.vio.network.payload.*;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -99,10 +99,10 @@ public class Networking {
         }
 
         Agent agent = Vio.getAgent();
-        Instant time = ConversationMessage.now();
+        Instant time = Message.now();
         SubmitResult result = agent == null
                 ? SubmitResult.UNAVAILABLE
-                : agent.submit(player, request, time, player.clientInformation().language());
+                : agent.submit(player, request, time);
 
         // The client shows the request with the server's time, so it matches the stored one and the reply's.
         context.reply(new SubmitResultPayload(result, time));

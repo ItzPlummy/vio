@@ -1,6 +1,6 @@
 package com.plummy.vio.conversation;
 
-import com.plummy.vio.message.ConversationMessage;
+import com.plummy.vio.message.Message;
 import com.plummy.vio.storage.Storage;
 
 import java.util.List;
@@ -12,9 +12,9 @@ public interface Conversation extends Storage.Item<UUID> {
 
     ConversationType getType();
 
-    List<ConversationMessage> getMessages();
+    List<Message> getMessages();
 
-    void addMessage(ConversationMessage message);
+    void addMessage(Message message);
 
     <T> T accept(ConversationVisitor<T> visitor);
 

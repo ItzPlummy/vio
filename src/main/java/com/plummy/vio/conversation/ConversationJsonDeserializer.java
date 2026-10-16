@@ -2,7 +2,7 @@ package com.plummy.vio.conversation;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.plummy.vio.message.ConversationMessage;
+import com.plummy.vio.message.Message;
 import com.plummy.vio.message.MessageJsonDeserializer;
 
 import java.util.UUID;
@@ -26,7 +26,7 @@ public class ConversationJsonDeserializer {
         };
 
         for (JsonElement message : json.getAsJsonArray("messages")) {
-            conversation.addMessage(MessageJsonDeserializer.getInstance().deserialize(message.getAsJsonObject(), ConversationMessage.class));
+            conversation.addMessage(MessageJsonDeserializer.getInstance().deserialize(message.getAsJsonObject(), Message.class));
         }
 
         return conversation;

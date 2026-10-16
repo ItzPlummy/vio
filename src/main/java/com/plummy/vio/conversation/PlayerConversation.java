@@ -1,6 +1,6 @@
 package com.plummy.vio.conversation;
 
-import com.plummy.vio.message.ConversationMessage;
+import com.plummy.vio.message.Message;
 import com.plummy.vio.message.PlayerRequestMessage;
 
 import java.util.ArrayDeque;
@@ -13,7 +13,7 @@ public class PlayerConversation implements Conversation {
     private static final int MESSAGE_LIMIT = 100;
 
     private final UUID playerId;
-    private final Deque<ConversationMessage> messages = new ArrayDeque<>();
+    private final Deque<Message> messages = new ArrayDeque<>();
 
     public PlayerConversation(UUID playerId) {
         this.playerId = playerId;
@@ -30,12 +30,12 @@ public class PlayerConversation implements Conversation {
     }
 
     @Override
-    public List<ConversationMessage> getMessages() {
+    public List<Message> getMessages() {
         return List.copyOf(messages);
     }
 
     @Override
-    public void addMessage(ConversationMessage message) {
+    public void addMessage(Message message) {
         messages.add(message);
 
         // Trim whole turns, so the history never starts with a tool call, tool output or answer whose player request was dropped.

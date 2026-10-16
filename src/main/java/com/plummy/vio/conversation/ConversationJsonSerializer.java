@@ -2,7 +2,7 @@ package com.plummy.vio.conversation;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.plummy.vio.message.ConversationMessage;
+import com.plummy.vio.message.Message;
 import com.plummy.vio.message.MessageJsonSerializer;
 
 public class ConversationJsonSerializer implements ConversationVisitor<JsonObject> {
@@ -21,7 +21,7 @@ public class ConversationJsonSerializer implements ConversationVisitor<JsonObjec
         JsonObject json = new JsonObject();
 
         JsonArray messages = new JsonArray();
-        for (ConversationMessage message : conversation.getMessages()) {
+        for (Message message : conversation.getMessages()) {
             messages.add(message.accept(MessageJsonSerializer.getInstance()));
         }
 

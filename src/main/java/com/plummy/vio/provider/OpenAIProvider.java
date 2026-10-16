@@ -44,12 +44,12 @@ public class OpenAIProvider implements Provider {
     }
 
     @Override
-    public ConversationMessage request(AccessLevel accessLevel, SystemMessage systemMessage, Conversation conversation) {
+    public Message request(AccessLevel accessLevel, String instructions, Conversation conversation) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(OPENAI_URI))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + getApiKey())
-                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, systemMessage, conversation).toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, conversation).toString()))
                 .build();
 
         HttpResponse<String> response;
@@ -74,11 +74,11 @@ public class OpenAIProvider implements Provider {
         }
     }
 
-    private JsonObject buildRequestBody(AccessLevel accessLevel, SystemMessage systemMessage, Conversation conversation) {
+    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, Conversation conversation) {
         JsonObject json = new JsonObject();
 
         JsonArray input = new JsonArray();
-        for (ConversationMessage message : conversation.getMessages()) {
+        for (Message message : conversation.getMessages()) {
             message.accept(OPENAI_MESSAGE_JSON_SERIALIZER).forEach(input::add);
         }
 
@@ -92,7 +92,7 @@ public class OpenAIProvider implements Provider {
         reasoning.addProperty("effort", "low");
 
         json.addProperty("model", getModel());
-        json.addProperty("instructions", SectionContentSerializer.getInstance().getMessageContent(systemMessage));
+        json.addProperty("instructions", instructions);
         json.add("input", input);
         json.add("tools", toolDefinitions);
 
@@ -135,7 +135,7 @@ public class OpenAIProvider implements Provider {
         return json;
     }
 
-    private ConversationMessage parseResponseBody(JsonObject json) {
+    private Message parseResponseBody(JsonObject json) {
         String status = json.get("status").getAsString();
 
         if (!status.equals("completed")) {
@@ -179,17 +179,6 @@ public class OpenAIProvider implements Provider {
     }
 
     private static class OpenAIMessageJsonSerializer implements MessageVisitor<List<JsonObject>> {
-
-        @Override
-        public List<JsonObject> visitSystemMessage(SystemMessage message) {
-            JsonObject json = new JsonObject();
-
-            json.addProperty("type", "message");
-            json.addProperty("role", "system");
-            json.addProperty("content", SectionContentSerializer.getInstance().getMessageContent(message));
-
-            return List.of(json);
-        }
 
         @Override
         public List<JsonObject> visitPlayerRequestMessage(PlayerRequestMessage message) {

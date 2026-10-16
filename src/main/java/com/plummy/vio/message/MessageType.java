@@ -2,7 +2,6 @@ package com.plummy.vio.message;
 
 public enum MessageType {
 
-    SYSTEM("system"),
     PLAYER_REQUEST("player_request"),
     TOOL_REQUEST("tool_request"),
     TOOL_RESPONSE("tool_response"),

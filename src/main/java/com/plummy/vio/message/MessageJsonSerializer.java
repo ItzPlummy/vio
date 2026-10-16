@@ -18,16 +18,6 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
     }
 
     @Override
-    public JsonObject visitSystemMessage(SystemMessage message) {
-        JsonObject json = new JsonObject();
-
-        json.addProperty("type", message.getType().getValue());
-        json.add("text", message.getText().accept(SectionJsonSerializer.getInstance()));
-
-        return json;
-    }
-
-    @Override
     public JsonObject visitPlayerRequestMessage(PlayerRequestMessage message) {
         JsonObject json = new JsonObject();
 

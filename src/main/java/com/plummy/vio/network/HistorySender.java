@@ -55,7 +55,7 @@ public class HistorySender {
         EntryMapper mapper = new EntryMapper();
         List<HistoryPayload.Entry> entries = new ArrayList<>();
 
-        for (ConversationMessage message : conversation.getMessages()) {
+        for (Message message : conversation.getMessages()) {
             HistoryPayload.Entry entry = message.accept(mapper);
 
             if (entry != null) {
@@ -82,11 +82,6 @@ public class HistorySender {
     }
 
     private static class EntryMapper implements MessageVisitor<HistoryPayload.Entry> {
-
-        @Override
-        public HistoryPayload.Entry visitSystemMessage(SystemMessage message) {
-            return null;
-        }
 
         @Override
         public HistoryPayload.Entry visitPlayerRequestMessage(PlayerRequestMessage message) {
