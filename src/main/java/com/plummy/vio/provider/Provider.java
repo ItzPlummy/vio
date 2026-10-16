@@ -7,7 +7,7 @@ import com.plummy.vio.tool.Tool;
 
 import java.util.Collection;
 
-public interface AgentProvider {
+public interface Provider {
 
     ConversationMessage request(SystemMessage systemMessage, Conversation conversation, Collection<Tool> tools);
 }

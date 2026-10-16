@@ -7,8 +7,8 @@ import com.plummy.vio.config.SystemMessageProvider;
 import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.conversation.PlayerConversation;
 import com.plummy.vio.message.*;
-import com.plummy.vio.provider.AgentProvider;
-import com.plummy.vio.provider.AgentProviderException;
+import com.plummy.vio.provider.Provider;
+import com.plummy.vio.provider.ProviderException;
 import com.plummy.vio.section.PlayerContextSection;
 import com.plummy.vio.section.ServerContextSection;
 import com.plummy.vio.storage.Storage;
@@ -29,7 +29,7 @@ public class VioAgent implements Agent {
     private static final int WORKER_THREADS = 2;
     private static final long PLAYER_LOOKUP_TIMEOUT_SECONDS = 5;
 
-    private final AgentProvider provider;
+    private final Provider provider;
     private final Storage<UUID, Conversation> conversationStorage;
     private final AccessManager accessManager;
     private final ToolExecutor toolExecutor;
@@ -44,7 +44,7 @@ public class VioAgent implements Agent {
 
     private final Set<UUID> busyPlayers = ConcurrentHashMap.newKeySet();
 
-    public VioAgent(AgentProvider provider, Storage<UUID, Conversation> conversationStorage, AccessManager accessManager, ToolExecutor toolExecutor, SystemMessageProvider systemMessageProvider, AgentListener listener) {
+    public VioAgent(Provider provider, Storage<UUID, Conversation> conversationStorage, AccessManager accessManager, ToolExecutor toolExecutor, SystemMessageProvider systemMessageProvider, AgentListener listener) {
         this.provider = provider;
         this.conversationStorage = conversationStorage;
         this.accessManager = accessManager;
@@ -151,7 +151,7 @@ public class VioAgent implements Agent {
             }
 
             notify(server, playerId, (listener, player) -> listener.onError(player, "Stopped after " + MAX_ROUNDS + " steps without a final answer."));
-        } catch (AgentProviderException e) {
+        } catch (ProviderException e) {
             Vio.getLogger().error("Agent request for {} failed", playerId, e);
             notify(server, playerId, (listener, player) -> listener.onError(player, "The AI provider request failed. Details are in the server log."));
         } catch (RuntimeException e) {

@@ -9,12 +9,11 @@ import com.plummy.vio.command.VioCommand;
 import com.plummy.vio.config.KeysConfig;
 import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.config.SystemMessageProvider;
-import com.plummy.vio.provider.AgentProvider;
-import com.plummy.vio.provider.OpenAIAgentProvider;
-import com.plummy.vio.registry.ToolRegistry;
+import com.plummy.vio.provider.Provider;
+import com.plummy.vio.provider.ProviderFactory;
 import com.plummy.vio.storage.ConversationStorage;
 import com.plummy.vio.storage.PlayerAccessStorage;
-import com.plummy.vio.tool.ToolExecutor;
+import com.plummy.vio.tool.ServerThreadToolExecutor;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -41,7 +40,7 @@ public class Vio {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static Agent agent;
-    private static AgentProvider agentProvider;
+    private static Provider provider;
     private static AccessManager accessManager;
 
     private static ConversationStorage conversationStorage;
@@ -56,22 +55,18 @@ public class Vio {
 
     @SubscribeEvent
     public void onServerStarting(ServerAboutToStartEvent event) {
-        switch (ServerConfig.PROVIDER.get()) {
-            case "openai" -> agentProvider = new OpenAIAgentProvider(ServerConfig.OPENAI_MODEL.get(), KeysConfig.OPENAI.get());
-            default -> throw new IllegalArgumentException("Provider '" + ServerConfig.PROVIDER.get() + "' is not implemented yet");
-        }
-
         MinecraftServer server = event.getServer();
 
+        provider = ProviderFactory.createProvider();
         conversationStorage = ConversationStorage.fromServer(server);
         playerAccessStorage = PlayerAccessStorage.fromServer(server);
         accessManager = new AccessManager(getPlayerAccessStorage());
 
         agent = new VioAgent(
-                getAgentProvider(),
+                getProvider(),
                 getConversationStorage(),
                 accessManager,
-                new ToolExecutor(ToolRegistry.getAll(), accessManager),
+                new ServerThreadToolExecutor(accessManager),
                 SystemMessageProvider.load(),
                 new ChatAgentListener()
         );
@@ -84,7 +79,7 @@ public class Vio {
             agent = null;
         }
 
-        agentProvider = null;
+        provider = null;
         conversationStorage = null;
         playerAccessStorage = null;
     }
@@ -115,8 +110,8 @@ public class Vio {
         return agent;
     }
 
-    public static AgentProvider getAgentProvider() {
-        return agentProvider;
+    public static Provider getProvider() {
+        return provider;
     }
 
     public static AccessManager getAccessManager() {

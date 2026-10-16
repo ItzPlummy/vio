@@ -14,20 +14,31 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.*;
 
-public class OpenAIAgentProvider implements AgentProvider {
+public class OpenAIProvider implements Provider {
 
     private static final OpenAIMessageJsonSerializer OPENAI_MESSAGE_JSON_SERIALIZER = new OpenAIMessageJsonSerializer();
     private static final String OPENAI_URI = "https://api.openai.com/v1/responses";
 
     private final String model;
     private final String apiKey;
-
     private final HttpClient httpClient;
 
-    public OpenAIAgentProvider(String model, String apiKey) {
+    public OpenAIProvider(String model, String apiKey) {
         this.model = model;
         this.apiKey = apiKey;
         this.httpClient = Vio.getHttpClient();
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public HttpClient getHttpClient() {
+        return httpClient;
     }
 
     @Override
@@ -44,20 +55,20 @@ public class OpenAIAgentProvider implements AgentProvider {
         try {
             response = getHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
-            throw new AgentProviderException("OpenAI request failed", e);
+            throw new ProviderException("OpenAI request failed", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new AgentProviderException("OpenAI request interrupted", e);
+            throw new ProviderException("OpenAI request interrupted", e);
         }
 
         if (response.statusCode() != 200) {
-            throw new AgentProviderException("OpenAI returned " + response.statusCode() + ": " + response.body());
+            throw new ProviderException("OpenAI returned " + response.statusCode() + ": " + response.body());
         }
 
         try {
             return parseResponseBody(JsonParser.parseString(response.body()).getAsJsonObject());
         } catch (JsonParseException | IllegalStateException | NullPointerException | Tool.ArgumentException e) {
-            throw new AgentProviderException("Malformed OpenAI response: " + response.body(), e);
+            throw new ProviderException("Malformed OpenAI response: " + response.body(), e);
         }
     }
 
@@ -125,7 +136,7 @@ public class OpenAIAgentProvider implements AgentProvider {
         String status = json.get("status").getAsString();
 
         if (!status.equals("completed")) {
-            throw new AgentProviderException("OpenAI response " + status + ": " + json.get("incomplete_details"));
+            throw new ProviderException("OpenAI response " + status + ": " + json.get("incomplete_details"));
         }
 
         StringBuilder text = new StringBuilder();
@@ -161,18 +172,6 @@ public class OpenAIAgentProvider implements AgentProvider {
         }
 
         return ToolRequestMessage.of(text.toString(), toolExecutionRequests);
-    }
-
-    public String getModel() {
-        return model;
-    }
-
-    public String getApiKey() {
-        return apiKey;
-    }
-
-    public HttpClient getHttpClient() {
-        return httpClient;
     }
 
     private static class OpenAIMessageJsonSerializer implements MessageVisitor<List<JsonObject>> {
