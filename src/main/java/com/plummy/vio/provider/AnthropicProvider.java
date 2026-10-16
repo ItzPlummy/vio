@@ -34,7 +34,7 @@ public class AnthropicProvider implements Provider {
     }
 
     @Override
-    public ConversationMessage request(SystemMessage systemMessage, Conversation conversation, Collection<Tool> tools) {
+    public ConversationMessage request(SystemMessage systemMessage, Conversation conversation) {
         return null;
     }
 }

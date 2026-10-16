@@ -9,5 +9,5 @@ import java.util.Collection;
 
 public interface Provider {
 
-    ConversationMessage request(SystemMessage systemMessage, Conversation conversation, Collection<Tool> tools);
+    ConversationMessage request(SystemMessage systemMessage, Conversation conversation);
 }

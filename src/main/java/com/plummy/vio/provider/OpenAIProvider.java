@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.plummy.vio.Vio;
 import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.message.*;
+import com.plummy.vio.registry.ToolRegistry;
 import com.plummy.vio.section.SectionContentSerializer;
 import com.plummy.vio.tool.Tool;
 
@@ -42,12 +43,12 @@ public class OpenAIProvider implements Provider {
     }
 
     @Override
-    public ConversationMessage request(SystemMessage systemMessage, Conversation conversation, Collection<Tool> tools) {
+    public ConversationMessage request(SystemMessage systemMessage, Conversation conversation) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(OPENAI_URI))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + getApiKey())
-                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(systemMessage, conversation, tools).toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(systemMessage, conversation).toString()))
                 .build();
 
         HttpResponse<String> response;
@@ -72,7 +73,7 @@ public class OpenAIProvider implements Provider {
         }
     }
 
-    private JsonObject buildRequestBody(SystemMessage systemMessage, Conversation conversation, Collection<Tool> tools) {
+    private JsonObject buildRequestBody(SystemMessage systemMessage, Conversation conversation) {
         JsonObject json = new JsonObject();
 
         JsonArray input = new JsonArray();
@@ -81,7 +82,8 @@ public class OpenAIProvider implements Provider {
         }
 
         JsonArray toolDefinitions = new JsonArray();
-        for (Tool tool : tools) {
+
+        for (Tool tool : ToolRegistry.getAll()) {
             toolDefinitions.add(buildToolDefinition(tool));
         }
 

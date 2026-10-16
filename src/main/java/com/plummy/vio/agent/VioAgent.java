@@ -9,46 +9,51 @@ import com.plummy.vio.conversation.PlayerConversation;
 import com.plummy.vio.message.*;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderException;
+import com.plummy.vio.registry.ToolRegistry;
 import com.plummy.vio.section.PlayerContextSection;
 import com.plummy.vio.section.ServerContextSection;
 import com.plummy.vio.storage.Storage;
+import com.plummy.vio.tool.BasicToolExecutor;
+import com.plummy.vio.tool.ServerToolExecutor;
 import com.plummy.vio.tool.Tool;
-import com.plummy.vio.tool.ToolExecutor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.util.Collection;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
 public class VioAgent implements Agent {
 
     private static final int MAX_ROUNDS = 8;
-    private static final int WORKER_THREADS = 2;
+    private static final int WORKER_THREADS = 4;
     private static final long PLAYER_LOOKUP_TIMEOUT_SECONDS = 5;
 
     private final Provider provider;
     private final Storage<UUID, Conversation> conversationStorage;
     private final AccessManager accessManager;
-    private final ToolExecutor toolExecutor;
+    private final BasicToolExecutor basicToolExecutor;
+    private final ServerToolExecutor serverToolExecutor;
     private final SystemMessageProvider systemMessageProvider;
     private final AgentListener listener;
 
-    private final ExecutorService worker = Executors.newFixedThreadPool(WORKER_THREADS, runnable -> {
-        Thread thread = new Thread(runnable, "Vio Agent");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private final ExecutorService worker = Executors.newFixedThreadPool(
+            WORKER_THREADS,
+            runnable -> {
+                Thread thread = new Thread(runnable, "vio_agent");
+                thread.setDaemon(true);
+                return thread;
+            }
+    );
 
     private final Set<UUID> busyPlayers = ConcurrentHashMap.newKeySet();
 
-    public VioAgent(Provider provider, Storage<UUID, Conversation> conversationStorage, AccessManager accessManager, ToolExecutor toolExecutor, SystemMessageProvider systemMessageProvider, AgentListener listener) {
+    public VioAgent(Provider provider, Storage<UUID, Conversation> conversationStorage, AccessManager accessManager, BasicToolExecutor basicToolExecutor, ServerToolExecutor serverToolExecutor, SystemMessageProvider systemMessageProvider, AgentListener listener) {
         this.provider = provider;
         this.conversationStorage = conversationStorage;
         this.accessManager = accessManager;
-        this.toolExecutor = toolExecutor;
+        this.basicToolExecutor = basicToolExecutor;
+        this.serverToolExecutor = serverToolExecutor;
         this.systemMessageProvider = systemMessageProvider;
         this.listener = listener;
     }
@@ -79,11 +84,10 @@ public class VioAgent implements Agent {
                 ServerContextSection.fromServer(server)
         );
 
-        Collection<Tool> tools = toolExecutor.getAvailableTools(accessLevel);
         SystemMessage systemMessage = systemMessageProvider.getPrompt(languageCode);
 
         try {
-            worker.execute(() -> process(server, playerId, systemMessage, message, tools));
+            worker.execute(() -> process(server, playerId, systemMessage, message));
         } catch (RejectedExecutionException e) {
             busyPlayers.remove(playerId);
             return SubmitResult.BUSY;
@@ -117,7 +121,7 @@ public class VioAgent implements Agent {
         worker.shutdownNow();
     }
 
-    private void process(MinecraftServer server, UUID playerId, SystemMessage systemMessage, PlayerRequestMessage message, Collection<Tool> tools) {
+    private void process(MinecraftServer server, UUID playerId, SystemMessage systemMessage, PlayerRequestMessage message) {
         Conversation conversation = null;
 
         try {
@@ -130,7 +134,7 @@ public class VioAgent implements Agent {
             conversation.addMessage(message);
 
             for (int round = 0; round < MAX_ROUNDS; round++) {
-                ConversationMessage response = provider.request(systemMessage, conversation, tools);
+                ConversationMessage response = provider.request(systemMessage, conversation);
                 conversation.addMessage(response);
 
                 if (response instanceof AgentResponseMessage agentResponse) {
@@ -143,7 +147,8 @@ public class VioAgent implements Agent {
                 }
 
                 notify(server, playerId, (listener, player) -> listener.onActivity(player, toolRequest.getActivityDescription()));
-                conversation.addMessage(new ToolResponseMessage(toolExecutor.execute(server, playerId, toolRequest.getToolExecutionRequests())));
+
+                conversation.addMessage(new ToolResponseMessage(executeTools(accessManager.getAccessLevel(playerId), toolRequest.getToolExecutionRequests())));
 
                 if (findPlayer(server, playerId) == null) {
                     return;
@@ -202,5 +207,20 @@ public class VioAgent implements Agent {
                 callback.accept(listener, player);
             }
         });
+    }
+
+    private SequencedMap<String, Tool.ExecutionResult> executeTools(AccessLevel accessLevel, SequencedMap<String, Tool.ExecutionRequest> tools) {
+        SequencedMap<String, Tool.ExecutionResult> results = new LinkedHashMap<>();
+
+        for (Map.Entry<String, Tool.ExecutionRequest> entry : tools.entrySet()) {
+            Tool.ExecutionResult result = switch (ToolRegistry.get(entry.getValue().getName()).getType()) {
+                case BASIC -> basicToolExecutor.execute(accessLevel, entry.getValue());
+                case SERVER -> serverToolExecutor.execute(accessLevel, entry.getValue());
+            };
+
+            results.put(entry.getKey(), result);
+        }
+
+        return results;
     }
 }

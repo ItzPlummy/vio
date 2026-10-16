@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ToolRegistry {
 
@@ -28,7 +29,21 @@ public class ToolRegistry {
         return TOOLS.get(name);
     }
 
+    public static <T> T get(String name, Class<T> toolClass) {
+        Tool tool = TOOLS.get(name);
+
+        if (!toolClass.isInstance(tool)) {
+            return null;
+        }
+
+        return toolClass.cast(tool);
+    }
+
     public static Collection<Tool> getAll() {
         return Collections.unmodifiableCollection(TOOLS.values());
+    }
+
+    public static <T> Collection<T> getAll(Class<T> toolClass) {
+        return TOOLS.values().stream().filter(toolClass::isInstance).map(toolClass::cast).collect(Collectors.toList());
     }
 }

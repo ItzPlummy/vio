@@ -6,7 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import java.util.LinkedHashMap;
 import java.util.SequencedMap;
 
-public class SetTimeTool implements Tool {
+public class SetTimeTool implements ServerTool {
 
     @Override
     public String getName() {
@@ -33,7 +33,7 @@ public class SetTimeTool implements Tool {
     }
 
     @Override
-    public ExecutionResult execute(Context context, Arguments arguments) {
+    public ExecutionResult execute(ServerTool.Context context, Arguments arguments) {
         int time = arguments.getInt("time", 0, 23999);
 
         for (ServerLevel level : context.getServer().getAllLevels()) {

@@ -13,7 +13,8 @@ import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderFactory;
 import com.plummy.vio.storage.ConversationStorage;
 import com.plummy.vio.storage.PlayerAccessStorage;
-import com.plummy.vio.tool.ServerThreadToolExecutor;
+import com.plummy.vio.tool.BasicToolExecutor;
+import com.plummy.vio.tool.ServerToolExecutor;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -66,7 +67,8 @@ public class Vio {
                 getProvider(),
                 getConversationStorage(),
                 accessManager,
-                new ServerThreadToolExecutor(accessManager),
+                new BasicToolExecutor(),
+                new ServerToolExecutor(server),
                 SystemMessageProvider.load(),
                 new ChatAgentListener()
         );

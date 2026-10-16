@@ -13,7 +13,7 @@ import java.util.Locale;
 import java.util.SequencedMap;
 import java.util.regex.Pattern;
 
-public class WebSearchTool implements Tool {
+public class WebSearchTool implements BasicTool {
 
     private static final int MAX_RESPONSE_SIZE = 100000;
 
@@ -56,7 +56,7 @@ public class WebSearchTool implements Tool {
     }
 
     @Override
-    public ExecutionResult execute(Context context, Arguments arguments) {
+    public ExecutionResult execute(Arguments arguments) {
         String url = arguments.getString("url");
 
         URI uri;
@@ -64,15 +64,15 @@ public class WebSearchTool implements Tool {
         try {
             uri = URI.create(url);
         } catch (IllegalArgumentException e) {
-            return ExecutionResult.invalidArguments("Provided URL is invalid: " + url);
+            return ExecutionResult.invalidArguments("Provided URL is invalid: %s.".formatted(url));
         }
 
         if (!"https".equalsIgnoreCase(uri.getScheme())) {
-            return ExecutionResult.invalidArguments("Only HTTPS URLs are allowed: " + url);
+            return ExecutionResult.invalidArguments("Only HTTPS URLs are allowed: %s.".formatted(url));
         }
 
         if (uri.getHost() == null) {
-            return ExecutionResult.invalidArguments("URL must contain a host: " + url);
+            return ExecutionResult.invalidArguments("URL must contain a host: %s.".formatted(url));
         }
 
         HttpRequest request = HttpRequest.newBuilder(uri)
@@ -89,10 +89,10 @@ public class WebSearchTool implements Tool {
                     HttpResponse.BodyHandlers.ofString()
             );
         } catch (IOException e) {
-            return ExecutionResult.failure("Failed to fetch URL: " + url);
+            return ExecutionResult.failure("Failed to fetch URL: %s.".formatted(url));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return ExecutionResult.failure("Failed to fetch URL: " + url);
+            return ExecutionResult.failure("Failed to fetch URL: %s.".formatted(url));
         }
 
         String body = response.body().substring(0, Math.min(response.body().length(), MAX_RESPONSE_SIZE));

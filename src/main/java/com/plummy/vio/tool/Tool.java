@@ -2,13 +2,12 @@ package com.plummy.vio.tool;
 
 import com.google.gson.*;
 import com.plummy.vio.access.AccessLevel;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 
 import java.util.SequencedMap;
 
 public interface Tool {
+
+    ToolType getType();
 
     String getName();
 
@@ -17,29 +16,6 @@ public interface Tool {
     SequencedMap<String, ArgumentDefinition> getArgumentSchema();
 
     AccessLevel getAccessLevel();
-
-    ExecutionResult execute(Context context, Arguments arguments);
-
-    class Context {
-
-        private final ServerPlayer player;
-
-        public Context(ServerPlayer player) {
-            this.player = player;
-        }
-
-        public ServerPlayer getPlayer() {
-            return player;
-        }
-
-        public MinecraftServer getServer() {
-            return player.getServer();
-        }
-
-        public ServerLevel getLevel() {
-            return player.serverLevel();
-        }
-    }
 
     class Arguments {
 
