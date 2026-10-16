@@ -54,6 +54,7 @@ public class BasicToolExecutor extends AbstractToolExecutor<BasicTool> {
             Thread.currentThread().interrupt();
             return Tool.ExecutionResult.failure("Execution interrupted.");
         } catch (ExecutionException e) {
+            System.out.println(e.getMessage());
             return Tool.ExecutionResult.failure("Internal error while executing the tools.");
         }
     }

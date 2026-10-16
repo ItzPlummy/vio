@@ -1,8 +1,6 @@
 package com.plummy.vio.registry;
 
-import com.plummy.vio.tool.SetTimeTool;
-import com.plummy.vio.tool.Tool;
-import com.plummy.vio.tool.WebSearchTool;
+import com.plummy.vio.tool.*;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -14,10 +12,12 @@ public class ToolRegistry {
 
     private static final Map<String, Tool> TOOLS = new LinkedHashMap<>();
 
-    public static Tool SET_TIME = register(new SetTimeTool());
-    public static Tool WEB_SEARCH = register(new WebSearchTool());
+    public static ServerTool SET_TIME = register(new SetTimeTool());
 
-    private static Tool register(Tool tool) {
+    public static BasicTool WEB_SEARCH = register(new WebSearchTool());
+    public static BasicTool WEB_FETCH = register(new WebFetchTool());
+
+    private static <T extends Tool> T register(T tool) {
         if (TOOLS.putIfAbsent(tool.getName(), tool) != null) {
             throw new IllegalStateException("Duplicate tool name: " + tool.getName());
         }

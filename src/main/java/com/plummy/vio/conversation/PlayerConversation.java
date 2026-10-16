@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public class PlayerConversation implements Conversation {
 
-    private static final int MESSAGE_LIMIT = 20;
+    private static final int MESSAGE_LIMIT = 100;
 
     private final UUID playerId;
     private final Deque<ConversationMessage> messages = new ArrayDeque<>();
