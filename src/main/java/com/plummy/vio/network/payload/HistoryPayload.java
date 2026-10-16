@@ -58,8 +58,7 @@ public class HistoryPayload implements CustomPacketPayload {
     public enum Kind {
 
         PLAYER,
-        VIO,
-        STATUS
+        AGENT
     }
 
     public static class Entry {

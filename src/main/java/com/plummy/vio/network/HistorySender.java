@@ -91,8 +91,7 @@ public class HistorySender {
 
         @Override
         public HistoryPayload.Entry visitToolRequestMessage(ToolRequestMessage message) {
-            // Blank statuses stay blank; the client never lists statuses from the history anyway.
-            return new HistoryPayload.Entry(HistoryPayload.Kind.STATUS, message.getActivityDescription().getActivityDescription(), message.getTime());
+            return null;
         }
 
         @Override
@@ -102,7 +101,7 @@ public class HistorySender {
 
         @Override
         public HistoryPayload.Entry visitAgentResponseMessage(AgentResponseMessage message) {
-            return new HistoryPayload.Entry(HistoryPayload.Kind.VIO, SectionContentSerializer.getInstance().getMessageContent(message), message.getTime());
+            return new HistoryPayload.Entry(HistoryPayload.Kind.AGENT, SectionContentSerializer.getInstance().getMessageContent(message), message.getTime());
         }
     }
 }

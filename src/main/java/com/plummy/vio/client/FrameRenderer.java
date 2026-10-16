@@ -2,34 +2,29 @@ package com.plummy.vio.client;
 
 import net.minecraft.client.gui.GuiGraphics;
 
-// A dark take on the vanilla slot, with pixel-stepped rounded corners:
-// a dark outline, then a 1px bevel that is light on the top-left and dark on the bottom-right, then the body.
-public final class VioFrame {
+public final class FrameRenderer {
 
-    // Width of the outline plus the bevel: the body starts this far in.
     public static final int BORDER = 2;
 
-    private VioFrame() {
+    private FrameRenderer() {
     }
 
     public static void render(GuiGraphics graphics, int x, int y, int width, int height, int radius) {
-        int[][] outline = spans(width, height, radius, 0);
-        int[][] bevel = spans(width, height, radius, 1);
-        int[][] body = spans(width, height, radius, 2);
+        int[][] outline = getRoundedRectangleSpan(width, height, radius, 0);
+        int[][] bevel = getRoundedRectangleSpan(width, height, radius, 1);
+        int[][] body = getRoundedRectangleSpan(width, height, radius, 2);
 
         for (int row = 0; row < height; row++) {
-            fillRing(graphics, x, y, width, height, row, outline[row], bevel[row], VioTheme.BORDER_DARK, VioTheme.BORDER_DARK);
-            fillRing(graphics, x, y, width, height, row, bevel[row], body[row], VioTheme.BORDER_LIGHT, VioTheme.BORDER_SHADOW);
+            renderRing(graphics, x, y, width, height, row, outline[row], bevel[row], Theme.BORDER_DARK, Theme.BORDER_DARK);
+            renderRing(graphics, x, y, width, height, row, bevel[row], body[row], Theme.BORDER_LIGHT, Theme.BORDER_SHADOW);
 
             if (body[row] != null) {
-                graphics.fill(x + body[row][0], y + row, x + body[row][1], y + row + 1, VioTheme.BACKGROUND);
+                graphics.fill(x + body[row][0], y + row, x + body[row][1], y + row + 1, Theme.BACKGROUND);
             }
         }
     }
 
-    // Fills the pixels of a row that are inside `outer` but not inside `inner`, merging runs of the same color.
-    // Pixels above the anti-diagonal of the frame get the top-left color, the rest the bottom-right one.
-    private static void fillRing(GuiGraphics graphics, int x, int y, int width, int height, int row, int[] outer, int[] inner, int topLeftColor, int bottomRightColor) {
+    private static void renderRing(GuiGraphics graphics, int x, int y, int width, int height, int row, int[] outer, int[] inner, int topLeftColor, int bottomRightColor) {
         if (outer == null) {
             return;
         }
@@ -53,8 +48,7 @@ public final class VioFrame {
         }
     }
 
-    // Per row, the [left, right) columns covered by the rounded rectangle inset by `inset`, or null for rows outside it.
-    private static int[][] spans(int width, int height, int radius, int inset) {
+    private static int[][] getRoundedRectangleSpan(int width, int height, int radius, int inset) {
         int[][] spans = new int[height][];
         int innerHeight = height - inset * 2;
         int cornerRadius = Math.max(0, Math.min(radius, Math.min(width, height) / 2) - inset);

@@ -23,14 +23,11 @@ import java.time.Instant;
 @EventBusSubscriber(modid = Vio.MODID)
 public class Networking {
 
-    // Agent replies can outgrow the vanilla 32767 limit, while the whole packet still has to fit in 1 MiB.
     public static final StreamCodec<ByteBuf, String> TEXT_CODEC = ByteBufCodecs.stringUtf8(65536);
-    // Message times, as UTC epoch milliseconds: the precision they are stored with.
     public static final StreamCodec<ByteBuf, Instant> TIME_CODEC = ByteBufCodecs.VAR_LONG.map(Instant::ofEpochMilli, Instant::toEpochMilli);
 
     @SubscribeEvent
     public static void register(RegisterPayloadHandlersEvent event) {
-        // Optional, so clients without the mod can still join the server.
         PayloadRegistrar registrar = event.registrar("1").optional();
 
         registrar.playToServer(
@@ -39,7 +36,6 @@ public class Networking {
                 Networking::handlePlayerRequest
         );
 
-        // Client handlers are called through lambdas, so a dedicated server never loads the client classes.
         registrar.playToClient(
                 SubmitResultPayload.getType(),
                 SubmitResultPayload.getStreamCodec(),

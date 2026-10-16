@@ -8,7 +8,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
-// Sent as a component, so a translatable error is shown in the client's language.
 public class AgentErrorPayload implements CustomPacketPayload {
 
     private static final Type<AgentErrorPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("vio", "agent_error"));

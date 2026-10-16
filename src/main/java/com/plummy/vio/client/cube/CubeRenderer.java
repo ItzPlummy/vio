@@ -1,14 +1,13 @@
 package com.plummy.vio.client.cube;
 
-import com.plummy.vio.client.VioTheme;
+import com.plummy.vio.client.Theme;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import org.joml.Vector3f;
 
 import java.util.Arrays;
 
-// Draws the hollow cube as a grid of square cells: the rotation is smooth, the picture is blocky.
-public class CubeRenderer {
+public final class CubeRenderer {
 
     private static final float[][] VERTICES = {
             {-1, -1, -1}, {1, -1, -1}, {1, 1, -1}, {-1, 1, -1},
@@ -25,18 +24,14 @@ public class CubeRenderer {
 
     private static final float CAMERA_DISTANCE = 5;
     private static final float CORNER_DISTANCE = (float) Math.sqrt(3);
-    // Distance from the center that maps to the edge of the area. A corner can reach ~2.65 when it faces the camera,
-    // so it is briefly clipped then, which keeps the cube large the rest of the time.
     private static final float FIT_EXTENT = 2.2f;
 
     private CubeRenderer() {
     }
 
-    // Draws into the square at (x, y) with the given side, all in GUI pixels.
     public static void render(GuiGraphics graphics, int x, int y, int size, CubeController cube) {
         double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
 
-        // Work in real framebuffer pixels, so every cell is a whole number of pixels and nothing blurs.
         int realSize = (int) Math.floor(size * guiScale);
         int cellSize = Math.max(1, realSize / cube.getGrid());
         int cells = realSize / cellSize;
@@ -66,15 +61,13 @@ public class CubeRenderer {
                 int left = originX + column * cellSize;
                 int top = originY + row * cellSize;
 
-                graphics.fill(left, top, left + cellSize, top + cellSize, color(value, cube.getEdgeAccent(edges[row * cells + column]), cube));
+                graphics.fill(left, top, left + cellSize, top + cellSize, getColor(value, cube.getEdgeAccent(edges[row * cells + column]), cube));
             }
         }
 
         graphics.pose().popPose();
     }
 
-    // Fills, per cell, the nearness (0 = back, 1 = front) of the closest edge in it, or -1 when empty,
-    // and that edge's index.
     private static void rasterize(CubeController cube, int cells, float[] depth, int[] edges) {
         Arrays.fill(depth, -1);
 
@@ -119,10 +112,10 @@ public class CubeRenderer {
         }
     }
 
-    private static int color(float nearness, float edgeAccent, CubeController cube) {
-        int color = VioTheme.lerp(VioTheme.CUBE_BACK, VioTheme.CUBE_FRONT, nearness);
-        color = VioTheme.lerp(color, VioTheme.CUBE_ACCENT, edgeAccent);
+    private static int getColor(float nearness, float edgeAccent, CubeController cube) {
+        int color = Theme.lerp(Theme.CUBE_BACK, Theme.CUBE_FRONT, nearness);
+        color = Theme.lerp(color, Theme.CUBE_ACCENT, edgeAccent);
 
-        return VioTheme.lerp(color, VioTheme.CUBE_ACCENT, cube.getAlert() * 0.8f);
+        return Theme.lerp(color, Theme.CUBE_ACCENT, cube.getAlert() * 0.8f);
     }
 }

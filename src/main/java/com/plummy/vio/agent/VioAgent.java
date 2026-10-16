@@ -6,6 +6,7 @@ import com.plummy.vio.access.AccessManager;
 import com.plummy.vio.config.Instructions;
 import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.conversation.PlayerConversation;
+import com.plummy.vio.listener.AgentListener;
 import com.plummy.vio.message.*;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderException;

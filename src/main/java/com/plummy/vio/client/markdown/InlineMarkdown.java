@@ -1,6 +1,6 @@
 package com.plummy.vio.client.markdown;
 
-import com.plummy.vio.client.VioTheme;
+import com.plummy.vio.client.Theme;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -9,19 +9,13 @@ import net.minecraft.network.chat.TextColor;
 
 import java.util.function.UnaryOperator;
 
-// Inline markdown to styled text: **bold**, *italic* or _italic_, ~~strikethrough~~, __underline__, `code`,
-// [links](https://...) and bare https:// links. Styles nest; a backslash escapes a punctuation character.
-// Anything that does not close stays as typed. Plain text keeps the color it is drawn with.
 public final class InlineMarkdown {
 
-    // Tags code runs, so the renderer can find them and draw their background. Insertion is otherwise unused here.
     private static final String CODE_MARKER = "vio:code";
     private static final String[] LINK_SCHEMES = {"https://", "http://"};
-    // Left off the end of a bare link: usually the sentence's punctuation, not part of the address.
     private static final String TRAILING_PUNCTUATION = ".,;:!?'\"";
 
     private static final Delimiter[] DELIMITERS = {
-            // Longer delimiters first, so ** is not read as two *.
             new Delimiter("**", style -> style.withBold(true), false),
             new Delimiter("__", style -> style.withUnderlined(true), true),
             new Delimiter("~~", style -> style.withStrikethrough(true), false),
@@ -82,7 +76,7 @@ public final class InlineMarkdown {
                 }
             }
 
-            Delimiter delimiter = openingAt(text, i, end);
+            Delimiter delimiter = getOpeningDelimiter(text, i, end);
 
             if (delimiter != null) {
                 int close = findClose(text, delimiter, i + delimiter.marker().length(), end);
@@ -102,8 +96,6 @@ public final class InlineMarkdown {
         flush(literal, style, out);
     }
 
-    // `code`, opened and closed by runs of the same number of backticks, so ``a ` inside`` works too.
-    // Nothing inside is parsed. Returns where parsing continues, or `start` when this is no code span.
     private static int parseCode(String text, int start, int end, Style style, StringBuilder literal, MutableComponent out) {
         int contentStart = start;
 
@@ -129,14 +121,13 @@ public final class InlineMarkdown {
             if (runEnd - index == length && index > contentStart) {
                 String code = text.substring(contentStart, index);
 
-                // One space on each side lets code start or end with a backtick; it is not part of the code.
                 if (code.length() >= 2 && code.startsWith(" ") && code.endsWith(" ") && !code.isBlank()) {
                     code = code.substring(1, code.length() - 1);
                 }
 
                 flush(literal, style, out);
                 out.append(Component.literal(code).withStyle(style
-                        .withColor(TextColor.fromRgb(VioTheme.CODE_TEXT & 0xFFFFFF))
+                        .withColor(TextColor.fromRgb(Theme.CODE_TEXT & 0xFFFFFF))
                         .withInsertion(CODE_MARKER)));
                 return runEnd;
             }
@@ -144,12 +135,10 @@ public final class InlineMarkdown {
             index = runEnd;
         }
 
-        // Unclosed: the whole run of backticks stays as typed.
         literal.append(text, start, contentStart);
         return contentStart;
     }
 
-    // [text](https://...), where the text may hold other markdown. Returns `start` when this is no link.
     private static int parseLink(String text, int start, int end, Style style, StringBuilder literal, MutableComponent out) {
         int textEnd = findUnescaped(text, ']', start + 1, end);
 
@@ -170,11 +159,10 @@ public final class InlineMarkdown {
         }
 
         flush(literal, style, out);
-        parse(text, start + 1, textEnd, linkStyle(style, url), out);
+        parse(text, start + 1, textEnd, getLinkStyle(style, url), out);
         return urlEnd + 1;
     }
 
-    // A bare https:// address, up to the next whitespace. Returns `start` when there is no address after the scheme.
     private static int parseBareLink(String text, int start, int end, Style style, StringBuilder literal, MutableComponent out) {
         int urlEnd = start;
 
@@ -193,12 +181,10 @@ public final class InlineMarkdown {
         }
 
         flush(literal, style, out);
-        out.append(Component.literal(url).withStyle(linkStyle(style, url)));
+        out.append(Component.literal(url).withStyle(getLinkStyle(style, url)));
         return urlEnd;
     }
 
-    // Trailing punctuation is dropped, and so is a closing parenthesis without an opening one in the address,
-    // as in "(see https://example.com)"; balanced ones stay, as in wiki links.
     private static boolean shouldTrim(String text, int start, int end) {
         char last = text.charAt(end - 1);
 
@@ -214,7 +200,6 @@ public final class InlineMarkdown {
         return url.chars().filter(c -> c == '(').count() < url.chars().filter(c -> c == ')').count();
     }
 
-    // A scheme followed by at least something.
     private static boolean hasAddress(String url) {
         for (String scheme : LINK_SCHEMES) {
             if (url.startsWith(scheme) && url.length() > scheme.length()) {
@@ -225,7 +210,6 @@ public final class InlineMarkdown {
         return false;
     }
 
-    // A link scheme at a word start, so "xhttps://" is not one.
     private static boolean isLinkStart(String text, int index) {
         if (index > 0 && Character.isLetterOrDigit(text.charAt(index - 1))) {
             return false;
@@ -240,9 +224,9 @@ public final class InlineMarkdown {
         return false;
     }
 
-    private static Style linkStyle(Style style, String url) {
+    private static Style getLinkStyle(Style style, String url) {
         return style
-                .withColor(TextColor.fromRgb(VioTheme.LINK_TEXT & 0xFFFFFF))
+                .withColor(TextColor.fromRgb(Theme.LINK_TEXT & 0xFFFFFF))
                 .withUnderlined(true)
                 .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url));
     }
@@ -261,8 +245,7 @@ public final class InlineMarkdown {
         return -1;
     }
 
-    // The delimiter that can open a span here: followed by a non-space, and for underscores not inside a word.
-    private static Delimiter openingAt(String text, int index, int end) {
+    private static Delimiter getOpeningDelimiter(String text, int index, int end) {
         for (Delimiter delimiter : DELIMITERS) {
             int after = index + delimiter.marker().length();
 
@@ -280,8 +263,6 @@ public final class InlineMarkdown {
         return null;
     }
 
-    // Where the span opened at `from` closes: the delimiter after a non-space, and for underscores not inside a word.
-    // Returns -1 when it never closes.
     private static int findClose(String text, Delimiter delimiter, int from, int end) {
         String marker = delimiter.marker();
         char markerChar = marker.charAt(0);
@@ -298,7 +279,6 @@ public final class InlineMarkdown {
                 continue;
             }
 
-            // A run of the marker character, like the *** that closes ***both***.
             int runEnd = index;
 
             while (runEnd < end && text.charAt(runEnd) == markerChar) {
@@ -307,11 +287,9 @@ public final class InlineMarkdown {
 
             int runLength = runEnd - index;
 
-            // A single * or _ is not closed by half of a ** or __ run that belongs to a nested span.
             boolean fits = marker.length() == 1 ? runLength % 2 == 1 || runLength >= 3 : runLength >= 2;
 
             if (fits && !Character.isWhitespace(text.charAt(index - 1))) {
-                // Close with the end of the run, so the inner span gets the rest of it.
                 int close = runEnd - marker.length();
                 boolean insideWord = delimiter.wordBound() && runEnd < end && Character.isLetterOrDigit(text.charAt(runEnd));
 
@@ -337,7 +315,6 @@ public final class InlineMarkdown {
         return c < 128 && !Character.isLetterOrDigit(c) && !Character.isWhitespace(c);
     }
 
-    // `wordBound`: only opens and closes at word edges, so snake_case names stay as typed.
     private record Delimiter(String marker, UnaryOperator<Style> apply, boolean wordBound) {
     }
 }

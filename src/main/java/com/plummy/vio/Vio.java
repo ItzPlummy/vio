@@ -8,7 +8,7 @@ import com.plummy.vio.command.VioCommand;
 import com.plummy.vio.config.Instructions;
 import com.plummy.vio.config.KeysConfig;
 import com.plummy.vio.config.ServerConfig;
-import com.plummy.vio.network.NetworkAgentListener;
+import com.plummy.vio.listener.NetworkAgentListener;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderFactory;
 import com.plummy.vio.storage.ConversationStorage;
@@ -37,10 +37,7 @@ public class Vio {
 
     public static final String MODID = "vio";
 
-    // NORMAL follows redirects except HTTPS -> HTTP downgrades.
-    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build();
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static Agent agent;
@@ -92,15 +89,6 @@ public class Vio {
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         VioCommand.register(event.getDispatcher());
-    }
-
-    @EventBusSubscriber(modid = MODID, value = Dist.CLIENT)
-    public static class ClientModEvents {
-
-        @SubscribeEvent
-        public static void onClientSetup(FMLClientSetupEvent event) {
-
-        }
     }
 
     public static HttpClient getHttpClient() {

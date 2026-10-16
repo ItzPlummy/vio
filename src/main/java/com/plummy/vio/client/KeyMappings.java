@@ -5,7 +5,7 @@ import net.minecraft.client.KeyMapping;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import org.lwjgl.glfw.GLFW;
 
-public final class VioKeyMappings {
+public final class KeyMappings {
 
     public static final String CATEGORY = "key.categories.vio";
 
@@ -17,6 +17,6 @@ public final class VioKeyMappings {
             CATEGORY
     );
 
-    private VioKeyMappings() {
+    private KeyMappings() {
     }
 }
