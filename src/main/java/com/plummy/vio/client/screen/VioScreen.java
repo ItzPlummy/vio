@@ -143,6 +143,12 @@ public class VioScreen extends Screen {
         detached = null;
     }
 
+    // The text style under a point in the window the HUD still shows, as last drawn, so its links can be clicked
+    // from other screens that free the mouse, like chat. Null when there is no such window or no text there.
+    public static Style getDetachedStyleAt(double mouseX, double mouseY) {
+        return detached == null ? null : detached.messages.getStyleAt(detached.font, mouseX, mouseY);
+    }
+
     @Override
     protected void init() {
         // Also called on resize, so the text and cursor carry over to the field with the new width.

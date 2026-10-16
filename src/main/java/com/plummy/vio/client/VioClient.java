@@ -5,6 +5,7 @@ import com.plummy.vio.client.hud.VioIcon;
 import com.plummy.vio.client.screen.VioScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.network.chat.Style;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -36,10 +37,22 @@ public class VioClient {
 
     @SubscribeEvent
     public static void onMouseButtonPressed(ScreenEvent.MouseButtonPressed.Pre event) {
-        // With the vanilla chat open, the mouse is free, so the HUD icon can be clicked.
-        if (event.getScreen() instanceof ChatScreen chat
-                && event.getButton() == GLFW.GLFW_MOUSE_BUTTON_LEFT
-                && VioIcon.contains(chat.width, VioIcon.CLOSED_SIZE, event.getMouseX(), event.getMouseY())) {
+        // With the vanilla chat open, the mouse is free, so the HUD icon and the links in the window it still shows
+        // can be clicked.
+        if (!(event.getScreen() instanceof ChatScreen chat) || event.getButton() != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            return;
+        }
+
+        Style style = VioScreen.getDetachedStyleAt(event.getMouseX(), event.getMouseY());
+
+        // Vanilla checks the chat link settings and the scheme, and asks for confirmation if set to.
+        if (style != null && style.getClickEvent() != null) {
+            chat.handleComponentClicked(style);
+            event.setCanceled(true);
+            return;
+        }
+
+        if (VioIcon.contains(chat.width, VioIcon.CLOSED_SIZE, event.getMouseX(), event.getMouseY())) {
             Minecraft.getInstance().setScreen(new VioScreen());
             event.setCanceled(true);
         }
