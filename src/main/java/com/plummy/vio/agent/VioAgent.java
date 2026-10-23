@@ -15,6 +15,9 @@ import com.plummy.vio.section.PlayerContextSection;
 import com.plummy.vio.section.ServerContextSection;
 import com.plummy.vio.storage.Storage;
 import com.plummy.vio.tool.BasicToolExecutor;
+import com.plummy.vio.tool.ExecutionRequest;
+import com.plummy.vio.tool.ExecutionResult;
+import com.plummy.vio.tool.Requester;
 import com.plummy.vio.tool.ServerToolExecutor;
 import com.plummy.vio.tool.Tool;
 import net.minecraft.network.chat.Component;
@@ -38,7 +41,7 @@ public class VioAgent implements Agent {
     private final BasicToolExecutor basicToolExecutor;
     private final ServerToolExecutor serverToolExecutor;
     private final Instructions instructions;
-    private final AgentListener listener;
+    private final List<AgentListener> listeners;
 
     private final ExecutorService worker = Executors.newFixedThreadPool(
             WORKER_THREADS,
@@ -51,18 +54,18 @@ public class VioAgent implements Agent {
 
     private final Set<UUID> busyPlayers = ConcurrentHashMap.newKeySet();
 
-    public VioAgent(Provider provider, Storage<UUID, Conversation> conversationStorage, AccessManager accessManager, BasicToolExecutor basicToolExecutor, ServerToolExecutor serverToolExecutor, Instructions instructions, AgentListener listener) {
+    public VioAgent(Provider provider, Storage<UUID, Conversation> conversationStorage, AccessManager accessManager, BasicToolExecutor basicToolExecutor, ServerToolExecutor serverToolExecutor, Instructions instructions, List<AgentListener> listeners) {
         this.provider = provider;
         this.conversationStorage = conversationStorage;
         this.accessManager = accessManager;
         this.basicToolExecutor = basicToolExecutor;
         this.serverToolExecutor = serverToolExecutor;
         this.instructions = instructions;
-        this.listener = listener;
+        this.listeners = List.copyOf(listeners);
     }
 
     @Override
-    public SubmitResult submit(ServerPlayer player, String request, Instant time) {
+    public SubmitResult submit(ServerPlayer player, String request, Instant time, boolean voice) {
         UUID playerId = player.getUUID();
         AccessLevel accessLevel = accessManager.getAccessLevel(playerId);
 
@@ -85,7 +88,8 @@ public class VioAgent implements Agent {
                 request,
                 PlayerContextSection.fromPlayer(player, accessLevel),
                 ServerContextSection.fromServer(server),
-                time
+                time,
+                voice
         );
 
         try {
@@ -150,7 +154,7 @@ public class VioAgent implements Agent {
 
                 notify(server, playerId, (listener, player) -> listener.onActivity(player, toolRequest));
 
-                conversation.addMessage(ToolResponseMessage.of(executeTools(accessLevel, toolRequest.getToolExecutionRequests())));
+                conversation.addMessage(ToolResponseMessage.of(executeTools(new Requester(playerId, accessLevel), toolRequest.getToolExecutionRequests())));
 
                 if (findPlayer(server, playerId) == null) {
                     return;
@@ -211,25 +215,25 @@ public class VioAgent implements Agent {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
 
             if (player != null) {
-                callback.accept(listener, player);
+                listeners.forEach(listener -> callback.accept(listener, player));
             }
         });
     }
 
-    private SequencedMap<String, Tool.ExecutionResult> executeTools(AccessLevel accessLevel, SequencedMap<String, Tool.ExecutionRequest> tools) {
-        SequencedMap<String, Tool.ExecutionResult> results = new LinkedHashMap<>();
+    private SequencedMap<String, ExecutionResult> executeTools(Requester requester, SequencedMap<String, ExecutionRequest> tools) {
+        SequencedMap<String, ExecutionResult> results = new LinkedHashMap<>();
 
-        for (Map.Entry<String, Tool.ExecutionRequest> entry : tools.entrySet()) {
+        for (Map.Entry<String, ExecutionRequest> entry : tools.entrySet()) {
             Tool tool = ToolRegistry.get(entry.getValue().getName());
 
-            Tool.ExecutionResult result;
+            ExecutionResult result;
 
             if (tool == null) {
-                result = Tool.ExecutionResult.invalidArguments("Unknown tool: %s.".formatted(entry.getValue().getName()));
+                result = ExecutionResult.invalidArguments("Unknown tool: %s.".formatted(entry.getValue().getName()));
             } else {
                 result = switch (tool.getType()) {
-                    case BASIC -> basicToolExecutor.execute(accessLevel, entry.getValue());
-                    case SERVER -> serverToolExecutor.execute(accessLevel, entry.getValue());
+                    case BASIC -> basicToolExecutor.execute(requester, entry.getValue());
+                    case SERVER -> serverToolExecutor.execute(requester, entry.getValue());
                 };
             }
 

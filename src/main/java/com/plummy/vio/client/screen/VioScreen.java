@@ -3,6 +3,8 @@ package com.plummy.vio.client.screen;
 import com.mojang.blaze3d.platform.Window;
 import com.plummy.vio.client.BoxRenderer;
 import com.plummy.vio.client.FrameRenderer;
+import com.plummy.vio.client.GlyphRenderer;
+import com.plummy.vio.client.KeyMappings;
 import com.plummy.vio.client.Theme;
 import com.plummy.vio.client.conversation.ClientConversation;
 import com.plummy.vio.client.hud.IconRenderer;
@@ -13,9 +15,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Whence;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
@@ -43,6 +47,9 @@ public class VioScreen extends Screen {
 
     private static final long HOLD_BASE_MILLIS = 1000;
     private static final long HOLD_MILLIS_PER_CHARACTER = 40;
+
+    // Room kept between typed text and the cancel button at the right end of the input box.
+    private static final int CANCEL_MARGIN = 2;
 
     private static VioScreen detached;
 
@@ -82,6 +89,9 @@ public class VioScreen extends Screen {
     private int inputY;
     private int visibleInputLines;
 
+    private int cancelX;
+    private int cancelY;
+
     public VioScreen() {
         super(Component.translatable("vio.screen.title"));
 
@@ -104,7 +114,7 @@ public class VioScreen extends Screen {
             return false;
         }
 
-        if (detached.pinned && !detached.conversation.isBusy() && Util.getMillis() >= detached.getHoldUntilMillis()) {
+        if (detached.closedMillis < 0 && !(detached.pinned && detached.isHeld())) {
             detached.startClosing();
         }
 
@@ -115,6 +125,11 @@ public class VioScreen extends Screen {
 
         detached.renderWindow(graphics);
         return true;
+    }
+
+    // Open, or still showing a reply after closing; not once it's sliding away.
+    public static boolean isShown() {
+        return Minecraft.getInstance().screen instanceof VioScreen || detached != null && detached.closedMillis < 0;
     }
 
     public static void clearDetached() {
@@ -136,7 +151,8 @@ public class VioScreen extends Screen {
         referenceHeight = (int) (window.getHeight() / autoScale);
 
         windowWidth = Math.min(Math.max(Math.round(referenceWidth * WIDTH), MIN_WIDTH), width - SCREEN_MARGIN * 2);
-        input = new InputField(font, windowWidth - PADDING * 2 - INPUT_PADDING_X * 2);
+        // Room for the cancel button is always kept, so the text doesn't reflow when it appears.
+        input = new InputField(font, windowWidth - PADDING * 2 - INPUT_PADDING_X * 2 - getCancelScreenWidth() - CANCEL_MARGIN);
         input.setValue(value);
         input.seekCursor(Whence.ABSOLUTE, cursor);
     }
@@ -145,6 +161,8 @@ public class VioScreen extends Screen {
     public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderWindow(graphics);
+        renderCancel(graphics, isOverCancel(mouseX, mouseY));
+        renderTooltip(graphics, mouseX, mouseY);
     }
 
     @Override
@@ -213,6 +231,12 @@ public class VioScreen extends Screen {
         int textHeight = visibleInputLines * input.getScreenLineHeight();
 
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (isOverCancel(mouseX, mouseY)) {
+                conversation.cancelCapture();
+                Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
+                return true;
+            }
+
             Style style = messages.getStyleAt(font, mouseX, mouseY);
 
             if (style != null && style.getClickEvent() != null) {
@@ -275,6 +299,9 @@ public class VioScreen extends Screen {
         renderInputBox(graphics, contentX, inputY - INPUT_PADDING_Y - slide, contentWidth, inputBoxHeight);
         input.render(graphics, contentX + INPUT_PADDING_X, inputY - slide, visibleInputLines, getPlaceholder());
 
+        cancelX = contentX + contentWidth - INPUT_PADDING_X - getCancelScreenWidth();
+        cancelY = inputY + (visibleInputLines - 1) * input.getScreenLineHeight() - slide;
+
         int iconSize = Math.round(IconRenderer.CLOSED_SIZE + (IconRenderer.OPEN_SIZE - IconRenderer.CLOSED_SIZE) * progress);
         IconRenderer.render(graphics, iconSize);
     }
@@ -295,6 +322,59 @@ public class VioScreen extends Screen {
         graphics.pose().scale(scale, scale, 1);
         BoxRenderer.render(graphics, 0, 0, (int) (width / scale + 0.001f), (int) (height / scale + 0.001f), Theme.INPUT_BOX, border);
         graphics.pose().popPose();
+    }
+
+    // While talking, a square as tall as a line at the right end of the input box, measured in font pixels like the text.
+    private void renderCancel(GuiGraphics graphics, boolean hovered) {
+        if (!conversation.isCapturing()) {
+            return;
+        }
+
+        float scale = Theme.getTextScale();
+        int size = getCancelSize();
+
+        graphics.pose().pushPose();
+        graphics.pose().translate(cancelX, cancelY, 0);
+        graphics.pose().scale(scale, scale, 1);
+
+        BoxRenderer.render(graphics, 0, -1, size, size, Theme.ERROR_BOX, Theme.ERROR_BOX_BORDER);
+        GlyphRenderer.render(graphics, GlyphRenderer.CROSS, (size - GlyphRenderer.getWidth(GlyphRenderer.CROSS)) / 2, 1, hovered ? Theme.PLAYER_TEXT : Theme.ERROR_TEXT);
+
+        graphics.pose().popPose();
+    }
+
+    private void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (isOverCancel(mouseX, mouseY)) {
+            graphics.renderTooltip(font, Component.literal(I18n.get("vio.voice.cancel", KeyMappings.CANCEL.getTranslatedKeyMessage().getString())), mouseX, mouseY);
+        }
+    }
+
+    // The position is where the button was last drawn, so what's hit is what's seen.
+    private boolean isOverCancel(double mouseX, double mouseY) {
+        if (font == null || minecraft == null || minecraft.screen != this || !conversation.isCapturing()) {
+            return false;
+        }
+
+        float scale = Theme.getTextScale();
+        int size = getCancelSize();
+        double x = (mouseX - cancelX) / scale;
+        double y = (mouseY - cancelY) / scale;
+
+        return x >= 0 && x < size && y >= -1 && y < size - 1;
+    }
+
+    private int getCancelSize() {
+        return font.lineHeight + 2;
+    }
+
+    private int getCancelScreenWidth() {
+        return (int) Math.ceil(getCancelSize() * Theme.getTextScale());
+    }
+
+    private boolean isHeld() {
+        long now = Util.getMillis();
+
+        return conversation.isBusy() || now < getHoldUntilMillis();
     }
 
     private void startClosing() {
@@ -397,7 +477,12 @@ public class VioScreen extends Screen {
             return 0;
         }
 
-        return conversation.getLastChangeMillis() + HOLD_BASE_MILLIS + last.getText().length() * HOLD_MILLIS_PER_CHARACTER;
+        return conversation.getLastChangeMillis() + getReadingMillis(last.getText());
+    }
+
+    // How long a message stays up once it's in, for reading it.
+    public static long getReadingMillis(String text) {
+        return HOLD_BASE_MILLIS + text.length() * HOLD_MILLIS_PER_CHARACTER;
     }
 
     private String getPlaceholder() {
@@ -405,10 +490,15 @@ public class VioScreen extends Screen {
             return I18n.get("vio.chat.error.not_installed");
         }
 
+        if (conversation.isCapturing()) {
+            return I18n.get("vio.voice.placeholder.capturing", KeyMappings.TALK.getTranslatedKeyMessage().getString());
+        }
+
         return I18n.get(conversation.isBusy() ? "vio.chat.placeholder.busy" : "vio.chat.placeholder");
     }
 
-    private static float ease(long startMillis) {
+    // Shared with the status window, so both slide exactly alike.
+    public static float ease(long startMillis) {
         float t = Math.min(1, (Util.getMillis() - startMillis) / (float) ANIMATION_MILLIS);
 
         return 1 - (1 - t) * (1 - t) * (1 - t);

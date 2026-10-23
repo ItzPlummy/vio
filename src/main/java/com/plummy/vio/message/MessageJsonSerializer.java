@@ -2,7 +2,8 @@ package com.plummy.vio.message;
 
 import com.google.gson.JsonObject;
 import com.plummy.vio.section.SectionJsonSerializer;
-import com.plummy.vio.tool.Tool;
+import com.plummy.vio.tool.ExecutionRequest;
+import com.plummy.vio.tool.ExecutionResult;
 
 import java.util.Map;
 
@@ -26,6 +27,7 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
         json.add("player_context", message.getPlayerContext().accept(SectionJsonSerializer.getInstance()));
         json.add("server_context", message.getServerContext().accept(SectionJsonSerializer.getInstance()));
         json.add("request", message.getRequest().accept(SectionJsonSerializer.getInstance()));
+        json.addProperty("voice", message.isVoice());
 
         return json;
     }
@@ -36,7 +38,7 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
 
         JsonObject toolExecutionRequests = new JsonObject();
 
-        for (Map.Entry<String, Tool.ExecutionRequest> entry : message.getToolExecutionRequests().entrySet()) {
+        for (Map.Entry<String, ExecutionRequest> entry : message.getToolExecutionRequests().entrySet()) {
             JsonObject toolExecutionRequest = new JsonObject();
 
             toolExecutionRequest.addProperty("name", entry.getValue().getName());
@@ -59,7 +61,7 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
 
         JsonObject toolExecutionResults = new JsonObject();
 
-        for (Map.Entry<String, Tool.ExecutionResult> entry : message.getToolExecutionResults().entrySet()) {
+        for (Map.Entry<String, ExecutionResult> entry : message.getToolExecutionResults().entrySet()) {
             JsonObject toolExecutionResult = new JsonObject();
 
             toolExecutionResult.addProperty("status", entry.getValue().getStatus().getValue());

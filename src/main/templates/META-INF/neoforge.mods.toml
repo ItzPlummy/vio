@@ -71,6 +71,13 @@ type = "required"
 versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
+# Simple Voice Chat, for voice requests and spoken replies; its API is a separate mod with a plain version
+[[dependencies."${mod_id}"]]
+modId = "voicechat_api"
+type = "optional"
+versionRange = "[2.6,)"
+ordering = "NONE"
+side = "BOTH"
 
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares
 # that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't

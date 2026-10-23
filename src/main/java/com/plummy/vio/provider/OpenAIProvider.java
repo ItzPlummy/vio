@@ -7,7 +7,12 @@ import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.message.*;
 import com.plummy.vio.registry.ToolRegistry;
 import com.plummy.vio.section.SectionContentSerializer;
+import com.plummy.vio.tool.ExecutionRequest;
+import com.plummy.vio.tool.ExecutionResult;
 import com.plummy.vio.tool.Tool;
+import com.plummy.vio.tool.argument.Argument;
+import com.plummy.vio.tool.argument.ArgumentSchemaJsonSerializer;
+import com.plummy.vio.tool.argument.Arguments;
 
 import java.io.IOException;
 import java.net.URI;
@@ -69,7 +74,7 @@ public class OpenAIProvider implements Provider {
 
         try {
             return parseResponseBody(JsonParser.parseString(response.body()).getAsJsonObject());
-        } catch (JsonParseException | IllegalStateException | NullPointerException | Tool.ArgumentException e) {
+        } catch (JsonParseException | IllegalStateException | NullPointerException | Argument.ParseException e) {
             throw new ProviderException("Malformed OpenAI response: " + response.body(), e);
         }
     }
@@ -104,25 +109,7 @@ public class OpenAIProvider implements Provider {
     }
 
     private static JsonObject buildToolDefinition(Tool tool) {
-        JsonObject properties = new JsonObject();
-        JsonArray required = new JsonArray();
-
-        for (Map.Entry<String, Tool.ArgumentDefinition> entry : tool.getFullArgumentSchema().entrySet()) {
-            JsonObject property = new JsonObject();
-
-            property.addProperty("type", entry.getValue().getType().getValue());
-            property.addProperty("description", entry.getValue().getDescription());
-
-            properties.add(entry.getKey(), property);
-            required.add(entry.getKey());
-        }
-
-        JsonObject parameters = new JsonObject();
-
-        parameters.addProperty("type", "object");
-        parameters.add("properties", properties);
-        parameters.add("required", required);
-        parameters.addProperty("additionalProperties", false);
+        JsonObject parameters = ArgumentSchemaJsonSerializer.getInstance().serialize(tool.getFullArgumentSchema());
 
         JsonObject json = new JsonObject();
 
@@ -143,7 +130,7 @@ public class OpenAIProvider implements Provider {
         }
 
         StringBuilder text = new StringBuilder();
-        SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests = new LinkedHashMap<>();
+        SequencedMap<String, ExecutionRequest> toolExecutionRequests = new LinkedHashMap<>();
 
         for (JsonElement element : json.getAsJsonArray("output")) {
             JsonObject item = element.getAsJsonObject();
@@ -162,9 +149,9 @@ public class OpenAIProvider implements Provider {
                 case "function_call" -> toolExecutionRequests.put(
                         item.get("call_id").getAsString(),
 
-                        new Tool.ExecutionRequest(
+                        new ExecutionRequest(
                                 item.get("name").getAsString(),
-                                Tool.Arguments.parse(item.get("arguments").getAsString())
+                                Arguments.parse(item.get("arguments").getAsString())
                         )
                 );
             }
@@ -196,7 +183,7 @@ public class OpenAIProvider implements Provider {
             // The status is already inside each call's arguments, so no assistant message is replayed.
             List<JsonObject> items = new ArrayList<>();
 
-            for (Map.Entry<String, Tool.ExecutionRequest> entry : message.getToolExecutionRequests().entrySet()) {
+            for (Map.Entry<String, ExecutionRequest> entry : message.getToolExecutionRequests().entrySet()) {
                 JsonObject json = new JsonObject();
 
                 json.addProperty("type", "function_call");
@@ -214,7 +201,7 @@ public class OpenAIProvider implements Provider {
         public List<JsonObject> visitToolResponseMessage(ToolResponseMessage message) {
             List<JsonObject> items = new ArrayList<>();
 
-            for (Map.Entry<String, Tool.ExecutionResult> entry : message.getToolExecutionResults().entrySet()) {
+            for (Map.Entry<String, ExecutionResult> entry : message.getToolExecutionResults().entrySet()) {
                 JsonObject output = new JsonObject();
 
                 output.addProperty("status", entry.getValue().getStatus().getValue());

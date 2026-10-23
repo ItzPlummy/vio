@@ -70,17 +70,21 @@ public class HistoryPayload implements CustomPacketPayload {
                 Entry::getText,
                 Networking.TIME_CODEC,
                 Entry::getTime,
+                ByteBufCodecs.BOOL,
+                Entry::isVoice,
                 Entry::new
         );
 
         private final Kind kind;
         private final String text;
         private final Instant time;
+        private final boolean voice;
 
-        public Entry(Kind kind, String text, Instant time) {
+        public Entry(Kind kind, String text, Instant time, boolean voice) {
             this.kind = kind;
             this.text = text;
             this.time = time;
+            this.voice = voice;
         }
 
         public Kind getKind() {
@@ -93,6 +97,11 @@ public class HistoryPayload implements CustomPacketPayload {
 
         public Instant getTime() {
             return time;
+        }
+
+        // A transcribed request; always false for the agent's replies.
+        public boolean isVoice() {
+            return voice;
         }
     }
 }

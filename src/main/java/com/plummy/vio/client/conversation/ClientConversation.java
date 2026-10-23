@@ -3,8 +3,9 @@ package com.plummy.vio.client.conversation;
 import com.plummy.vio.agent.SubmitResult;
 import com.plummy.vio.client.StatusPlaceholders;
 import com.plummy.vio.client.message.*;
-import com.plummy.vio.network.payload.HistoryPayload;
-import com.plummy.vio.network.payload.PlayerRequestPayload;
+import com.plummy.vio.network.payload.*;
+import com.plummy.vio.voice.VoiceAvailability;
+import com.plummy.vio.voice.VoiceState;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -27,6 +28,8 @@ public class ClientConversation {
     private PlayerMessage pendingRequest;
     private String draft = "";
     private String thinkingStatus = "";
+    private VoiceAvailability voiceAvailability = VoiceAvailability.UNSUPPORTED;
+    private VoiceState voiceState = VoiceState.IDLE;
 
     private int revision;
     private long lastChangeMillis;
@@ -62,16 +65,68 @@ public class ClientConversation {
         this.draft = draft;
     }
 
-    public String getThinkingStatus() {
-        return thinkingStatus;
-    }
-
     public int getRevision() {
         return revision;
     }
 
     public long getLastChangeMillis() {
         return lastChangeMillis;
+    }
+
+    // A server without Vio never says, so it counts as one without voice.
+    public VoiceAvailability getVoiceAvailability() {
+        return isAvailable() ? voiceAvailability : VoiceAvailability.UNSUPPORTED;
+    }
+
+    public String getVoiceUnavailableReason() {
+        return I18n.get("vio.voice.unavailable." + getVoiceAvailability().getValue());
+    }
+
+    public VoiceState getVoiceState() {
+        return voiceState;
+    }
+
+    // What voice is doing, as the capture's bubble and the status window say it; null when there's nothing to say.
+    public String getVoiceStatus() {
+        return switch (voiceState) {
+            case LISTENING -> I18n.get("vio.voice.listening");
+            case NO_AUDIO -> I18n.get("vio.voice.no_audio");
+            case TRANSCRIBING -> I18n.get("vio.voice.transcribing");
+            case IDLE, SPEAKING -> null;
+        };
+    }
+
+    // The agent's latest status, or a placeholder until it sends one; null when it isn't working.
+    public String getWorkingStatus() {
+        if (!isBusy) {
+            return null;
+        }
+
+        ClientMessage last = getLastMessage();
+
+        return last != null && last.getType() == ClientMessageType.STATUS ? last.getText() : thinkingStatus;
+    }
+
+    public boolean isCapturing() {
+        return voiceState == VoiceState.LISTENING || voiceState == VoiceState.NO_AUDIO;
+    }
+
+    // The icon and the status window show the outcome once the server starts listening, or why it can't.
+    public void startCapture() {
+        if (getVoiceAvailability() != VoiceAvailability.AVAILABLE) {
+            addError(getVoiceUnavailableReason());
+            return;
+        }
+
+        PacketDistributor.sendToServer(StartCapturePayload.getInstance());
+    }
+
+    public void stopCapture() {
+        PacketDistributor.sendToServer(StopCapturePayload.getInstance());
+    }
+
+    public void cancelCapture() {
+        PacketDistributor.sendToServer(CancelCapturePayload.getInstance());
     }
 
     public boolean isAvailable() {
@@ -82,17 +137,18 @@ public class ClientConversation {
     public boolean send(String request) {
         String text = request.strip();
 
-        if (text.isEmpty() || text.length() > PlayerRequestPayload.MAX_LENGTH || isBusy()) {
+        // Not while talking: the live bubble is the pending request until the capture is sent.
+        if (text.isEmpty() || text.length() > PlayerRequestPayload.MAX_LENGTH || isBusy() || isCapturing() || voiceState == VoiceState.TRANSCRIBING) {
             return false;
         }
 
         if (!isAvailable()) {
-            addMessage(new ErrorMessage(I18n.get("vio.chat.error.not_installed"), Instant.now()));
+            addError(I18n.get("vio.chat.error.not_installed"));
             return false;
         }
 
         thinkingStatus = StatusPlaceholders.getRandom();
-        pendingRequest = new PlayerMessage(text, Instant.now());
+        pendingRequest = new PlayerMessage(text, Instant.now(), false);
         addMessage(pendingRequest);
         isBusy = true;
 
@@ -108,10 +164,16 @@ public class ClientConversation {
             int index = messages.indexOf(request);
 
             if (index >= 0) {
-                messages.set(index, new PlayerMessage(request.getText(), time));
-                onChange();
+                messages.set(index, new PlayerMessage(request.getText(), time, request.isVoice()));
             }
 
+            // A spoken request only becomes one now, once its capture has ended.
+            if (request != null && request.isVoice()) {
+                thinkingStatus = StatusPlaceholders.getRandom();
+                isBusy = true;
+            }
+
+            onChange();
             return;
         }
 
@@ -127,7 +189,7 @@ public class ClientConversation {
             default -> "vio.chat.error.unavailable";
         };
 
-        addMessage(new ErrorMessage(I18n.get(key), Instant.now()));
+        addError(I18n.get(key));
     }
 
     public void onStatus(String status, Instant time) {
@@ -142,7 +204,7 @@ public class ClientConversation {
 
     public void onError(String error) {
         isBusy = false;
-        addMessage(new ErrorMessage(error, Instant.now()));
+        addError(error);
     }
 
     public void onHistory(HistoryPayload payload) {
@@ -150,7 +212,7 @@ public class ClientConversation {
 
         for (HistoryPayload.Entry entry : payload.getEntries()) {
             ClientMessage message = switch (entry.getKind()) {
-                case PLAYER -> new PlayerMessage(entry.getText(), entry.getTime());
+                case PLAYER -> new PlayerMessage(entry.getText(), entry.getTime(), entry.isVoice());
                 case AGENT -> getAgentMessage(entry.getText(), entry.getTime());
             };
 
@@ -160,6 +222,48 @@ public class ClientConversation {
         isBusy = payload.isBusy();
         thinkingStatus = StatusPlaceholders.getRandom();
         pendingRequest = null;
+        onChange();
+    }
+
+    public void onVoiceAvailability(VoiceAvailability availability) {
+        voiceAvailability = availability;
+        onChange();
+    }
+
+    public void onVoiceState(VoiceState state) {
+        VoiceState previous = voiceState;
+        voiceState = state;
+
+        switch (state) {
+            case LISTENING, NO_AUDIO -> {
+                if (pendingRequest == null) {
+                    pendingRequest = new PlayerMessage("", Instant.now(), true);
+                    addMessage(pendingRequest);
+                }
+            }
+            case IDLE -> {
+                // A sent capture's bubble was already settled by its result, so this one was cancelled or empty.
+                if (pendingRequest != null && pendingRequest.isVoice()) {
+                    messages.remove(pendingRequest);
+                    pendingRequest = null;
+                }
+            }
+            case TRANSCRIBING, SPEAKING -> {
+            }
+        }
+
+        onChange();
+    }
+
+    public void onVoiceTranscript(String transcript) {
+        int index = messages.indexOf(pendingRequest);
+
+        if (index < 0 || !pendingRequest.isVoice()) {
+            return;
+        }
+
+        pendingRequest = new PlayerMessage(transcript, pendingRequest.getTime(), true);
+        messages.set(index, pendingRequest);
         onChange();
     }
 
@@ -173,6 +277,8 @@ public class ClientConversation {
     public void reset() {
         clear();
         draft = "";
+        voiceAvailability = VoiceAvailability.UNSUPPORTED;
+        voiceState = VoiceState.IDLE;
     }
 
     private AgentMessage getAgentMessage(String text, Instant time) {
@@ -186,6 +292,10 @@ public class ClientConversation {
         }
 
         return new AgentMessage(text, time, thoughtDuration);
+    }
+
+    private void addError(String error) {
+        addMessage(new ErrorMessage(error, Instant.now()));
     }
 
     private void addMessage(ClientMessage message) {

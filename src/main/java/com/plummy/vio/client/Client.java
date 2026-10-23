@@ -4,6 +4,7 @@ import com.plummy.vio.Vio;
 import com.plummy.vio.client.conversation.ClientConversation;
 import com.plummy.vio.client.hud.IconRenderer;
 import com.plummy.vio.client.screen.VioScreen;
+import com.plummy.vio.voice.VoiceState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.network.chat.Style;
@@ -22,15 +23,37 @@ public class Client {
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(KeyMappings.OPEN);
+        event.register(KeyMappings.TALK);
+        event.register(KeyMappings.CANCEL);
     }
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        ClientConversation conversation = ClientConversation.getInstance();
+
+        while (KeyMappings.CANCEL.consumeClick()) {
+            if (conversation.isCapturing()) {
+                conversation.cancelCapture();
+            }
+        }
 
         while (KeyMappings.OPEN.consumeClick()) {
             if (minecraft.screen == null && minecraft.player != null) {
                 minecraft.setScreen(new VioScreen());
+            }
+        }
+
+        // Starts talking and sends early, with no window: the icon shows the talking, and the action bar any problem.
+        while (KeyMappings.TALK.consumeClick()) {
+            if (minecraft.screen != null || minecraft.player == null) {
+                continue;
+            }
+
+            if (conversation.isCapturing()) {
+                conversation.stopCapture();
+            } else if (conversation.getVoiceState() != VoiceState.TRANSCRIBING) {
+                conversation.startCapture();
             }
         }
     }

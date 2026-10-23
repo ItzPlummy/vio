@@ -1,6 +1,6 @@
 package com.plummy.vio.tool;
 
-import com.plummy.vio.access.AccessLevel;
+import com.plummy.vio.tool.argument.Arguments;
 import net.minecraft.server.MinecraftServer;
 
 public class ServerToolExecutor extends AbstractToolExecutor<ServerTool> {
@@ -13,16 +13,16 @@ public class ServerToolExecutor extends AbstractToolExecutor<ServerTool> {
     }
 
     @Override
-    public Tool.ExecutionResult execute(AccessLevel accessLevel, Tool.ExecutionRequest request) {
+    public ExecutionResult execute(Requester requester, ExecutionRequest request) {
         if (!server.isRunning()) {
-            return Tool.ExecutionResult.failure("Server is not running.");
+            return ExecutionResult.failure("Server is not running.");
         }
 
-        return await(server.submit(() -> executeNow(accessLevel, request)));
+        return await(server.submit(() -> executeNow(requester, request)));
     }
 
     @Override
-    protected Tool.ExecutionResult invoke(ServerTool tool, Tool.Arguments arguments) {
-        return tool.execute(new ServerTool.Context(server), arguments);
+    protected ExecutionResult invoke(ServerTool tool, Requester requester, Arguments arguments) {
+        return tool.execute(new ServerTool.Context(server, requester), arguments);
     }
 }

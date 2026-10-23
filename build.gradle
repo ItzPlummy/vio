@@ -11,6 +11,18 @@ group = mod_group_id
 repositories {
     mavenLocal()
     mavenCentral()
+    // Simple Voice Chat API
+    maven { url = 'https://maven.maxhenkel.de/repository/public' }
+    // Simple Voice Chat itself, for dev runs
+    maven {
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+    // sherpa-onnx, which is only published there
+    maven {
+        url = 'https://jitpack.io'
+        content { includeGroup 'com.github.k2-fsa.sherpa-onnx' }
+    }
 }
 
 base {
@@ -101,6 +113,15 @@ dependencies {
     jarJar(implementation("org.jsoup:jsoup:1.18.3"))
     // Dev runs don't load Jar-in-Jar contents, so put plain libraries on the game classpath explicitly
     additionalRuntimeClasspath "org.jsoup:jsoup:1.18.3"
+
+    // Local speech to text; its native libraries and the model are downloaded on first server start instead
+    jarJar(implementation("com.github.k2-fsa.sherpa-onnx:sherpa-onnx-jvm:v${sherpa_onnx_version}"))
+    additionalRuntimeClasspath "com.github.k2-fsa.sherpa-onnx:sherpa-onnx-jvm:v${sherpa_onnx_version}"
+
+    // Simple Voice Chat is optional: only compiled against, and provides its API itself when installed
+    compileOnly "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}"
+    // Dev runs load the mod, so voice can be tested; comment out to test without it
+    runtimeOnly "maven.modrinth:simple-voice-chat:neoforge-${minecraft_version}-${voicechat_version}"
 
     // Example mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime

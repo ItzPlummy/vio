@@ -30,9 +30,22 @@ public final class Theme {
     public static final int HEADING_TEXT = 0xFFE9DCFF;
     public static final int STATUS_HIGHLIGHT = 0xFFE6E6EC;
 
-    public static final int CUBE_FRONT = 0xFFB98CFF;
-    public static final int CUBE_BACK = 0xFF4A2580;
-    public static final int CUBE_ACCENT = 0xFFDA8DF0;
+    public static final int CUBE_FRONT = 0xFFA571F0;
+    public static final int CUBE_BACK = 0xFF563185;
+    public static final int CUBE_ACCENT = 0xFFC45DE3;
+
+    public static final int ICON_OUTLINE = 0xFF0E0E10;
+    public static final int ICON_LIGHT = 0xFF3A3A42;
+    public static final int ICON_SHADOW = 0xFF141417;
+    public static final int ICON_BACKGROUND = 0xFF1E1E22;
+    public static final int ICON_PULSE = 0xFF322640;
+    public static final int ICON_STAR = 0xFF462E52;
+    public static final int ICON_RECORDING_OUTLINE = 0xFF100A0B;
+    public static final int ICON_RECORDING_LIGHT = 0xFF5C2630;
+    public static final int ICON_RECORDING_SHADOW = 0xFF1A0E10;
+    public static final int ICON_RECORDING_BACKGROUND = 0xFF2E1519;
+    public static final int ICON_RECORDING_PULSE = 0xFF3A1A20;
+    public static final int ICON_RECORDING_STAR = 0xFF5C2630;
 
     private static final float TEXT_SIZE = 2f / 3f;
     private static final float STATUS_TEXT_SIZE = 0.5f;

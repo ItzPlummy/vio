@@ -4,7 +4,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.plummy.vio.section.*;
-import com.plummy.vio.tool.Tool;
+import com.plummy.vio.tool.ExecutionRequest;
+import com.plummy.vio.tool.ExecutionResult;
+import com.plummy.vio.tool.ExecutionStatus;
+import com.plummy.vio.tool.argument.Arguments;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -28,17 +31,19 @@ public class MessageJsonDeserializer {
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("request"), PlayerRequestSection.class),
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("player_context"), PlayerContextSection.class),
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("server_context"), ServerContextSection.class),
-                    getTime(json)
+                    getTime(json),
+                    // Conversations stored before voice existed have no flag.
+                    json.has("voice") && json.get("voice").getAsBoolean()
             );
             case TOOL_REQUEST -> {
-                SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests = new LinkedHashMap<>();
+                SequencedMap<String, ExecutionRequest> toolExecutionRequests = new LinkedHashMap<>();
 
                 for (Map.Entry<String, JsonElement> entry : json.getAsJsonObject("tool_execution_requests").entrySet()) {
                     JsonObject toolExecutionRequest = entry.getValue().getAsJsonObject();
 
-                    toolExecutionRequests.put(entry.getKey(), new Tool.ExecutionRequest(
+                    toolExecutionRequests.put(entry.getKey(), new ExecutionRequest(
                             toolExecutionRequest.get("name").getAsString(),
-                            new Tool.Arguments(toolExecutionRequest.getAsJsonObject("arguments"))
+                            new Arguments(toolExecutionRequest.getAsJsonObject("arguments"))
                     ));
                 }
 
@@ -49,13 +54,13 @@ public class MessageJsonDeserializer {
                 );
             }
             case TOOL_RESPONSE -> {
-                SequencedMap<String, Tool.ExecutionResult> toolExecutionResults = new LinkedHashMap<>();
+                SequencedMap<String, ExecutionResult> toolExecutionResults = new LinkedHashMap<>();
 
                 for (Map.Entry<String, JsonElement> entry : json.getAsJsonObject("tool_execution_results").entrySet()) {
                     JsonObject toolExecutionResult = entry.getValue().getAsJsonObject();
 
-                    toolExecutionResults.put(entry.getKey(), new Tool.ExecutionResult(
-                            Tool.ExecutionStatus.fromValue(toolExecutionResult.get("status").getAsString()),
+                    toolExecutionResults.put(entry.getKey(), new ExecutionResult(
+                            ExecutionStatus.fromValue(toolExecutionResult.get("status").getAsString()),
                             toolExecutionResult.get("result").getAsString()
                     ));
                 }

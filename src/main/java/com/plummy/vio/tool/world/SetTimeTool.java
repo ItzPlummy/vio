@@ -1,6 +1,12 @@
-package com.plummy.vio.tool;
+package com.plummy.vio.tool.world;
 
+import com.google.gson.JsonObject;
 import com.plummy.vio.access.AccessLevel;
+import com.plummy.vio.tool.ExecutionResult;
+import com.plummy.vio.tool.ServerTool;
+import com.plummy.vio.tool.argument.ArgumentDefinition;
+import com.plummy.vio.tool.argument.ArgumentType;
+import com.plummy.vio.tool.argument.Arguments;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.LinkedHashMap;
@@ -40,6 +46,10 @@ public class SetTimeTool implements ServerTool {
             level.setDayTime(time);
         }
 
-        return ExecutionResult.success("Time set to %d ticks.".formatted(time));
+        JsonObject json = new JsonObject();
+
+        json.addProperty("time_ticks", time);
+
+        return ExecutionResult.success(json);
     }
 }

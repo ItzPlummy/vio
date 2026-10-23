@@ -1,6 +1,8 @@
 package com.plummy.vio.client.screen;
 
 import com.plummy.vio.client.BoxRenderer;
+import com.plummy.vio.client.GlyphRenderer;
+import com.plummy.vio.client.ShimmerRenderer;
 import com.plummy.vio.client.TextLine;
 import com.plummy.vio.client.Theme;
 import com.plummy.vio.client.conversation.ClientConversation;
@@ -8,6 +10,7 @@ import com.plummy.vio.client.markdown.InlineMarkdown;
 import com.plummy.vio.client.markdown.MarkdownLayout;
 import com.plummy.vio.client.message.ClientMessage;
 import com.plummy.vio.client.message.ClientMessageType;
+import com.plummy.vio.client.message.PlayerMessage;
 import com.plummy.vio.client.message.StatusMessage;
 import com.plummy.vio.client.message.ThoughtMessage;
 import net.minecraft.Util;
@@ -33,11 +36,10 @@ public class MessageList {
     private static final int GAP = 4;
     private static final float MAX_BOX_WIDTH = 0.75f;
     private static final int POSTFIX_GAP = 2;
+    private static final int GLYPH_GAP = 2;
     private static final int SCROLLBAR_GUTTER = 4;
     private static final float SCROLL_EASING = 14f;
     private static final float SCROLLBAR_FADE_EASING = 8f;
-    private static final long SHIMMER_PERIOD_MILLIS = 1500;
-    private static final float SHIMMER_BAND_WIDTH = 24f;
     private static final float MAX_FRAME_SECONDS = 0.1f;
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
@@ -180,18 +182,12 @@ public class MessageList {
 
         for (ClientMessage message : conversation.getMessages()) {
             if (message.getType() != ClientMessageType.STATUS) {
-                addBlock(createBlock(font, message, textWidth));
+                addBlock(createBlock(font, message, textWidth, conversation));
             }
         }
 
-        ClientMessage last = conversation.getLastMessage();
-
         if (conversation.isBusy()) {
-            ClientMessage status = last != null && last.getType() == ClientMessageType.STATUS
-                    ? last
-                    : new StatusMessage(conversation.getThinkingStatus(), Instant.now());
-
-            addBlock(createBlock(font, status, textWidth));
+            addBlock(createBlock(font, new StatusMessage(conversation.getWorkingStatus(), Instant.now()), textWidth, conversation));
         }
 
         if (scroll > 0 && !anchored && width == layoutWidth) {
@@ -203,12 +199,17 @@ public class MessageList {
         layoutWidth = width;
     }
 
-    private Block createBlock(Font font, ClientMessage message, int textWidth) {
+    private Block createBlock(Font font, ClientMessage message, int textWidth, ClientConversation conversation) {
+        boolean voice = message instanceof PlayerMessage playerMessage && playerMessage.isVoice();
+        // A capture's bubble before it's transcribed: it shimmers with what voice is doing instead.
+        boolean placeholder = voice && message == conversation.getPendingRequest() && message.getText().isEmpty();
+        String text = placeholder ? getVoicePlaceholder(conversation) : message.getText();
+
         return switch (message.getType()) {
             case PLAYER, AGENT, ERROR -> {
                 MarkdownLayout.Layout layout = message.getType() == ClientMessageType.AGENT
-                        ? MarkdownLayout.layout(font, message.getText(), textWidth)
-                        : new MarkdownLayout.Layout(getPlainLines(font, message.getText(), textWidth), List.of());
+                        ? MarkdownLayout.layout(font, text, textWidth)
+                        : new MarkdownLayout.Layout(getPlainLines(font, text, textWidth), List.of());
                 List<TextLine> lines = layout.lines();
                 List<MarkdownLayout.Panel> panels = layout.panels();
                 int textWidthUsed = Math.max(
@@ -224,14 +225,14 @@ public class MessageList {
                 String postfix = getPostfix(message);
                 int height = postfix == null ? boxHeight : boxHeight + POSTFIX_GAP + getPostfixHeight();
 
-                yield new Block(message.getType(), lines, panels, boxWidth, boxHeight, postfix, height);
+                yield new Block(message.getType(), lines, panels, boxWidth, boxHeight, postfix, height, voice, placeholder);
             }
             case STATUS -> {
                 List<TextLine> lines = getPlainLines(font, message.getText(), (int) (textWidth / getStatusScale()));
                 int textLength = lines.stream().mapToInt(line -> font.width(line.text())).max().orElse(0);
                 int height = (int) Math.ceil(lines.size() * LINE_HEIGHT * getStatusScale());
 
-                yield new Block(message.getType(), lines, List.of(), textLength, height, null, height);
+                yield new Block(message.getType(), lines, List.of(), textLength, height, null, height, false, false);
             }
         };
     }
@@ -247,7 +248,12 @@ public class MessageList {
     private void renderBlock(GuiGraphics graphics, Font font, Block block, int x, int y, int width) {
         switch (block.type()) {
             case PLAYER -> {
-                renderBox(graphics, font, block, x + width - block.width(), y, Theme.PLAYER_BOX, Theme.PLAYER_BOX_BORDER, Theme.PLAYER_TEXT);
+                if (block.placeholder()) {
+                    renderPlaceholderBox(graphics, font, block, x + width - block.width(), y);
+                } else {
+                    renderBox(graphics, font, block, x + width - block.width(), y, Theme.PLAYER_BOX, Theme.PLAYER_BOX_BORDER, Theme.PLAYER_TEXT);
+                }
+
                 renderPostfix(graphics, font, block, x + width - BOX_PADDING_X, y, true);
             }
             case AGENT -> {
@@ -262,7 +268,7 @@ public class MessageList {
                 graphics.pose().scale(statusScale, statusScale, 1);
 
                 for (TextLine line : block.lines()) {
-                    renderShimmer(graphics, font, line.text(), line.y(), block.width());
+                    ShimmerRenderer.render(graphics, font, line.text(), line.y(), block.width());
                 }
 
                 graphics.pose().popPose();
@@ -305,23 +311,6 @@ public class MessageList {
         return Math.max(0, Math.min(value, contentHeight - viewHeight));
     }
 
-    private static void renderShimmer(GuiGraphics graphics, Font font, FormattedCharSequence line, int y, int textLength) {
-        float phase = (Util.getMillis() % SHIMMER_PERIOD_MILLIS) / (float) SHIMMER_PERIOD_MILLIS;
-        float bandCenter = -SHIMMER_BAND_WIDTH + phase * (textLength + SHIMMER_BAND_WIDTH * 2);
-        int[] x = {0};
-
-        line.accept((index, style, codePoint) -> {
-            String character = Character.toString(codePoint);
-            int characterWidth = font.width(character);
-            float distance = Math.abs(x[0] + characterWidth / 2f - bandCenter) / SHIMMER_BAND_WIDTH;
-            float highlight = distance >= 1 ? 0 : (float) (Math.cos(distance * Math.PI) + 1) / 2;
-
-            graphics.drawString(font, character, x[0], y, Theme.lerp(Theme.STATUS_TEXT, Theme.STATUS_HIGHLIGHT, highlight), false);
-            x[0] += characterWidth;
-            return true;
-        });
-    }
-
     private static void renderBox(GuiGraphics graphics, Font font, Block block, int x, int y, int boxColor, int borderColor, int textColor) {
         BoxRenderer.render(graphics, x, y, block.width(), block.boxHeight(), boxColor, borderColor);
 
@@ -339,6 +328,19 @@ public class MessageList {
 
             graphics.drawString(font, line.text(), lineX, lineY, textColor, true);
         }
+    }
+
+    private static void renderPlaceholderBox(GuiGraphics graphics, Font font, Block block, int x, int y) {
+        BoxRenderer.render(graphics, x, y, block.width(), block.boxHeight(), Theme.PLAYER_BOX, Theme.PLAYER_BOX_BORDER);
+
+        graphics.pose().pushPose();
+        graphics.pose().translate(x + BOX_PADDING_X, y + BOX_PADDING_Y, 0);
+
+        for (TextLine line : block.lines()) {
+            ShimmerRenderer.render(graphics, font, line.text(), line.y(), block.width() - BOX_PADDING_X * 2);
+        }
+
+        graphics.pose().popPose();
     }
 
     private static void renderCodeBackgrounds(GuiGraphics graphics, Font font, FormattedCharSequence line, int x, int y) {
@@ -364,8 +366,10 @@ public class MessageList {
         }
     }
 
+    // Boxed like a code block, but around the text where it already is: the border takes the free row above and below
+    // the glyphs and the column beside them, so nothing moves.
     private static void renderCodeBackground(GuiGraphics graphics, int left, int right, int y) {
-        graphics.fill(left - 1, y - 1, right, y + LINE_HEIGHT - 1, Theme.CODE_BACKGROUND);
+        BoxRenderer.render(graphics, left - 2, y - 1, right - left + 3, LINE_HEIGHT + 1, Theme.CODE_BACKGROUND, Theme.CODE_BLOCK_BORDER);
     }
 
     private static void renderPostfix(GuiGraphics graphics, Font font, Block block, int x, int y, boolean alignRight) {
@@ -374,13 +378,26 @@ public class MessageList {
         }
 
         float scale = getStatusScale();
-        int left = alignRight ? x - (int) Math.ceil(font.width(block.postfix()) * scale) : x;
+        // Spoken requests are marked with a microphone before the time.
+        int glyphWidth = block.voice() ? GlyphRenderer.getWidth(GlyphRenderer.MICROPHONE) + GLYPH_GAP : 0;
+        int left = alignRight ? x - (int) Math.ceil((glyphWidth + font.width(block.postfix())) * scale) : x;
 
         graphics.pose().pushPose();
         graphics.pose().translate(left, y + block.boxHeight() + POSTFIX_GAP, 0);
         graphics.pose().scale(scale, scale, 1);
-        graphics.drawString(font, block.postfix(), 0, 0, Theme.STATUS_TEXT, false);
+
+        if (block.voice()) {
+            GlyphRenderer.render(graphics, GlyphRenderer.MICROPHONE, 0, 0, Theme.STATUS_TEXT);
+        }
+
+        graphics.drawString(font, block.postfix(), glyphWidth, 0, Theme.STATUS_TEXT, false);
         graphics.pose().popPose();
+    }
+
+    private static String getVoicePlaceholder(ClientConversation conversation) {
+        String status = conversation.getVoiceStatus();
+
+        return status == null ? I18n.get("vio.voice.listening") : status;
     }
 
     private static List<TextLine> getPlainLines(Font font, String text, int width) {
@@ -424,6 +441,6 @@ public class MessageList {
         return (int) ((width - SCROLLBAR_GUTTER) / Theme.getTextScale());
     }
 
-    private record Block(ClientMessageType type, List<TextLine> lines, List<MarkdownLayout.Panel> panels, int width, int boxHeight, String postfix, int height) {
+    private record Block(ClientMessageType type, List<TextLine> lines, List<MarkdownLayout.Panel> panels, int width, int boxHeight, String postfix, int height, boolean voice, boolean placeholder) {
     }
 }
