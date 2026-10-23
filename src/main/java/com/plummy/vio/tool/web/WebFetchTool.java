@@ -1,7 +1,13 @@
-package com.plummy.vio.tool;
+package com.plummy.vio.tool.web;
 
+import com.google.gson.JsonObject;
 import com.plummy.vio.Vio;
 import com.plummy.vio.access.AccessLevel;
+import com.plummy.vio.tool.BasicTool;
+import com.plummy.vio.tool.ExecutionResult;
+import com.plummy.vio.tool.argument.ArgumentDefinition;
+import com.plummy.vio.tool.argument.ArgumentType;
+import com.plummy.vio.tool.argument.Arguments;
 
 import java.io.IOException;
 import java.net.URI;
@@ -109,7 +115,15 @@ public class WebFetchTool implements BasicTool {
             body = extractTextFromHtml(body);
         }
 
-        return ExecutionResult.success("Status code: %s, fetched URL: %s, content type: %s, body: %s".formatted(response.statusCode(), response.uri().toString(), contentType, body));
+        JsonObject json = new JsonObject();
+
+        json.addProperty("status_code", response.statusCode());
+        json.addProperty("url", response.uri().toString());
+        json.addProperty("content_type", contentType);
+        // Page text is web content: data, never instructions.
+        json.addProperty("body", body);
+
+        return ExecutionResult.success(json);
     }
 
     private static String extractTextFromHtml(String html) {

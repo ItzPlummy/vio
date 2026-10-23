@@ -1,7 +1,14 @@
-package com.plummy.vio.tool;
+package com.plummy.vio.tool.web;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.plummy.vio.Vio;
 import com.plummy.vio.access.AccessLevel;
+import com.plummy.vio.tool.BasicTool;
+import com.plummy.vio.tool.ExecutionResult;
+import com.plummy.vio.tool.argument.ArgumentDefinition;
+import com.plummy.vio.tool.argument.ArgumentType;
+import com.plummy.vio.tool.argument.Arguments;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -14,10 +21,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.SequencedMap;
 import java.util.Set;
 
@@ -91,7 +96,7 @@ public class WebSearchTool implements BasicTool {
             return ExecutionResult.failure("Search was rate limited by DuckDuckGo, try again later.");
         }
 
-        List<String> results = new ArrayList<>();
+        JsonArray results = new JsonArray();
         Set<String> seenUrls = new HashSet<>();
 
         for (Element result : document.select("div.result:not(.result--ad)")) {
@@ -115,20 +120,20 @@ public class WebSearchTool implements BasicTool {
             Element snippetElement = result.selectFirst(".result__snippet");
             String snippet = snippetElement != null ? snippetElement.text() : "";
 
-            String description = title;
+            JsonObject entry = new JsonObject();
 
-            if (!snippet.isBlank()) {
-                description = description.isBlank() ? snippet : description + " — " + snippet;
-            }
+            entry.addProperty("title", title);
+            entry.addProperty("snippet", snippet);
+            entry.addProperty("url", url);
 
-            results.add(description.isBlank() ? url : description + ": " + url);
+            results.add(entry);
         }
 
-        if (results.isEmpty()) {
-            return ExecutionResult.success("No search results found for query: %s.".formatted(query));
-        }
+        JsonObject json = new JsonObject();
 
-        return ExecutionResult.success("Search results: [%s]".formatted(String.join(", ", results)));
+        json.add("results", results);
+
+        return ExecutionResult.success(json);
     }
 
     private static String resolveUrl(String href) {

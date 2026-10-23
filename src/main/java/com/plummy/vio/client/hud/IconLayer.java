@@ -28,7 +28,9 @@ public class IconLayer implements LayeredDraw.Layer {
 
         event.wrapLayer(VanillaGuiLayers.BOSS_OVERLAY, layer -> (graphics, deltaTracker) -> {
             graphics.pose().pushPose();
-            graphics.pose().translate(0, IconRenderer.getBottom(IconRenderer.CLOSED_SIZE) + BOSS_GAP - BOSS_NAME_TOP, 0);
+            // Below the icon as talking grows it, and below the status window while it shows; both are last frame's, as they're drawn after.
+            int top = Math.max(IconRenderer.getBottom(IconRenderer.getGrownSize()), StatusWindow.getInstance().getBottom());
+            graphics.pose().translate(0, top + BOSS_GAP - BOSS_NAME_TOP, 0);
             layer.render(graphics, deltaTracker);
             graphics.pose().popPose();
         });

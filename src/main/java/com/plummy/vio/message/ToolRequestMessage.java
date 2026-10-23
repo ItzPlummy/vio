@@ -2,7 +2,7 @@ package com.plummy.vio.message;
 
 import com.plummy.vio.section.ActivityDescriptionSection;
 import com.plummy.vio.section.Section;
-import com.plummy.vio.tool.Tool;
+import com.plummy.vio.tool.ExecutionRequest;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -13,16 +13,16 @@ import java.util.SequencedMap;
 public class ToolRequestMessage implements Message {
 
     private final ActivityDescriptionSection activityDescription;
-    private final SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests;
+    private final SequencedMap<String, ExecutionRequest> toolExecutionRequests;
     private final Instant time;
 
-    public ToolRequestMessage(ActivityDescriptionSection activityDescription, SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests, Instant time) {
+    public ToolRequestMessage(ActivityDescriptionSection activityDescription, SequencedMap<String, ExecutionRequest> toolExecutionRequests, Instant time) {
         this.activityDescription = activityDescription;
         this.toolExecutionRequests = new LinkedHashMap<>(toolExecutionRequests);
         this.time = time;
     }
 
-    public static ToolRequestMessage of(SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests) {
+    public static ToolRequestMessage of(SequencedMap<String, ExecutionRequest> toolExecutionRequests) {
         // With parallel calls the first status describes the round; a blank one falls back to a placeholder when shown.
         String activityDescription = toolExecutionRequests.values().stream()
                 .map(request -> request.getArguments().getStatus())
@@ -59,7 +59,7 @@ public class ToolRequestMessage implements Message {
         return activityDescription;
     }
 
-    public SequencedMap<String, Tool.ExecutionRequest> getToolExecutionRequests() {
+    public SequencedMap<String, ExecutionRequest> getToolExecutionRequests() {
         return Collections.unmodifiableSequencedMap(toolExecutionRequests);
     }
 }

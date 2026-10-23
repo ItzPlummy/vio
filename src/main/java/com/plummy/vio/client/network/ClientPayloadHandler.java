@@ -28,4 +28,16 @@ public class ClientPayloadHandler {
     public static void handleClearHistory() {
         ClientConversation.getInstance().clear();
     }
+
+    public static void handleVoiceAvailability(VoiceAvailabilityPayload payload) {
+        ClientConversation.getInstance().onVoiceAvailability(payload.getAvailability());
+    }
+
+    public static void handleVoiceState(VoiceStatePayload payload) {
+        ClientConversation.getInstance().onVoiceState(payload.getState());
+    }
+
+    public static void handleVoiceTranscript(VoiceTranscriptPayload payload) {
+        ClientConversation.getInstance().onVoiceTranscript(payload.getTranscript());
+    }
 }

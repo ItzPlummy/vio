@@ -1,6 +1,6 @@
 package com.plummy.vio.tool;
 
-import com.plummy.vio.access.AccessLevel;
+import com.plummy.vio.tool.argument.Arguments;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,12 +23,12 @@ public class BasicToolExecutor extends AbstractToolExecutor<BasicTool> {
     }
 
     @Override
-    public Tool.ExecutionResult execute(AccessLevel accessLevel, Tool.ExecutionRequest request) {
-        return await(worker.submit(() -> executeNow(accessLevel, request)));
+    public ExecutionResult execute(Requester requester, ExecutionRequest request) {
+        return await(worker.submit(() -> executeNow(requester, request)));
     }
 
     @Override
-    protected Tool.ExecutionResult invoke(BasicTool tool, Tool.Arguments arguments) {
+    protected ExecutionResult invoke(BasicTool tool, Requester requester, Arguments arguments) {
         return tool.execute(arguments);
     }
 }

@@ -7,8 +7,8 @@ import java.util.UUID;
 
 public interface Agent {
 
-    // `time` is when the request arrived; it becomes the stored request's time.
-    SubmitResult submit(ServerPlayer player, String request, Instant time);
+    // `time` is when the request arrived; it becomes the stored request's time. `voice` marks a transcribed request.
+    SubmitResult submit(ServerPlayer player, String request, Instant time, boolean voice);
 
     boolean isBusy(UUID playerId);
 

@@ -31,16 +31,35 @@ public class SectionJsonDeserializer {
             case PLAYER_REQUEST -> new PlayerRequestSection(
                     json.get("request").getAsString()
             );
-            case PLAYER_CONTEXT -> new PlayerContextSection(
-                    UUID.fromString(json.get("id").getAsString()),
-                    json.get("name").getAsString(),
-                    AccessLevel.fromValue(json.get("access_level").getAsString()),
-                    json.get("x").getAsDouble(),
-                    json.get("y").getAsDouble(),
-                    json.get("z").getAsDouble(),
-                    json.get("yaw").getAsDouble(),
-                    json.get("pitch").getAsDouble()
-            );
+            case PLAYER_CONTEXT -> {
+                List<String> structures = new ArrayList<>();
+
+                for (JsonElement structure : json.getAsJsonArray("structures")) {
+                    structures.add(structure.getAsString());
+                }
+
+                yield new PlayerContextSection(
+                        UUID.fromString(json.get("id").getAsString()),
+                        json.get("name").getAsString(),
+                        AccessLevel.fromValue(json.get("access_level").getAsString()),
+                        json.get("x").getAsDouble(),
+                        json.get("y").getAsDouble(),
+                        json.get("z").getAsDouble(),
+                        json.get("yaw").getAsDouble(),
+                        json.get("pitch").getAsDouble(),
+                        json.get("dimension").getAsString(),
+                        json.get("biome").getAsString(),
+                        structures.toArray(new String[0]),
+                        json.get("health").getAsDouble(),
+                        json.get("armor").getAsDouble(),
+                        json.get("food").getAsDouble(),
+                        json.get("saturation").getAsDouble(),
+                        json.get("level").getAsInt(),
+                        json.get("game_mode").getAsString(),
+                        json.get("main_hand_item").getAsString(),
+                        json.get("off_hand_item").getAsString()
+                );
+            }
             case SERVER_CONTEXT -> {
                 List<String> dimensions = new ArrayList<>();
 
@@ -48,7 +67,11 @@ public class SectionJsonDeserializer {
                     dimensions.add(dimension.getAsString());
                 }
 
-                yield new ServerContextSection(dimensions, json.get("time").getAsLong());
+                yield new ServerContextSection(
+                        dimensions.toArray(new String[0]),
+                        json.get("time").getAsLong(),
+                        json.get("day").getAsLong()
+                );
             }
         };
     }

@@ -46,17 +46,31 @@ public class SectionJsonSerializer implements SectionVisitor<JsonObject> {
 
     @Override
     public JsonObject visitPlayerContextSection(PlayerContextSection section) {
+        JsonArray structures = new JsonArray();
+        for (String structure : section.getStructures()) structures.add(structure);
+
         JsonObject json = new JsonObject();
 
         json.addProperty("type", section.getType().getValue());
         json.addProperty("id", section.getId().toString());
         json.addProperty("name", section.getName());
+        json.addProperty("access_level", section.getAccessLevel().getValue());
         json.addProperty("x", section.getX());
         json.addProperty("y", section.getY());
         json.addProperty("z", section.getZ());
         json.addProperty("yaw", section.getYaw());
         json.addProperty("pitch", section.getPitch());
-        json.addProperty("access_level", section.getAccessLevel().getValue());
+        json.addProperty("dimension", section.getDimension());
+        json.addProperty("biome", section.getBiome());
+        json.add("structures", structures);
+        json.addProperty("health", section.getHealth());
+        json.addProperty("armor", section.getArmor());
+        json.addProperty("food", section.getFood());
+        json.addProperty("saturation", section.getSaturation());
+        json.addProperty("level", section.getLevel());
+        json.addProperty("game_mode", section.getGameMode());
+        json.addProperty("main_hand_item", section.getMainHandItem());
+        json.addProperty("off_hand_item", section.getOffHandItem());
 
         return json;
     }
@@ -74,6 +88,7 @@ public class SectionJsonSerializer implements SectionVisitor<JsonObject> {
         json.addProperty("type", section.getType().getValue());
         json.add("dimensions", dimensions);
         json.addProperty("time", section.getTime());
+        json.addProperty("day", section.getDay());
 
         return json;
     }

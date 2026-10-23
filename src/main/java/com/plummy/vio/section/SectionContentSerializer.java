@@ -33,14 +33,16 @@ public class SectionContentSerializer implements SectionVisitor<String> {
 
     @Override
     public String visitPlayerContextSection(PlayerContextSection section) {
-        return "<player_context>\nPlayer UUID: %s\nNickname: %s\nPosition X: %.3f\nPosition Y: %.3f\nPosition Z: %.3f\nYaw: %.1f\nPitch: %.1f\nAccess level: %s\n</player_context>"
-                .formatted(section.getId(), section.getName(), section.getX(), section.getY(), section.getZ(), section.getYaw(), section.getPitch(), section.getAccessLevel());
+        String structures = section.getStructures().length == 0 ? "none" : String.join(", ", section.getStructures());
+
+        return "<player_context>\nPlayer UUID: %s\nNickname: %s\nPosition X: %.3f\nPosition Y: %.3f\nPosition Z: %.3f\nYaw: %.1f\nPitch: %.1f\nDimension: %s\nBiome: %s\nInside structures: %s\nHealth: %.1f\nArmor: %.0f\nFood: %.0f\nSaturation: %.1f\nExperience level: %d\nGame mode: %s\nMain hand item: %s\nOff hand item: %s\nAccess level: %s\n</player_context>"
+                .formatted(section.getId(), section.getName(), section.getX(), section.getY(), section.getZ(), section.getYaw(), section.getPitch(), section.getDimension(), section.getBiome(), structures, section.getHealth(), section.getArmor(), section.getFood(), section.getSaturation(), section.getLevel(), section.getGameMode(), section.getMainHandItem(), section.getOffHandItem(), section.getAccessLevel());
     }
 
     @Override
     public String visitServerContextSection(ServerContextSection section) {
         return "<server_context>\nDimensions: %s\nTime of day in ticks (0-23999): %d\nDay: %d\n</server_context>"
-                .formatted(section.getDimensions(), section.getTime() % 24000, section.getTime() / 24000);
+                .formatted(String.join(", ", section.getDimensions()), section.getTime(), section.getDay());
     }
 
     public String getMessageContent(Message message) {

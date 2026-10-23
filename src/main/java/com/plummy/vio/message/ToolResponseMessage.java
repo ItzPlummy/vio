@@ -1,7 +1,7 @@
 package com.plummy.vio.message;
 
 import com.plummy.vio.section.Section;
-import com.plummy.vio.tool.Tool;
+import com.plummy.vio.tool.ExecutionResult;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -11,15 +11,15 @@ import java.util.SequencedMap;
 
 public class ToolResponseMessage implements Message {
 
-    private final SequencedMap<String, Tool.ExecutionResult> toolExecutionResults;
+    private final SequencedMap<String, ExecutionResult> toolExecutionResults;
     private final Instant time;
 
-    public ToolResponseMessage(SequencedMap<String, Tool.ExecutionResult> toolExecutionResults, Instant time) {
+    public ToolResponseMessage(SequencedMap<String, ExecutionResult> toolExecutionResults, Instant time) {
         this.toolExecutionResults = new LinkedHashMap<>(toolExecutionResults);
         this.time = time;
     }
 
-    public static ToolResponseMessage of(SequencedMap<String, Tool.ExecutionResult> toolExecutionResults) {
+    public static ToolResponseMessage of(SequencedMap<String, ExecutionResult> toolExecutionResults) {
         return new ToolResponseMessage(toolExecutionResults, Message.now());
     }
 
@@ -43,7 +43,7 @@ public class ToolResponseMessage implements Message {
         return time;
     }
 
-    public SequencedMap<String, Tool.ExecutionResult> getToolExecutionResults() {
+    public SequencedMap<String, ExecutionResult> getToolExecutionResults() {
         return Collections.unmodifiableSequencedMap(toolExecutionResults);
     }
 }

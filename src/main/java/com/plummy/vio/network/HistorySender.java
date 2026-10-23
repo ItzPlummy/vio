@@ -86,7 +86,7 @@ public class HistorySender {
         @Override
         public HistoryPayload.Entry visitPlayerRequestMessage(PlayerRequestMessage message) {
             // Only the player's own text: the context sections are for the model.
-            return new HistoryPayload.Entry(HistoryPayload.Kind.PLAYER, message.getRequest().getRequest(), message.getTime());
+            return new HistoryPayload.Entry(HistoryPayload.Kind.PLAYER, message.getRequest().getRequest(), message.getTime(), message.isVoice());
         }
 
         @Override
@@ -101,7 +101,7 @@ public class HistorySender {
 
         @Override
         public HistoryPayload.Entry visitAgentResponseMessage(AgentResponseMessage message) {
-            return new HistoryPayload.Entry(HistoryPayload.Kind.AGENT, SectionContentSerializer.getInstance().getMessageContent(message), message.getTime());
+            return new HistoryPayload.Entry(HistoryPayload.Kind.AGENT, SectionContentSerializer.getInstance().getMessageContent(message), message.getTime(), false);
         }
     }
 }

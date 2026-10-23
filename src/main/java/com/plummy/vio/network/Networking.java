@@ -6,6 +6,7 @@ import com.plummy.vio.agent.SubmitResult;
 import com.plummy.vio.client.network.ClientPayloadHandler;
 import com.plummy.vio.message.Message;
 import com.plummy.vio.network.payload.*;
+import com.plummy.vio.voice.VoiceManager;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -71,6 +72,42 @@ public class Networking {
                 ClearHistoryPayload.getStreamCodec(),
                 (payload, context) -> ClientPayloadHandler.handleClearHistory()
         );
+
+        registrar.playToClient(
+                VoiceAvailabilityPayload.getType(),
+                VoiceAvailabilityPayload.getStreamCodec(),
+                (payload, context) -> ClientPayloadHandler.handleVoiceAvailability(payload)
+        );
+
+        registrar.playToServer(
+                StartCapturePayload.getType(),
+                StartCapturePayload.getStreamCodec(),
+                (payload, context) -> handleStartCapture(context)
+        );
+
+        registrar.playToServer(
+                StopCapturePayload.getType(),
+                StopCapturePayload.getStreamCodec(),
+                (payload, context) -> handleStopCapture(context)
+        );
+
+        registrar.playToServer(
+                CancelCapturePayload.getType(),
+                CancelCapturePayload.getStreamCodec(),
+                (payload, context) -> handleCancelCapture(context)
+        );
+
+        registrar.playToClient(
+                VoiceStatePayload.getType(),
+                VoiceStatePayload.getStreamCodec(),
+                (payload, context) -> ClientPayloadHandler.handleVoiceState(payload)
+        );
+
+        registrar.playToClient(
+                VoiceTranscriptPayload.getType(),
+                VoiceTranscriptPayload.getStreamCodec(),
+                (payload, context) -> ClientPayloadHandler.handleVoiceTranscript(payload)
+        );
     }
 
     public static boolean hasClient(ServerPlayer player) {
@@ -98,9 +135,41 @@ public class Networking {
         Instant time = Message.now();
         SubmitResult result = agent == null
                 ? SubmitResult.UNAVAILABLE
-                : agent.submit(player, request, time);
+                : agent.submit(player, request, time, false);
 
         // The client shows the request with the server's time, so it matches the stored one and the reply's.
         context.reply(new SubmitResultPayload(result, time));
+    }
+
+    private static void handleStartCapture(IPayloadContext context) {
+        if (!(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+
+        VoiceManager voiceManager = Vio.getVoiceManager();
+        SubmitResult result = voiceManager == null
+                ? SubmitResult.UNAVAILABLE
+                : voiceManager.startCapture(player);
+
+        // An accepted capture reports through its voice state; the request itself is submitted once it ends.
+        if (result != SubmitResult.ACCEPTED) {
+            context.reply(new SubmitResultPayload(result, Message.now()));
+        }
+    }
+
+    private static void handleStopCapture(IPayloadContext context) {
+        VoiceManager voiceManager = Vio.getVoiceManager();
+
+        if (context.player() instanceof ServerPlayer player && voiceManager != null) {
+            voiceManager.stopCapture(player);
+        }
+    }
+
+    private static void handleCancelCapture(IPayloadContext context) {
+        VoiceManager voiceManager = Vio.getVoiceManager();
+
+        if (context.player() instanceof ServerPlayer player && voiceManager != null) {
+            voiceManager.cancelCapture(player);
+        }
     }
 }

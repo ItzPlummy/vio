@@ -4,16 +4,24 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ServerContextSection implements Section {
 
-    private final List<String> dimensions;
-    private final long time;
+    private final String[] dimensions;
 
-    public ServerContextSection(List<String> dimensions, long time) {
-        this.dimensions = List.copyOf(dimensions);
+    private final long time;
+    private final long day;
+
+    public ServerContextSection(
+            String[] dimensions,
+            long time,
+            long day
+    ) {
+        this.dimensions = Arrays.copyOf(dimensions, dimensions.length);
         this.time = time;
+        this.day = day;
     }
 
     public static ServerContextSection fromServer(MinecraftServer server) {
@@ -23,7 +31,11 @@ public class ServerContextSection implements Section {
             dimensions.add(level.dimension().location().toString());
         }
 
-        return new ServerContextSection(dimensions, server.overworld().getDayTime());
+        return new ServerContextSection(
+                dimensions.toArray(new String[0]),
+                server.overworld().getDayTime() % 24000,
+                server.overworld().getDayTime() / 24000
+        );
     }
 
     @Override
@@ -36,11 +48,15 @@ public class ServerContextSection implements Section {
         return visitor.visitServerContextSection(this);
     }
 
-    public List<String> getDimensions() {
+    public String[] getDimensions() {
         return dimensions;
     }
 
     public long getTime() {
         return time;
+    }
+
+    public long getDay() {
+        return day;
     }
 }

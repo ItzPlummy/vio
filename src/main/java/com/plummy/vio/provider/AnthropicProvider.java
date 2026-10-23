@@ -7,7 +7,12 @@ import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.message.*;
 import com.plummy.vio.registry.ToolRegistry;
 import com.plummy.vio.section.SectionContentSerializer;
+import com.plummy.vio.tool.ExecutionRequest;
+import com.plummy.vio.tool.ExecutionResult;
+import com.plummy.vio.tool.ExecutionStatus;
 import com.plummy.vio.tool.Tool;
+import com.plummy.vio.tool.argument.ArgumentSchemaJsonSerializer;
+import com.plummy.vio.tool.argument.Arguments;
 
 import java.io.IOException;
 import java.net.URI;
@@ -121,32 +126,13 @@ public class AnthropicProvider implements Provider {
     }
 
     private static JsonObject buildToolDefinition(Tool tool) {
-        JsonObject properties = new JsonObject();
-        JsonArray required = new JsonArray();
-
-        for (Map.Entry<String, Tool.ArgumentDefinition> entry : tool.getFullArgumentSchema().entrySet()) {
-            JsonObject property = new JsonObject();
-
-            property.addProperty("type", entry.getValue().getType().getValue());
-            property.addProperty("description", entry.getValue().getDescription());
-
-            properties.add(entry.getKey(), property);
-            required.add(entry.getKey());
-        }
-
-        JsonObject inputSchema = new JsonObject();
-
-        inputSchema.addProperty("type", "object");
-        inputSchema.add("properties", properties);
-        inputSchema.add("required", required);
-        inputSchema.addProperty("additionalProperties", false);
+        JsonObject inputSchema = ArgumentSchemaJsonSerializer.getInstance().serialize(tool.getFullArgumentSchema());
 
         JsonObject json = new JsonObject();
 
         json.addProperty("name", tool.getName());
         json.addProperty("description", tool.getDescription());
         json.add("input_schema", inputSchema);
-        json.addProperty("strict", true);
 
         return json;
     }
@@ -164,7 +150,7 @@ public class AnthropicProvider implements Provider {
         }
 
         StringBuilder text = new StringBuilder();
-        SequencedMap<String, Tool.ExecutionRequest> toolExecutionRequests = new LinkedHashMap<>();
+        SequencedMap<String, ExecutionRequest> toolExecutionRequests = new LinkedHashMap<>();
 
         for (JsonElement element : json.getAsJsonArray("content")) {
             JsonObject block = element.getAsJsonObject();
@@ -174,9 +160,9 @@ public class AnthropicProvider implements Provider {
                 case "tool_use" -> toolExecutionRequests.put(
                         block.get("id").getAsString(),
 
-                        new Tool.ExecutionRequest(
+                        new ExecutionRequest(
                                 block.get("name").getAsString(),
-                                new Tool.Arguments(block.getAsJsonObject("input"))
+                                new Arguments(block.getAsJsonObject("input"))
                         )
                 );
             }
@@ -202,7 +188,7 @@ public class AnthropicProvider implements Provider {
             // The status is already inside each call's arguments, so no text block is replayed.
             JsonArray content = new JsonArray();
 
-            for (Map.Entry<String, Tool.ExecutionRequest> entry : message.getToolExecutionRequests().entrySet()) {
+            for (Map.Entry<String, ExecutionRequest> entry : message.getToolExecutionRequests().entrySet()) {
                 JsonObject block = new JsonObject();
 
                 block.addProperty("type", "tool_use");
@@ -220,7 +206,7 @@ public class AnthropicProvider implements Provider {
         public List<JsonObject> visitToolResponseMessage(ToolResponseMessage message) {
             JsonArray content = new JsonArray();
 
-            for (Map.Entry<String, Tool.ExecutionResult> entry : message.getToolExecutionResults().entrySet()) {
+            for (Map.Entry<String, ExecutionResult> entry : message.getToolExecutionResults().entrySet()) {
                 JsonObject output = new JsonObject();
 
                 output.addProperty("status", entry.getValue().getStatus().getValue());
@@ -232,9 +218,9 @@ public class AnthropicProvider implements Provider {
                 block.addProperty("tool_use_id", entry.getKey());
                 block.addProperty("content", output.toString());
 
-                Tool.ExecutionStatus status = entry.getValue().getStatus();
+                ExecutionStatus status = entry.getValue().getStatus();
 
-                if (status != Tool.ExecutionStatus.SUCCESS && status != Tool.ExecutionStatus.PARTIAL) {
+                if (status != ExecutionStatus.SUCCESS && status != ExecutionStatus.PARTIAL) {
                     block.addProperty("is_error", true);
                 }
 

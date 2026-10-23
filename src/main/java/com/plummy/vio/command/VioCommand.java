@@ -12,6 +12,7 @@ import com.plummy.vio.access.PlayerAccess;
 import com.plummy.vio.agent.Agent;
 import com.plummy.vio.network.Networking;
 import com.plummy.vio.network.payload.ClearHistoryPayload;
+import com.plummy.vio.tool.world.RunCommandTool;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -39,7 +40,8 @@ public class VioCommand {
                 .then(Commands.literal("reset")
                         .executes(VioCommand::reset))
                 .then(Commands.literal("access")
-                        .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        // Never through run_command: it runs at level 2 for any FULL player, which would let them hand out access.
+                        .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS) && !RunCommandTool.isToolSource(source))
                         .then(player)));
     }
 

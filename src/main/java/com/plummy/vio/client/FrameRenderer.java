@@ -10,16 +10,20 @@ public final class FrameRenderer {
     }
 
     public static void render(GuiGraphics graphics, int x, int y, int width, int height, int radius) {
-        int[][] outline = getRoundedRectangleSpan(width, height, radius, 0);
-        int[][] bevel = getRoundedRectangleSpan(width, height, radius, 1);
-        int[][] body = getRoundedRectangleSpan(width, height, radius, 2);
+        render(graphics, x, y, width, height, radius, Theme.BORDER_DARK, Theme.BORDER_LIGHT, Theme.BORDER_SHADOW, Theme.BACKGROUND);
+    }
+
+    public static void render(GuiGraphics graphics, int x, int y, int width, int height, int radius, int outlineColor, int lightColor, int shadowColor, int backgroundColor) {
+        int[][] outline = getSpans(width, height, radius, 0);
+        int[][] bevel = getSpans(width, height, radius, 1);
+        int[][] body = getSpans(width, height, radius, 2);
 
         for (int row = 0; row < height; row++) {
-            renderRing(graphics, x, y, width, height, row, outline[row], bevel[row], Theme.BORDER_DARK, Theme.BORDER_DARK);
-            renderRing(graphics, x, y, width, height, row, bevel[row], body[row], Theme.BORDER_LIGHT, Theme.BORDER_SHADOW);
+            renderRing(graphics, x, y, width, height, row, outline[row], bevel[row], outlineColor, outlineColor);
+            renderRing(graphics, x, y, width, height, row, bevel[row], body[row], lightColor, shadowColor);
 
             if (body[row] != null) {
-                graphics.fill(x + body[row][0], y + row, x + body[row][1], y + row + 1, Theme.BACKGROUND);
+                graphics.fill(x + body[row][0], y + row, x + body[row][1], y + row + 1, backgroundColor);
             }
         }
     }
@@ -48,7 +52,7 @@ public final class FrameRenderer {
         }
     }
 
-    private static int[][] getRoundedRectangleSpan(int width, int height, int radius, int inset) {
+    public static int[][] getSpans(int width, int height, int radius, int inset) {
         int[][] spans = new int[height][];
         int innerHeight = height - inset * 2;
         int cornerRadius = Math.max(0, Math.min(radius, Math.min(width, height) / 2) - inset);
