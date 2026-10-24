@@ -6,7 +6,8 @@ public enum SectionType {
     ACTIVITY_DESCRIPTION("activity_description"),
     PLAYER_REQUEST("player_request"),
     PLAYER_CONTEXT("player_context"),
-    SERVER_CONTEXT("server_context");
+    SERVER_CONTEXT("server_context"),
+    SCRIPT_CONTEXT("script_context");
 
     private final String value;
 

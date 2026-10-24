@@ -31,6 +31,8 @@ public class MessageJsonDeserializer {
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("request"), PlayerRequestSection.class),
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("player_context"), PlayerContextSection.class),
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("server_context"), ServerContextSection.class),
+                    // Absent for players who couldn't use scripts, and in conversations stored before scripts existed.
+                    json.has("script_context") ? SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("script_context"), ScriptContextSection.class) : null,
                     getTime(json),
                     // Conversations stored before voice existed have no flag.
                     json.has("voice") && json.get("voice").getAsBoolean()

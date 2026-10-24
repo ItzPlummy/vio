@@ -97,13 +97,10 @@ public class AnthropicProvider implements Provider {
             toolDefinitions.add(buildToolDefinition(tool));
         }
 
-        // Thinking blocks would have to be stored and replayed unchanged, so thinking is off.
-        // Only accepted at effort high or below, and rejected by models that can't disable thinking (Opus 5.5, Sonnet 5.5).
-        JsonObject thinking = new JsonObject();
-        thinking.addProperty("type", "disabled");
-
+        // No thinking field: current models then think adaptively, and effort sets how much. Thinking blocks aren't
+        // stored or replayed, so each agent round reasons afresh instead of seeing the previous round's reasoning.
         JsonObject outputConfig = new JsonObject();
-        outputConfig.addProperty("effort", "low");
+        outputConfig.addProperty("effort", "medium");
 
         // Every agent round resends the whole conversation, so cache it up to the last block.
         JsonObject cacheControl = new JsonObject();
@@ -117,10 +114,10 @@ public class AnthropicProvider implements Provider {
             json.add("tools", toolDefinitions);
         }
 
-        json.add("thinking", thinking);
         json.add("output_config", outputConfig);
         json.add("cache_control", cacheControl);
-        json.addProperty("max_tokens", 16000);
+        // Thinking counts toward it too.
+        json.addProperty("max_tokens", 16384);
 
         return json;
     }

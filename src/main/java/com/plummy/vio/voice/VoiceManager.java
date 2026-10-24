@@ -84,12 +84,18 @@ public class VoiceManager {
         textToSpeechWorker.shutdownNow();
         speechToTextWorker.shutdownNow();
 
-        // The model may still be in use by a running transcription, so it's released only once that ends.
+        // A model may still be in use by a running transcription or synthesis, so it's released only once that ends.
         try {
             if (speechToTextWorker.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 speechToText.release();
             } else {
                 Vio.getLogger().warn("Speech to text didn't stop in time, its model isn't released");
+            }
+
+            if (textToSpeechWorker.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                textToSpeech.release();
+            } else {
+                Vio.getLogger().warn("Text to speech didn't stop in time, its voices aren't released");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

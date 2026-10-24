@@ -1,6 +1,7 @@
 package com.plummy.vio.registry;
 
 import com.plummy.vio.access.AccessLevel;
+import com.plummy.vio.script.ScriptType;
 import com.plummy.vio.tool.*;
 import com.plummy.vio.tool.block.GetBlockInfoTool;
 import com.plummy.vio.tool.knowledge.GetBlockTypeInfoTool;
@@ -12,6 +13,7 @@ import com.plummy.vio.tool.knowledge.*;
 import com.plummy.vio.tool.monitoring.*;
 import com.plummy.vio.tool.nbt.*;
 import com.plummy.vio.tool.player.*;
+import com.plummy.vio.tool.script.*;
 import com.plummy.vio.tool.web.*;
 import com.plummy.vio.tool.world.*;
 
@@ -84,6 +86,17 @@ public class ToolRegistry {
     public static ServerTool READ_SERVER_LOG = register(new ReadServerLogTool());
     public static ServerTool GET_MOD_LIST = register(new GetModListTool());
 
+    public static ServerTool LIST_SCRIPTS = register(new ListScriptsTool());
+    public static ServerTool READ_SCRIPT = register(new ReadScriptTool());
+    public static BasicTool SAVE_ONE_SHOT_SCRIPT = register(new SaveScriptTool(ScriptType.ONE_SHOT));
+    public static BasicTool SAVE_PERIODIC_SCRIPT = register(new SaveScriptTool(ScriptType.PERIODIC));
+    public static BasicTool SAVE_LISTENER_SCRIPT = register(new SaveScriptTool(ScriptType.LISTENER));
+    public static BasicTool SAVE_COMMAND_SCRIPT = register(new SaveScriptTool(ScriptType.COMMAND));
+    public static ServerTool SET_SCRIPT_ENABLED = register(new SetScriptEnabledTool());
+    public static ServerTool RUN_SCRIPT = register(new RunScriptTool());
+    public static ServerTool READ_SCRIPT_LOG = register(new ReadScriptLogTool());
+    public static ServerTool DELETE_SCRIPT = register(new DeleteScriptTool());
+
     public static BasicTool WEB_SEARCH = register(new WebSearchTool());
     public static BasicTool WEB_FETCH = register(new WebFetchTool());
 
@@ -108,6 +121,6 @@ public class ToolRegistry {
     }
 
     public static Collection<Tool> getAll(AccessLevel accessLevel) {
-        return TOOLS.values().stream().filter(tool -> accessLevel.isAtLeast(tool.getAccessLevel())).collect(Collectors.toList());
+        return TOOLS.values().stream().filter(tool -> tool.isAvailable() && accessLevel.isAtLeast(tool.getAccessLevel())).collect(Collectors.toList());
     }
 }

@@ -11,7 +11,9 @@ import com.plummy.vio.message.*;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderException;
 import com.plummy.vio.registry.ToolRegistry;
+import com.plummy.vio.script.ScriptManager;
 import com.plummy.vio.section.PlayerContextSection;
+import com.plummy.vio.section.ScriptContextSection;
 import com.plummy.vio.section.ServerContextSection;
 import com.plummy.vio.storage.Storage;
 import com.plummy.vio.tool.BasicToolExecutor;
@@ -20,6 +22,7 @@ import com.plummy.vio.tool.ExecutionResult;
 import com.plummy.vio.tool.Requester;
 import com.plummy.vio.tool.ServerToolExecutor;
 import com.plummy.vio.tool.Tool;
+import com.plummy.vio.tool.script.ScriptTools;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -84,10 +87,15 @@ public class VioAgent implements Agent {
             return SubmitResult.UNAVAILABLE;
         }
 
+        // Only FULL players get the script tools, so only they see the scripts.
+        ScriptManager scriptManager = Vio.getScriptManager();
+        boolean scripts = accessLevel == AccessLevel.FULL && ScriptTools.isAvailable() && scriptManager != null;
+
         PlayerRequestMessage message = PlayerRequestMessage.of(
                 request,
                 PlayerContextSection.fromPlayer(player, accessLevel),
                 ServerContextSection.fromServer(server),
+                scripts ? ScriptContextSection.fromManager(scriptManager) : null,
                 time,
                 voice
         );

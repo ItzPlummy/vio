@@ -4,7 +4,7 @@ import com.plummy.vio.tool.argument.Arguments;
 
 public interface BasicTool extends Tool {
 
-    ExecutionResult execute(Arguments arguments);
+    ExecutionResult execute(Requester requester, Arguments arguments);
 
     default ToolType getType() {
         return ToolType.BASIC;

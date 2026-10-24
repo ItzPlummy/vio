@@ -11,4 +11,6 @@ public interface SectionVisitor<T> {
     T visitPlayerContextSection(PlayerContextSection section);
 
     T visitServerContextSection(ServerContextSection section);
+
+    T visitScriptContextSection(ScriptContextSection section);
 }

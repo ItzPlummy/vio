@@ -29,6 +29,6 @@ public class BasicToolExecutor extends AbstractToolExecutor<BasicTool> {
 
     @Override
     protected ExecutionResult invoke(BasicTool tool, Requester requester, Arguments arguments) {
-        return tool.execute(arguments);
+        return tool.execute(requester, arguments);
     }
 }

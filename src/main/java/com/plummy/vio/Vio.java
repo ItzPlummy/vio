@@ -12,8 +12,10 @@ import com.plummy.vio.listener.AgentListener;
 import com.plummy.vio.listener.NetworkAgentListener;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderFactory;
+import com.plummy.vio.script.ScriptManager;
 import com.plummy.vio.storage.ConversationStorage;
 import com.plummy.vio.storage.PlayerAccessStorage;
+import com.plummy.vio.storage.ScriptStorage;
 import com.plummy.vio.tool.BasicToolExecutor;
 import com.plummy.vio.tool.ServerToolExecutor;
 import com.plummy.vio.voice.VoiceAgentListener;
@@ -34,6 +36,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import org.slf4j.Logger;
 
@@ -58,6 +61,7 @@ public class Vio {
     private static PlayerAccessStorage playerAccessStorage;
 
     private static VoiceManager voiceManager;
+    private static ScriptManager scriptManager;
 
     // Set by the voice chat plugin while its server runs, from its own thread.
     private static volatile VoiceChat voiceChat;
@@ -100,11 +104,27 @@ public class Vio {
         );
     }
 
+    // Unlike ServerAboutToStartEvent, the levels exist by now, which scripts may need.
+    @SubscribeEvent
+    public void onServerLevelsLoaded(ServerStartingEvent event) {
+        if (ServerConfig.SCRIPTS_ENABLED.get()) {
+            scriptManager = new ScriptManager(event.getServer(), ScriptStorage.fromServer(event.getServer()));
+            scriptManager.load();
+            NeoForge.EVENT_BUS.register(scriptManager);
+        }
+    }
+
     @SubscribeEvent
     public void onServerStopping(ServerStoppingEvent event) {
         if (agent != null) {
             agent.shutdown();
             agent = null;
+        }
+
+        if (scriptManager != null) {
+            NeoForge.EVENT_BUS.unregister(scriptManager);
+            scriptManager.shutdown();
+            scriptManager = null;
         }
 
         if (voiceManager != null) {
@@ -121,6 +141,11 @@ public class Vio {
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         VioCommand.register(event.getDispatcher());
+
+        // Null on the first registration, which comes before scripts load; they add their commands themselves.
+        if (scriptManager != null) {
+            scriptManager.registerCommands(event.getDispatcher());
+        }
     }
 
     public static HttpClient getHttpClient() {
@@ -153,6 +178,10 @@ public class Vio {
 
     public static VoiceManager getVoiceManager() {
         return voiceManager;
+    }
+
+    public static ScriptManager getScriptManager() {
+        return scriptManager;
     }
 
     public static VoiceChat getVoiceChat() {

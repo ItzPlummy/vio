@@ -21,7 +21,7 @@ public abstract class AbstractToolExecutor<T extends Tool> implements ToolExecut
     protected ExecutionResult executeNow(Requester requester, ExecutionRequest request) {
         Tool registered = ToolRegistry.get(request.getName());
 
-        if (!toolClass.isInstance(registered)) {
+        if (!toolClass.isInstance(registered) || !registered.isAvailable()) {
             return ExecutionResult.invalidArguments("Unknown tool: %s.".formatted(request.getName()));
         }
 

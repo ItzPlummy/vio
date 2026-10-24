@@ -18,6 +18,11 @@ public interface Tool {
 
     AccessLevel getAccessLevel();
 
+    // Unavailable tools aren't sent to the model at all, e.g. when their feature is turned off in the config.
+    default boolean isAvailable() {
+        return true;
+    }
+
     default SequencedMap<String, ArgumentDefinition> getFullArgumentSchema() {
         SequencedMap<String, ArgumentDefinition> schema = new LinkedHashMap<>();
 

@@ -90,7 +90,7 @@ public class ElevenLabsTextToSpeechTransformer implements TextToSpeechTransforme
             throw new TransformerException("ElevenLabs returned " + response.statusCode() + ": " + new String(response.body(), StandardCharsets.UTF_8));
         }
 
-        return resample(toSamples(response.body()), getSampleRate(), VoiceChat.SAMPLE_RATE);
+        return Resampler.resample(toSamples(response.body()), getSampleRate(), VoiceChat.SAMPLE_RATE);
     }
 
     // Formats are named after their sample rate, e.g. pcm_24000.
@@ -106,23 +106,7 @@ public class ElevenLabsTextToSpeechTransformer implements TextToSpeechTransforme
         return samples;
     }
 
-    // Linear interpolation; only ever upsamples here, where it's good enough for speech.
-    private static short[] resample(short[] samples, int fromRate, int toRate) {
-        if (fromRate == toRate || samples.length == 0) {
-            return samples;
-        }
-
-        short[] resampled = new short[(int) ((long) samples.length * toRate / fromRate)];
-
-        for (int i = 0; i < resampled.length; i++) {
-            double position = (double) i * fromRate / toRate;
-            int index = (int) position;
-            int current = samples[index];
-            int next = samples[Math.min(index + 1, samples.length - 1)];
-
-            resampled[i] = (short) Math.round(current + (next - current) * (position - index));
-        }
-
-        return resampled;
+    @Override
+    public void release() {
     }
 }

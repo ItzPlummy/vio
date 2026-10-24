@@ -15,6 +15,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.StreamSupport;
 
 public interface ServerTool extends Tool {
@@ -42,6 +43,11 @@ public interface ServerTool extends Tool {
 
         public AccessLevel getAccessLevel() {
             return requester.getAccessLevel();
+        }
+
+        // Also when the requesting player is no longer online.
+        public UUID getPlayerId() {
+            return requester.getPlayerId();
         }
 
         public ServerPlayer getPlayer() {

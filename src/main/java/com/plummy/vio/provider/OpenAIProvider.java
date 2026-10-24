@@ -94,7 +94,7 @@ public class OpenAIProvider implements Provider {
         }
 
         JsonObject reasoning = new JsonObject();
-        reasoning.addProperty("effort", "low");
+        reasoning.addProperty("effort", "medium");
 
         json.addProperty("model", getModel());
         json.addProperty("instructions", instructions);
@@ -103,7 +103,8 @@ public class OpenAIProvider implements Provider {
 
         json.addProperty("store", false);
         json.add("reasoning", reasoning);
-        json.addProperty("max_output_tokens", 2048);
+        // Reasoning counts toward it too.
+        json.addProperty("max_output_tokens", 16384);
 
         return json;
     }

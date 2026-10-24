@@ -4,6 +4,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.plummy.vio.access.AccessLevel;
+import com.plummy.vio.script.ScriptState;
+import com.plummy.vio.script.ScriptType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,6 +74,22 @@ public class SectionJsonDeserializer {
                         json.get("time").getAsLong(),
                         json.get("day").getAsLong()
                 );
+            }
+            case SCRIPT_CONTEXT -> {
+                List<ScriptContextSection.Entry> scripts = new ArrayList<>();
+
+                for (JsonElement element : json.getAsJsonArray("scripts")) {
+                    JsonObject script = element.getAsJsonObject();
+
+                    scripts.add(new ScriptContextSection.Entry(
+                            script.get("name").getAsString(),
+                            ScriptType.fromValue(script.get("type").getAsString()),
+                            ScriptState.fromValue(script.get("state").getAsString()),
+                            script.get("description").getAsString()
+                    ));
+                }
+
+                yield new ScriptContextSection(scripts);
             }
         };
     }

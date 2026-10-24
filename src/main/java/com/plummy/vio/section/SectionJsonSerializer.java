@@ -92,4 +92,27 @@ public class SectionJsonSerializer implements SectionVisitor<JsonObject> {
 
         return json;
     }
+
+    @Override
+    public JsonObject visitScriptContextSection(ScriptContextSection section) {
+        JsonArray scripts = new JsonArray();
+
+        for (ScriptContextSection.Entry script : section.getScripts()) {
+            JsonObject scriptJson = new JsonObject();
+
+            scriptJson.addProperty("name", script.name());
+            scriptJson.addProperty("type", script.type().getValue());
+            scriptJson.addProperty("state", script.state().getValue());
+            scriptJson.addProperty("description", script.description());
+
+            scripts.add(scriptJson);
+        }
+
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", section.getType().getValue());
+        json.add("scripts", scripts);
+
+        return json;
+    }
 }

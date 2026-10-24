@@ -45,6 +45,18 @@ public class SectionContentSerializer implements SectionVisitor<String> {
                 .formatted(String.join(", ", section.getDimensions()), section.getTime(), section.getDay());
     }
 
+    @Override
+    public String visitScriptContextSection(ScriptContextSection section) {
+        StringBuilder scripts = new StringBuilder();
+
+        for (ScriptContextSection.Entry script : section.getScripts()) {
+            scripts.append("\n- %s (%s, %s): %s".formatted(script.name(), script.type(), script.state(), script.description()));
+        }
+
+        return "<script_context>\nSaved scripts: %s%s\n</script_context>"
+                .formatted(section.getScripts().isEmpty() ? "none" : section.getScripts().size(), scripts);
+    }
+
     public String getMessageContent(Message message) {
         return message.getSections().stream()
                 .map(section -> section.accept(this))

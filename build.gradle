@@ -118,6 +118,15 @@ dependencies {
     jarJar(implementation("com.github.k2-fsa.sherpa-onnx:sherpa-onnx-jvm:v${sherpa_onnx_version}"))
     additionalRuntimeClasspath "com.github.k2-fsa.sherpa-onnx:sherpa-onnx-jvm:v${sherpa_onnx_version}"
 
+    // Groovy for scripts; a range, so another mod bundling Groovy 4 shares one copy with us
+    jarJar(implementation("org.apache.groovy:groovy")) {
+        version {
+            strictly "[4.0.0,5.0)"
+            prefer groovy_version
+        }
+    }
+    additionalRuntimeClasspath "org.apache.groovy:groovy:${groovy_version}"
+
     // Simple Voice Chat is optional: only compiled against, and provides its API itself when installed
     compileOnly "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}"
     // Dev runs load the mod, so voice can be tested; comment out to test without it

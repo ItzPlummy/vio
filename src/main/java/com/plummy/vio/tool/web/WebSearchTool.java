@@ -6,6 +6,7 @@ import com.plummy.vio.Vio;
 import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.tool.BasicTool;
 import com.plummy.vio.tool.ExecutionResult;
+import com.plummy.vio.tool.Requester;
 import com.plummy.vio.tool.argument.ArgumentDefinition;
 import com.plummy.vio.tool.argument.ArgumentType;
 import com.plummy.vio.tool.argument.Arguments;
@@ -57,7 +58,7 @@ public class WebSearchTool implements BasicTool {
     }
 
     @Override
-    public ExecutionResult execute(Arguments arguments) {
+    public ExecutionResult execute(Requester requester, Arguments arguments) {
         String query = arguments.getString("query");
 
         if (query == null || query.isBlank()) {
