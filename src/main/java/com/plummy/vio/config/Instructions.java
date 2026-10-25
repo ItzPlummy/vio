@@ -12,7 +12,7 @@ import java.nio.file.Path;
 
 public class Instructions {
 
-    private static final String BUNDLED_RESOURCE = "/vio/instructions.txt";
+    private static final String PATH = "/vio/instructions.txt";
 
     private final String text;
 
@@ -20,51 +20,40 @@ public class Instructions {
         this.text = text;
     }
 
-    public static Path getPath() {
-        return FMLPaths.CONFIGDIR.get().resolve(Vio.MODID).resolve("instructions.txt");
-    }
-
     public static Instructions load() {
-        Path path = getPath();
+        Path path = FMLPaths.CONFIGDIR.get().resolve(PATH);
 
-        createDefaultIfMissing(path);
+        if (!Files.exists(path)) {
+            try {
+                Files.createDirectories(path.getParent());
+                Files.writeString(path, getDefaultInstructions(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                Vio.getLogger().warn("Failed to create agent instructions", e);
+            }
+        }
 
         try {
             String text = Files.readString(path, StandardCharsets.UTF_8);
-            Vio.getLogger().info("Loaded instructions from {}", path);
             return new Instructions(text);
         } catch (IOException e) {
-            Vio.getLogger().warn("Failed to read {}, using the bundled instructions", path, e);
-            return new Instructions(readBundled());
+            Vio.getLogger().warn("Failed to read agent instructions", e);
+            return new Instructions(getDefaultInstructions());
         }
     }
 
-    public String get() {
+    public String getText() {
         return text;
     }
 
-    private static void createDefaultIfMissing(Path path) {
-        if (Files.exists(path)) {
-            return;
-        }
-
-        try {
-            Files.createDirectories(path.getParent());
-            Files.writeString(path, readBundled(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            Vio.getLogger().warn("Failed to create {}", path, e);
-        }
-    }
-
-    private static String readBundled() {
-        try (InputStream stream = Instructions.class.getResourceAsStream(BUNDLED_RESOURCE)) {
+    private static String getDefaultInstructions() {
+        try (InputStream stream = Instructions.class.getResourceAsStream(PATH)) {
             if (stream == null) {
-                throw new IllegalStateException("Bundled instructions " + BUNDLED_RESOURCE + " are missing");
+                throw new IllegalStateException("Default instructions are missing");
             }
 
             return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to read bundled instructions " + BUNDLED_RESOURCE, e);
+            throw new UncheckedIOException("Failed to read default instructions", e);
         }
     }
 }

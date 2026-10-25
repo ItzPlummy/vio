@@ -352,7 +352,7 @@ public class ScriptManager {
 
     // Runs the body of a command script, which only declares its command, and builds the node Vio registers from it.
     private LiteralCommandNode<CommandSourceStack> declare(CommandScript script, AtomicBoolean active) {
-        Outcome outcome = invoke(script, ServerConfig.DECLARATION_BUDGET_MILLIS.get(), () -> {
+        Outcome outcome = invoke(script, 100, () -> {
             CommandVioScript instance = (CommandVioScript) script.getCompiled().newInstance();
 
             instance.init(server, script.getLog());
@@ -482,7 +482,7 @@ public class ScriptManager {
 
     // Runs the body of a listener script, which only collects its on(...) handlers, and checks them.
     private List<ListenerVioScript.Handler<?>> declare(ListenerScript script) {
-        Outcome outcome = invoke(script, ServerConfig.DECLARATION_BUDGET_MILLIS.get(), () -> {
+        Outcome outcome = invoke(script, 100, () -> {
             ListenerVioScript instance = (ListenerVioScript) script.getCompiled().newInstance();
 
             instance.init(server, script.getLog());

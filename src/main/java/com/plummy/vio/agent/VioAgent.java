@@ -142,7 +142,7 @@ public class VioAgent implements Agent {
             conversation.addMessage(message);
 
             for (int round = 0; round < MAX_ROUNDS; round++) {
-                Message response = provider.request(accessLevel, instructions.get(), conversation);
+                Message response = provider.request(accessLevel, instructions.getText(), conversation);
                 conversation.addMessage(response);
 
                 if (response instanceof AgentResponseMessage agentResponse) {

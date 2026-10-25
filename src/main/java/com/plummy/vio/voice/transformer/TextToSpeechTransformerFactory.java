@@ -12,11 +12,11 @@ public class TextToSpeechTransformerFactory {
         return switch (ServerConfig.TEXT_TO_SPEECH.get()) {
             case "elevenlabs" -> new ElevenLabsTextToSpeechTransformer(
                     ServerConfig.ELEVENLABS_VOICE_ID.get(),
-                    ServerConfig.ELEVENLABS_MODEL.get(),
+                    ServerConfig.ELEVENLABS_TEXT_TO_SPEECH_MODEL.get(),
                     ServerConfig.ELEVENLABS_OUTPUT_FORMAT.get(),
                     KeysConfig.ELEVENLABS.get()
             );
-            case "local" -> new LocalTextToSpeechTransformer(ServerConfig.LOCAL_THREADS.get());
+            case "local" -> new LocalTextToSpeechTransformer(4);
             default -> throw new IllegalArgumentException("Text to speech '" + ServerConfig.TEXT_TO_SPEECH.get() + "' is not available");
         };
     }

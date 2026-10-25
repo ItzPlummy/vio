@@ -14,7 +14,7 @@ public class AccessManager {
     }
 
     public AccessLevel getServerAccessLevel() {
-        return AccessLevel.fromValue(ServerConfig.ACCESS_LEVEL.get());
+        return AccessLevel.fromValue(ServerConfig.DEFAULT_ACCESS_LEVEL.get());
     }
 
     public AccessLevel getAccessLevel(UUID playerId) {

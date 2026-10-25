@@ -113,13 +113,13 @@ public class SaveScriptTool implements BasicTool {
                     + "Only concrete NeoForge game events work: not abstract ones like PlayerEvent itself, mod loading events or client events. Handlers don't see events another mod already canceled. "
                     + "Common events, in net.neoforged.neoforge.event: entity.player.PlayerEvent.PlayerLoggedInEvent, PlayerRespawnEvent and ItemCraftedEvent; entity.player.PlayerInteractEvent.RightClickBlock; level.BlockEvent.BreakEvent and EntityPlaceEvent; entity.living.LivingDeathEvent and LivingIncomingDamageEvent; entity.EntityJoinLevelEvent; ServerChatEvent. Import the outer class for nested ones, as in the example. "
                     + "Each handler call runs on the server thread within %d ms, declaring within %d ms; after %d failures in a row the script is disabled. Prefer rare, specific events: frequent ones like every entity's tick cost a call each time.")
-                    .formatted(ServerConfig.LISTENER_BUDGET_MILLIS.get(), ServerConfig.DECLARATION_BUDGET_MILLIS.get(), ServerConfig.MAX_FAILURES.get());
+                    .formatted(ServerConfig.LISTENER_BUDGET_MILLIS.get(), 100, ServerConfig.MAX_FAILURES.get());
             case COMMAND -> ("The script body only declares the command, and runs whenever the script is enabled (also when it's saved enabled and when the server starts): command(Commands.literal('name')...) exactly once, with Brigadier builder calls chained inside the parentheses as in the example; .executes takes a closure { ctx -> ...; return 1 }. "
                     + "Import net.minecraft.commands.Commands and the argument types (com.mojang.brigadier.arguments.*, net.minecraft.commands.arguments.*); item and block arguments take CommandBuildContext.simple(server.registryAccess(), server.worldData.enabledFeatures()). "
                     + "The name is 1 to 32 lowercase letters, digits and underscores and can't be an existing command. permission_level decides who can use it, so .requires is ignored; redirect, fork and custom argument types aren't supported. "
                     + "Executes and suggestions run on the server thread within %d ms per call, declaring within %d ms; after %d failures in a row the script is disabled. For errors meant for the player, throw a CommandSyntaxException or call ctx.source.sendFailure(...): those aren't failures. "
                     + "The command runs with full server authority whoever types it, so choose permission_level deliberately.")
-                    .formatted(ServerConfig.COMMAND_BUDGET_MILLIS.get(), ServerConfig.DECLARATION_BUDGET_MILLIS.get(), ServerConfig.MAX_FAILURES.get());
+                    .formatted(ServerConfig.COMMAND_BUDGET_MILLIS.get(), 100, ServerConfig.MAX_FAILURES.get());
         };
     }
 

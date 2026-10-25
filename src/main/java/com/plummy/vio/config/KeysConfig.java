@@ -14,15 +14,15 @@ public class KeysConfig {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
         OPENAI = builder
-                .comment("API key for OpenAI provider")
+                .comment("OpenAI API key. Must be set if OpenAI is chosen as the provider in server config")
                 .define("openai", "");
 
         ANTHROPIC = builder
-                .comment("API key for Anthropic provider")
+                .comment("Anthropic API key. Must be set if Anthropic is chosen as the provider in server config")
                 .define("anthropic", "");
 
         ELEVENLABS = builder
-                .comment("API key for ElevenLabs speech to text and text to speech")
+                .comment("ElevenLabs API key. Must be set if ElevenLabs is chosen as STT or TTS in server config")
                 .define("elevenlabs", "");
 
         SPEC = builder.build();
