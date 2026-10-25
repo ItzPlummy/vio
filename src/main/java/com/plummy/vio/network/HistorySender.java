@@ -5,7 +5,7 @@ import com.plummy.vio.agent.Agent;
 import com.plummy.vio.core.conversation.Conversation;
 import com.plummy.vio.core.message.*;
 import com.plummy.vio.core.section.SectionContentSerializer;
-import com.plummy.vio.core.storage.ConversationStorage;
+import com.plummy.vio.core.conversation.ConversationStorage;
 import com.plummy.vio.network.payload.HistoryPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;

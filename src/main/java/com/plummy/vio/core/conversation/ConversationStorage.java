@@ -1,17 +1,14 @@
-package com.plummy.vio.core.storage;
+package com.plummy.vio.core.conversation;
 
 import com.google.gson.JsonObject;
 import com.plummy.vio.Vio;
-import com.plummy.vio.core.conversation.Conversation;
-import com.plummy.vio.core.conversation.ConversationJsonDeserializer;
-import com.plummy.vio.core.conversation.ConversationJsonSerializer;
+import com.plummy.vio.core.storage.JsonDirectoryStorage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 
 import java.nio.file.Path;
-import java.util.UUID;
 
-public class ConversationStorage extends JsonDirectoryStorage<UUID, Conversation> {
+public class ConversationStorage extends JsonDirectoryStorage<String, Conversation> {
 
     public ConversationStorage(Path directory) {
         super(directory);
@@ -32,7 +29,7 @@ public class ConversationStorage extends JsonDirectoryStorage<UUID, Conversation
     }
 
     @Override
-    protected String getFileName(UUID key) {
+    protected String getFileName(String key) {
         return key + ".json";
     }
 }

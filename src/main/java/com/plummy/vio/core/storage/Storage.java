@@ -10,7 +10,7 @@ public interface Storage<K, T extends Storage.Item<K>> {
 
     void delete(K key);
 
-    public static interface Item<T> {
+    interface Item<T> {
 
         T getKey();
     }

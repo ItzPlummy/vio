@@ -20,8 +20,8 @@ public class PlayerConversation implements Conversation {
     }
 
     @Override
-    public UUID getId() {
-        return playerId;
+    public String getKey() {
+        return getPlayerId().toString();
     }
 
     @Override
@@ -38,7 +38,6 @@ public class PlayerConversation implements Conversation {
     public void addMessage(Message message) {
         messages.add(message);
 
-        // Trim whole turns, so the history never starts with a tool call, tool output or answer whose player request was dropped.
         while (!messages.isEmpty() && (messages.size() > MESSAGE_LIMIT || !(messages.getFirst() instanceof PlayerRequestMessage))) {
             messages.removeFirst();
         }
@@ -47,5 +46,9 @@ public class PlayerConversation implements Conversation {
     @Override
     public <T> T accept(ConversationVisitor<T> visitor) {
         return visitor.visitPlayerConversation(this);
+    }
+
+    public UUID getPlayerId() {
+        return playerId;
     }
 }
