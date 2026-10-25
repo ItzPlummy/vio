@@ -31,7 +31,7 @@ public final class BrigadierNodes {
             ((Map<?, ?>) LITERALS.get(root)).remove(node.getName());
             return true;
         } catch (IllegalAccessException e) {
-            Vio.getLogger().warn("Failed to remove command /{}", node.getName(), e);
+            Vio.getLogger().warn("Failed to remove command /%s".formatted(node.getName()), e);
             return false;
         }
     }
@@ -42,7 +42,7 @@ public final class BrigadierNodes {
             field.setAccessible(true);
             return field;
         } catch (ReflectiveOperationException | RuntimeException e) {
-            Vio.getLogger().warn("Brigadier's CommandNode.{} isn't accessible, so script commands are only hidden until restart instead of removed", name, e);
+            Vio.getLogger().warn("Brigadier's CommandNode.%s isn't accessible, so script commands are only hidden until restart instead of removed".formatted(name), e);
             return null;
         }
     }

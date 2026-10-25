@@ -25,9 +25,9 @@ public final class FileDownloader {
 
     // Downloads next to the target and moves the file in place only once its SHA-256 matches, so a target that exists is complete.
     public static void download(URI uri, Path target, String sha256) {
-        Path partial = target.resolveSibling(target.getFileName() + ".part");
+        Path partial = target.resolveSibling("%s.part".formatted(target.getFileName()));
 
-        Vio.getLogger().info("Downloading {} to {}", uri, target);
+        Vio.getLogger().info("Downloading %s to %s".formatted(uri, target));
 
         try {
             Files.createDirectories(target.getParent());
@@ -37,7 +37,7 @@ public final class FileDownloader {
 
             try (InputStream input = new DigestInputStream(response.body(), digest); OutputStream output = Files.newOutputStream(partial)) {
                 if (response.statusCode() != 200) {
-                    throw new TransformerException("Download of " + uri + " returned " + response.statusCode());
+                    throw new TransformerException("Download of %s returned %s".formatted(uri, response.statusCode()));
                 }
 
                 byte[] buffer = new byte[BUFFER_SIZE];
@@ -56,17 +56,17 @@ public final class FileDownloader {
             String actual = HexFormat.of().formatHex(digest.digest());
 
             if (!actual.equals(sha256)) {
-                throw new TransformerException("Download of " + uri + " has SHA-256 " + actual + ", expected " + sha256);
+                throw new TransformerException("Download of %s has SHA-256 %s, expected %s".formatted(uri, actual, sha256));
             }
 
             Files.move(partial, target, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            throw new TransformerException("Download of " + uri + " failed", e);
+            throw new TransformerException("Failed to download %s".formatted(uri), e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new TransformerException("Download of " + uri + " interrupted", e);
+            throw new TransformerException("Download of %s interrupted".formatted(uri), e);
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 is not available", e);
+            throw new IllegalStateException("SHA-256 isn't available", e);
         } finally {
             deleteQuietly(partial);
         }
@@ -76,7 +76,7 @@ public final class FileDownloader {
         try {
             Files.deleteIfExists(path);
         } catch (IOException e) {
-            Vio.getLogger().warn("Failed to delete {}", path, e);
+            Vio.getLogger().warn("Failed to delete %s".formatted(path), e);
         }
     }
 }

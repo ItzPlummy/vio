@@ -6,12 +6,12 @@ import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.conversation.Conversation;
 import com.plummy.vio.core.message.*;
 import com.plummy.vio.core.section.SectionContentSerializer;
-import com.plummy.vio.core.tool.ExecutionRequest;
-import com.plummy.vio.core.tool.ExecutionResult;
+import com.plummy.vio.core.tool.executor.ExecutionRequest;
+import com.plummy.vio.core.tool.executor.ExecutionResult;
 import com.plummy.vio.core.tool.Tool;
 import com.plummy.vio.core.tool.ToolRegistry;
-import com.plummy.vio.core.tool.argument.ArgumentSchemaJsonSerializer;
-import com.plummy.vio.core.tool.argument.Arguments;
+import com.plummy.vio.core.tool.value.argument.ArgumentSchemaJsonSerializer;
+import com.plummy.vio.core.tool.value.argument.Arguments;
 
 import java.io.IOException;
 import java.net.URI;
@@ -60,20 +60,20 @@ public class OllamaProvider implements Provider {
         try {
             response = getHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
-            throw new ProviderException("Ollama request failed", e);
+            throw new ProviderException("Failed to send the Ollama request", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ProviderException("Ollama request interrupted", e);
         }
 
         if (response.statusCode() != 200) {
-            throw new ProviderException("Ollama returned " + response.statusCode() + ": " + response.body());
+            throw new ProviderException("Ollama returned %s: %s".formatted(response.statusCode(), response.body()));
         }
 
         try {
             return parseResponseBody(JsonParser.parseString(response.body()).getAsJsonObject());
         } catch (JsonParseException | IllegalStateException | NullPointerException | ClassCastException e) {
-            throw new ProviderException("Malformed Ollama response: " + response.body(), e);
+            throw new ProviderException("Malformed Ollama response: %s".formatted(response.body()), e);
         }
     }
 
@@ -118,7 +118,7 @@ public class OllamaProvider implements Provider {
     }
 
     private static JsonObject buildToolDefinition(Tool tool) {
-        JsonObject parameters = ArgumentSchemaJsonSerializer.getInstance().serialize(tool.getFullArgumentSchema());
+        JsonObject parameters = ArgumentSchemaJsonSerializer.getInstance().serialize(tool.getArgumentSchema());
 
         JsonObject function = new JsonObject();
 

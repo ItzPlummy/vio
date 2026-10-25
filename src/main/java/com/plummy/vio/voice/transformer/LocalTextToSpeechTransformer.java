@@ -96,7 +96,7 @@ public class LocalTextToSpeechTransformer implements TextToSpeechTransformer {
                 .setModel(modelConfig)
                 .build());
 
-        Vio.getLogger().info("Text to speech voice {} loaded in {} ms", voice, (System.nanoTime() - start) / 1_000_000);
+        Vio.getLogger().info("Text to speech voice %s loaded in %s ms".formatted(voice, (System.nanoTime() - start) / 1_000_000));
 
         return tts;
     }

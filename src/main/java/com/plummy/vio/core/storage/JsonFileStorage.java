@@ -74,7 +74,7 @@ public abstract class JsonFileStorage<K, T extends Storage.Item<K>> extends Abst
 
             return loaded;
         } catch (IOException | RuntimeException e) {
-            Path broken = file.resolveSibling(file.getFileName() + ".broken");
+            Path broken = file.resolveSibling("%s.broken".formatted(file.getFileName()));
             Vio.getLogger().error("Failed to load %s, moving it to %s and starting empty".formatted(file, broken), e);
 
             try {

@@ -193,7 +193,7 @@ public final class MarkdownLayout {
             }
 
             if (line.startsWith(" ") && !blocks.isEmpty() && blocks.getLast() instanceof Item last) {
-                blocks.set(blocks.size() - 1, new Item(last.depth(), last.marker(), last.numbered(), last.text() + "\n" + line.strip()));
+                blocks.set(blocks.size() - 1, new Item(last.depth(), last.marker(), last.numbered(), "%s\n%s".formatted(last.text(), line.strip())));
                 continue;
             }
 

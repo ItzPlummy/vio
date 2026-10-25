@@ -22,7 +22,7 @@
   "vio.voice.error.transcription": "Не удалось разобрать речь.",
   "vio.voice.error.speech": "Не удалось озвучить ответ.",
   "vio.voice.listening": "Слушаю...",
-  "vio.voice.no_audio": "Нет звука: проверь микрофон или push-to-talk",
+  "vio.voice.no_audio": "Нет звука: проверь микрофон или push-to-talk.",
   "vio.voice.transcribing": "Перевожу...",
   "vio.voice.placeholder.capturing": "Нажми %s, чтобы отправить",
   "vio.voice.cancel": "Отмена (%s)",

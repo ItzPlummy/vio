@@ -80,7 +80,7 @@ public class ClientConversation {
     }
 
     public String getVoiceUnavailableReason() {
-        return I18n.get("vio.voice.unavailable." + getVoiceAvailability().getValue());
+        return I18n.get("vio.voice.unavailable.%s".formatted(getVoiceAvailability().getValue()));
     }
 
     public VoiceState getVoiceState() {

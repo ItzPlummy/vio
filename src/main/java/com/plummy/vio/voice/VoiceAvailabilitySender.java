@@ -39,7 +39,7 @@ public class VoiceAvailabilitySender {
     public static void send(ServerPlayer player) {
         VoiceAvailability availability = getAvailability(player);
 
-        Vio.getLogger().debug("Voice availability of {} is {}", player.getGameProfile().getName(), availability);
+        Vio.getLogger().debug("Voice availability of %s is %s".formatted(player.getGameProfile().getName(), availability));
         Networking.send(player, new VoiceAvailabilityPayload(availability));
     }
 

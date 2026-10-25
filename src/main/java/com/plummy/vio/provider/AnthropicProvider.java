@@ -7,8 +7,11 @@ import com.plummy.vio.core.conversation.Conversation;
 import com.plummy.vio.core.message.*;
 import com.plummy.vio.core.section.SectionContentSerializer;
 import com.plummy.vio.core.tool.*;
-import com.plummy.vio.core.tool.argument.ArgumentSchemaJsonSerializer;
-import com.plummy.vio.core.tool.argument.Arguments;
+import com.plummy.vio.core.tool.value.argument.ArgumentSchemaJsonSerializer;
+import com.plummy.vio.core.tool.value.argument.Arguments;
+import com.plummy.vio.core.tool.executor.ExecutionRequest;
+import com.plummy.vio.core.tool.executor.ExecutionResult;
+import com.plummy.vio.core.tool.executor.ExecutionStatus;
 
 import java.io.IOException;
 import java.net.URI;
@@ -65,20 +68,20 @@ public class AnthropicProvider implements Provider {
         try {
             response = getHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
-            throw new ProviderException("Anthropic request failed", e);
+            throw new ProviderException("Failed to send the Anthropic request", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ProviderException("Anthropic request interrupted", e);
         }
 
         if (response.statusCode() != 200) {
-            throw new ProviderException("Anthropic returned " + response.statusCode() + ": " + response.body());
+            throw new ProviderException("Anthropic returned %s: %s".formatted(response.statusCode(), response.body()));
         }
 
         try {
             return parseResponseBody(JsonParser.parseString(response.body()).getAsJsonObject());
         } catch (JsonParseException | IllegalStateException | NullPointerException | ClassCastException e) {
-            throw new ProviderException("Malformed Anthropic response: " + response.body(), e);
+            throw new ProviderException("Malformed Anthropic response: %s".formatted(response.body()), e);
         }
     }
 
@@ -122,7 +125,7 @@ public class AnthropicProvider implements Provider {
     }
 
     private static JsonObject buildToolDefinition(Tool tool) {
-        JsonObject inputSchema = ArgumentSchemaJsonSerializer.getInstance().serialize(tool.getFullArgumentSchema());
+        JsonObject inputSchema = ArgumentSchemaJsonSerializer.getInstance().serialize(tool.getArgumentSchema());
 
         JsonObject json = new JsonObject();
 
@@ -139,7 +142,7 @@ public class AnthropicProvider implements Provider {
 
         switch (stopReason) {
             case "refusal" -> {
-                Vio.getLogger().warn("Anthropic declined the request: {}", json.get("stop_details"));
+                Vio.getLogger().warn("Anthropic declined the request: %s".formatted(json.get("stop_details")));
                 return AgentResponseMessage.of(REFUSAL_RESPONSE);
             }
             case "max_tokens" -> throw new ProviderException("Anthropic response hit max_tokens");
@@ -216,7 +219,7 @@ public class AnthropicProvider implements Provider {
 
                 ExecutionStatus status = entry.getValue().getStatus();
 
-                if (status != ExecutionStatus.SUCCESS && status != ExecutionStatus.PARTIAL) {
+                if (status != ExecutionStatus.SUCCESS) {
                     block.addProperty("is_error", true);
                 }
 

@@ -60,7 +60,7 @@ public class LocalSpeechToTextTransformer implements SpeechToTextTransformer {
     @Override
     public Transcript transcribe(short[] samples, String gameLanguage) {
         if (recognizer == null) {
-            throw new TransformerException("Speech to text is not loaded");
+            throw new TransformerException("Speech to text isn't loaded");
         }
 
         OfflineStream stream = recognizer.createStream();

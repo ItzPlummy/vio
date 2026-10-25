@@ -8,12 +8,12 @@ public class PlayerAccess implements Storage.Item<UUID> {
 
     private final UUID playerId;
     private final String name;
-    private final AccessLevel level;
+    private final AccessLevel accessLevel;
 
-    public PlayerAccess(UUID playerId, String name, AccessLevel level) {
+    public PlayerAccess(UUID playerId, String name, AccessLevel accessLevel) {
         this.playerId = playerId;
         this.name = name;
-        this.level = level;
+        this.accessLevel = accessLevel;
     }
 
     @Override
@@ -29,7 +29,7 @@ public class PlayerAccess implements Storage.Item<UUID> {
         return name;
     }
 
-    public AccessLevel getLevel() {
-        return level;
+    public AccessLevel getAccessLevel() {
+        return accessLevel;
     }
 }

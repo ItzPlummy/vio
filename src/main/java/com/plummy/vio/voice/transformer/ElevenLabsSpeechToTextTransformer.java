@@ -107,7 +107,7 @@ public class ElevenLabsSpeechToTextTransformer implements SpeechToTextTransforme
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(ELEVENLABS_URI))
                 .timeout(TIMEOUT)
-                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .header("Content-Type", "multipart/form-data; boundary=%s".formatted(boundary))
                 .header("xi-api-key", getApiKey())
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body.build()))
                 .build();
@@ -117,14 +117,14 @@ public class ElevenLabsSpeechToTextTransformer implements SpeechToTextTransforme
         try {
             response = getHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
-            throw new TransformerException("ElevenLabs request failed", e);
+            throw new TransformerException("Failed to send the ElevenLabs request", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TransformerException("ElevenLabs request interrupted", e);
         }
 
         if (response.statusCode() != 200) {
-            throw new TransformerException("ElevenLabs returned " + response.statusCode() + ": " + response.body());
+            throw new TransformerException("ElevenLabs returned %s: %s".formatted(response.statusCode(), response.body()));
         }
 
         try {
@@ -133,7 +133,7 @@ public class ElevenLabsSpeechToTextTransformer implements SpeechToTextTransforme
 
             return json;
         } catch (JsonParseException | IllegalStateException | NullPointerException | ClassCastException | UnsupportedOperationException e) {
-            throw new TransformerException("Malformed ElevenLabs response: " + response.body(), e);
+            throw new TransformerException("Malformed ElevenLabs response: %s".formatted(response.body()), e);
         }
     }
 
@@ -193,21 +193,21 @@ public class ElevenLabsSpeechToTextTransformer implements SpeechToTextTransforme
         }
 
         private void addField(String name, String value) {
-            write("--" + boundary + "\r\n");
-            write("Content-Disposition: form-data; name=\"" + name + "\"\r\n\r\n");
-            write(value + "\r\n");
+            write("--%s\r\n".formatted(boundary));
+            write("Content-Disposition: form-data; name=\"%s\"\r\n\r\n".formatted(name));
+            write("%s\r\n".formatted(value));
         }
 
         private void addFile(String name, String fileName, byte[] content) {
-            write("--" + boundary + "\r\n");
-            write("Content-Disposition: form-data; name=\"" + name + "\"; filename=\"" + fileName + "\"\r\n");
+            write("--%s\r\n".formatted(boundary));
+            write("Content-Disposition: form-data; name=\"%s\"; filename=\"%s\"\r\n".formatted(name, fileName));
             write("Content-Type: application/octet-stream\r\n\r\n");
             output.writeBytes(content);
             write("\r\n");
         }
 
         private byte[] build() {
-            write("--" + boundary + "--\r\n");
+            write("--%s--\r\n".formatted(boundary));
             return output.toByteArray();
         }
 

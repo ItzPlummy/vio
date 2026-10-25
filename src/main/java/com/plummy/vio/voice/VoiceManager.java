@@ -67,10 +67,10 @@ public class VoiceManager {
             try {
                 speechToText.load();
                 availability = VoiceAvailability.AVAILABLE;
-                Vio.getLogger().info("Speech to text loaded in {} ms", (System.nanoTime() - start) / 1_000_000);
+                Vio.getLogger().info("Speech to text loaded in %s ms".formatted((System.nanoTime() - start) / 1_000_000));
             } catch (RuntimeException e) {
                 availability = VoiceAvailability.UNSUPPORTED;
-                Vio.getLogger().error("Speech to text failed to load, voice is unavailable", e);
+                Vio.getLogger().error("Failed to load speech to text, voice is unavailable", e);
             }
 
             VoiceAvailabilitySender.sendAllLater();
@@ -178,7 +178,7 @@ public class VoiceManager {
             try {
                 audio = textToSpeech.synthesize(text, language);
             } catch (RuntimeException e) {
-                Vio.getLogger().error("Text to speech for {} failed", playerId, e);
+                Vio.getLogger().error("Failed to synthesize speech for %s".formatted(playerId), e);
                 server.execute(() -> sendError(server, playerId, "speech"));
                 return;
             }
@@ -266,7 +266,7 @@ public class VoiceManager {
             try {
                 transcript = speechToText.transcribe(speech, gameLanguage);
             } catch (RuntimeException e) {
-                Vio.getLogger().error("Speech to text for {} failed", session.getPlayerId(), e);
+                Vio.getLogger().error("Failed to transcribe speech for %s".formatted(session.getPlayerId()), e);
                 transcript = new Transcript("", null);
                 failed = true;
             }
@@ -392,7 +392,7 @@ public class VoiceManager {
         ServerPlayer player = server.getPlayerList().getPlayer(playerId);
 
         if (player != null) {
-            Networking.send(player, new AgentErrorPayload(Component.translatable("vio.voice.error." + name)));
+            Networking.send(player, new AgentErrorPayload(Component.translatable("vio.voice.error.%s".formatted(name))));
         }
     }
 

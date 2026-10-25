@@ -10,7 +10,7 @@ import com.plummy.vio.agent.Agent;
 import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.access.AccessManager;
 import com.plummy.vio.core.access.PlayerAccess;
-import com.plummy.vio.core.tool.world.RunCommandTool;
+import com.plummy.vio.core.tool.catalog.server.RunCommandTool;
 import com.plummy.vio.network.Networking;
 import com.plummy.vio.network.payload.ClearHistoryPayload;
 import net.minecraft.ChatFormatting;
@@ -50,7 +50,7 @@ public class VioCommand {
         Agent agent = Vio.getAgent();
 
         if (agent == null) {
-            context.getSource().sendFailure(Component.literal("Vio is not running."));
+            context.getSource().sendFailure(Component.literal("Vio isn't running."));
             return 0;
         }
 
@@ -69,15 +69,15 @@ public class VioCommand {
         AccessManager accessManager = Vio.getAccessManager();
 
         if (accessManager == null) {
-            context.getSource().sendFailure(Component.literal("Vio is not running."));
+            context.getSource().sendFailure(Component.literal("Vio isn't running."));
             return 0;
         }
 
         for (GameProfile profile : profiles) {
             PlayerAccess playerAccess = accessManager.getPlayerAccess(profile.getId());
             String text = playerAccess == null
-                    ? profile.getName() + " has access level " + accessManager.getServerAccessLevel() + " (server default)."
-                    : profile.getName() + " has access level " + playerAccess.getLevel() + ".";
+                    ? "%s has access level %s (server default).".formatted(profile.getName(), accessManager.getDefaultAccessLevel())
+                    : "%s has access level %s.".formatted(profile.getName(), playerAccess.getAccessLevel());
 
             context.getSource().sendSystemMessage(Component.literal(text));
         }
@@ -90,13 +90,13 @@ public class VioCommand {
         AccessManager accessManager = Vio.getAccessManager();
 
         if (accessManager == null) {
-            context.getSource().sendFailure(Component.literal("Vio is not running."));
+            context.getSource().sendFailure(Component.literal("Vio isn't running."));
             return 0;
         }
 
         for (GameProfile profile : profiles) {
             accessManager.setPlayerAccessLevel(profile.getId(), profile.getName(), level);
-            context.getSource().sendSuccess(() -> Component.literal("Set " + profile.getName() + "'s Vio access level to " + level + "."), true);
+            context.getSource().sendSuccess(() -> Component.literal("Set %s's Vio access level to %s.".formatted(profile.getName(), level)), true);
         }
 
         return profiles.size();
@@ -107,13 +107,13 @@ public class VioCommand {
         AccessManager accessManager = Vio.getAccessManager();
 
         if (accessManager == null) {
-            context.getSource().sendFailure(Component.literal("Vio is not running."));
+            context.getSource().sendFailure(Component.literal("Vio isn't running."));
             return 0;
         }
 
         for (GameProfile profile : profiles) {
             accessManager.resetPlayerAccessLevel(profile.getId());
-            context.getSource().sendSuccess(() -> Component.literal("Reset " + profile.getName() + "'s Vio access level to the server default (" + accessManager.getServerAccessLevel() + ")."), true);
+            context.getSource().sendSuccess(() -> Component.literal("Reset %s's Vio access level to the server default (%s).".formatted(profile.getName(), accessManager.getDefaultAccessLevel())), true);
         }
 
         return profiles.size();

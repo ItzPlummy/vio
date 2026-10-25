@@ -1,7 +1,12 @@
 package com.plummy.vio.core.tool;
 
 import com.plummy.vio.core.access.AccessLevel;
-import com.plummy.vio.core.tool.argument.*;
+import com.plummy.vio.core.tool.value.argument.*;
+import com.plummy.vio.core.tool.executor.ExecutionResult;
+import com.plummy.vio.core.tool.executor.ExecutionResultException;
+import com.plummy.vio.core.tool.requester.PlayerToolRequester;
+import com.plummy.vio.core.tool.requester.ToolRequester;
+import com.plummy.vio.core.tool.value.catalog.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -22,17 +27,12 @@ public interface ServerTool extends Tool {
 
     ExecutionResult execute(Context context, Arguments arguments);
 
-    default ToolType getType() {
-        return ToolType.SERVER;
-    }
-
-    // Resolves arguments against the running server. Chunks are never loaded and positions always come from the model, never from where the player stands.
     class Context {
 
         private final MinecraftServer server;
-        private final Requester requester;
+        private final ToolRequester requester;
 
-        public Context(MinecraftServer server, Requester requester) {
+        public Context(MinecraftServer server, ToolRequester requester) {
             this.server = server;
             this.requester = requester;
         }
@@ -45,16 +45,19 @@ public interface ServerTool extends Tool {
             return requester.getAccessLevel();
         }
 
-        // Also when the requesting player is no longer online.
         public UUID getPlayerId() {
-            return requester.getPlayerId();
+            if (!(requester instanceof PlayerToolRequester player)) {
+                throw ExecutionResultException.failure("This tool needs a requesting player");
+            }
+
+            return player.getPlayerId();
         }
 
         public ServerPlayer getPlayer() {
-            ServerPlayer player = server.getPlayerList().getPlayer(requester.getPlayerId());
+            ServerPlayer player = server.getPlayerList().getPlayer(getPlayerId());
 
             if (player == null) {
-                throw ResultException.failure("The requesting player is no longer online.");
+                throw ExecutionResultException.failure("The requesting player is no longer online");
             }
 
             return player;
@@ -64,7 +67,7 @@ public interface ServerTool extends Tool {
             ServerPlayer player = server.getPlayerList().getPlayerByName(reference.getName());
 
             if (player == null) {
-                throw ResultException.invalidArguments("No online player named \"%s\". Use list_players to see who is online.".formatted(reference.getName()));
+                throw ExecutionResultException.invalidArguments("No online player named '%s'. Use list_players to see who is online".formatted(reference.getName()));
             }
 
             return player;
@@ -74,7 +77,7 @@ public interface ServerTool extends Tool {
             return switch (reference) {
                 case PlayerReference player -> getPlayer(player);
                 case UuidReference uuid -> getEntity(uuid);
-                default -> throw new IllegalArgumentException("Unknown entity reference: " + reference.getClass().getSimpleName());
+                default -> throw new IllegalArgumentException("Unknown entity reference: %s".formatted(reference.getClass().getSimpleName()));
             };
         }
 
@@ -87,7 +90,7 @@ public interface ServerTool extends Tool {
                 }
             }
 
-            throw ResultException.invalidArguments("No loaded entity with UUID %s. It may have died, despawned or be in an unloaded chunk; use find_entities to look up current UUIDs.".formatted(reference.getUuid()));
+            throw ExecutionResultException.invalidArguments("No loaded entity with UUID %s. It may have died, despawned or be in an unloaded chunk; use find_entities to look up current UUIDs".formatted(reference.getUuid()));
         }
 
         public ServerLevel getLevel(Dimension dimension) {
@@ -96,7 +99,7 @@ public interface ServerTool extends Tool {
             if (level == null) {
                 List<String> ids = StreamSupport.stream(server.getAllLevels().spliterator(), false).map(other -> other.dimension().location().toString()).toList();
 
-                throw ResultException.invalidArguments("Unknown dimension \"%s\". Dimensions on this server: %s".formatted(dimension.getId(), ids));
+                throw ExecutionResultException.invalidArguments("Unknown dimension %s. Dimensions on this server: %s".formatted(dimension.getId(), ids));
             }
 
             return level;
@@ -105,24 +108,24 @@ public interface ServerTool extends Tool {
         // A loaded position inside the build height.
         public void requireLoaded(ServerLevel level, BlockPos pos) {
             if (level.isOutsideBuildHeight(pos)) {
-                throw ResultException.invalidArguments("y %d is outside the build height of %s (%d to %d).".formatted(pos.getY(), level.dimension().location(), level.getMinBuildHeight(), level.getMaxBuildHeight() - 1));
+                throw ExecutionResultException.invalidArguments("y %s is outside the build height of %s (%s to %s)".formatted(pos.getY(), level.dimension().location(), level.getMinBuildHeight(), level.getMaxBuildHeight() - 1));
             }
 
             if (!level.isLoaded(pos)) {
-                throw ResultException.failure("%d %d %d (%s) is in an unloaded chunk. Chunks are never loaded for tools; a player has to be near it.".formatted(pos.getX(), pos.getY(), pos.getZ(), level.dimension().location()));
+                throw ExecutionResultException.failure("%s %s %s (%s) is in an unloaded chunk. Chunks are never loaded for tools; a player has to be near it".formatted(pos.getX(), pos.getY(), pos.getZ(), level.dimension().location()));
             }
         }
 
         // The whole region inside the build height, with every chunk it touches loaded.
         public void requireLoaded(ServerLevel level, BoundingBox box) {
             if (level.isOutsideBuildHeight(box.minY()) || level.isOutsideBuildHeight(box.maxY())) {
-                throw ResultException.invalidArguments("y %d to %d is outside the build height of %s (%d to %d).".formatted(box.minY(), box.maxY(), level.dimension().location(), level.getMinBuildHeight(), level.getMaxBuildHeight() - 1));
+                throw ExecutionResultException.invalidArguments("y %s to %s is outside the build height of %s (%s to %s)".formatted(box.minY(), box.maxY(), level.dimension().location(), level.getMinBuildHeight(), level.getMaxBuildHeight() - 1));
             }
 
             long unloaded = box.intersectingChunks().filter(chunk -> !level.getChunkSource().hasChunk(chunk.x, chunk.z)).count();
 
             if (unloaded > 0) {
-                throw ResultException.failure("The region touches %d unloaded chunk(s) in %s. Chunks are never loaded for tools; a player has to be near them.".formatted(unloaded, level.dimension().location()));
+                throw ExecutionResultException.failure("The region touches %s unloaded chunk(s) in %s. Chunks are never loaded for tools; a player has to be near them".formatted(unloaded, level.dimension().location()));
             }
         }
 
@@ -132,7 +135,7 @@ public interface ServerTool extends Tool {
             if (registry.isEmpty()) {
                 List<String> ids = server.registryAccess().registries().map(entry -> entry.key().location().toString()).sorted().toList();
 
-                throw ResultException.invalidArguments("Unknown registry \"%s\". Valid registries: %s".formatted(id, ids));
+                throw ExecutionResultException.invalidArguments("Unknown registry %s. Valid registries: %s".formatted(id, ids));
             }
 
             return registry.get();
@@ -142,16 +145,15 @@ public interface ServerTool extends Tool {
             return getEntry(server.registryAccess().registryOrThrow(registry), id, kind);
         }
 
-        // Fails like Unknown block "minecraft:stone_brick" when the id doesn't exist.
         public <T> Holder.Reference<T> getEntry(Registry<T> registry, Identifier id, String kind) {
             if (id.isTag()) {
-                throw ResultException.invalidArguments("Expected a %s id, got the tag %s.".formatted(kind, id));
+                throw ExecutionResultException.invalidArguments("Expected a %s id, got the tag %s".formatted(kind, id));
             }
 
             Optional<Holder.Reference<T>> holder = registry.getHolder(id.getId());
 
             if (holder.isEmpty()) {
-                throw ResultException.invalidArguments("Unknown %s \"%s\".".formatted(kind, id));
+                throw ExecutionResultException.invalidArguments("Unknown %s %s".formatted(kind, id));
             }
 
             return holder.get();

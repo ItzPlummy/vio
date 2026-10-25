@@ -2,24 +2,20 @@ package com.plummy.vio.core.tool;
 
 import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.script.ScriptType;
-import com.plummy.vio.core.tool.block.GetBlockInfoTool;
-import com.plummy.vio.core.tool.block.GetContainerContentsTool;
-import com.plummy.vio.core.tool.editing.*;
-import com.plummy.vio.core.tool.entity.FindEntitiesTool;
-import com.plummy.vio.core.tool.entity.GetEntityInfoTool;
-import com.plummy.vio.core.tool.knowledge.*;
-import com.plummy.vio.core.tool.monitoring.GetModListTool;
-import com.plummy.vio.core.tool.monitoring.GetServerStatusTool;
-import com.plummy.vio.core.tool.monitoring.ReadServerLogTool;
-import com.plummy.vio.core.tool.nbt.GetNbtTool;
-import com.plummy.vio.core.tool.nbt.ModifyNbtTool;
-import com.plummy.vio.core.tool.nbt.NbtTarget;
-import com.plummy.vio.core.tool.nbt.RemoveNbtTool;
-import com.plummy.vio.core.tool.player.*;
-import com.plummy.vio.core.tool.script.*;
-import com.plummy.vio.core.tool.web.WebFetchTool;
-import com.plummy.vio.core.tool.web.WebSearchTool;
-import com.plummy.vio.core.tool.world.*;
+import com.plummy.vio.core.tool.catalog.editing.*;
+import com.plummy.vio.core.tool.catalog.entity.FindEntitiesTool;
+import com.plummy.vio.core.tool.catalog.entity.GetEntityInfoTool;
+import com.plummy.vio.core.tool.catalog.nbt.GetNbtTool;
+import com.plummy.vio.core.tool.catalog.nbt.ModifyNbtTool;
+import com.plummy.vio.core.tool.catalog.nbt.NbtTarget;
+import com.plummy.vio.core.tool.catalog.nbt.RemoveNbtTool;
+import com.plummy.vio.core.tool.catalog.player.*;
+import com.plummy.vio.core.tool.catalog.registry.*;
+import com.plummy.vio.core.tool.catalog.script.*;
+import com.plummy.vio.core.tool.catalog.server.*;
+import com.plummy.vio.core.tool.catalog.web.WebFetchTool;
+import com.plummy.vio.core.tool.catalog.web.WebSearchTool;
+import com.plummy.vio.core.tool.catalog.world.*;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -108,12 +104,8 @@ public class ToolRegistry {
     public static BasicTool WEB_FETCH = register(new WebFetchTool());
 
     private static <T extends Tool> T register(T tool) {
-        if (tool.getArgumentSchema().containsKey("status")) {
-            throw new IllegalStateException("Tool " + tool.getName() + " can't define the reserved 'status' argument");
-        }
-
         if (TOOLS.putIfAbsent(tool.getName(), tool) != null) {
-            throw new IllegalStateException("Duplicate tool name: " + tool.getName());
+            throw new IllegalStateException("Duplicate tool name: %s".formatted(tool.getName()));
         }
 
         return tool;

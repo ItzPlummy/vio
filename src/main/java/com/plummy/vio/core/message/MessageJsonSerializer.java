@@ -2,8 +2,8 @@ package com.plummy.vio.core.message;
 
 import com.google.gson.JsonObject;
 import com.plummy.vio.core.section.SectionJsonSerializer;
-import com.plummy.vio.core.tool.ExecutionRequest;
-import com.plummy.vio.core.tool.ExecutionResult;
+import com.plummy.vio.core.tool.executor.ExecutionRequest;
+import com.plummy.vio.core.tool.executor.ExecutionResult;
 
 import java.util.Map;
 

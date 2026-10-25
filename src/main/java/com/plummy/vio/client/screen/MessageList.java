@@ -406,7 +406,7 @@ public class MessageList {
         String time = TIME_FORMAT.format(message.getTime());
 
         if (message instanceof ThoughtMessage thoughtMessage && thoughtMessage.getThoughtDuration() != null) {
-            return time + " | " + getThoughtText(thoughtMessage.getThoughtDuration());
+            return "%s | %s".formatted(time, getThoughtText(thoughtMessage.getThoughtDuration()));
         }
 
         return switch (message.getType()) {

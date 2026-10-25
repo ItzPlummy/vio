@@ -26,7 +26,7 @@ public enum VoiceAvailability {
             }
         }
 
-        throw new IllegalArgumentException("Invalid voice availability: " + value);
+        throw new IllegalArgumentException("Invalid voice availability: %s".formatted(value));
     }
 
     public String getValue() {

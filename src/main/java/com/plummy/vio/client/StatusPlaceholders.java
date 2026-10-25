@@ -15,7 +15,7 @@ public final class StatusPlaceholders {
     public static String getRandom() {
         int count = 0;
 
-        while (I18n.exists(KEY_PREFIX + (count + 1))) {
+        while (I18n.exists("%s%s".formatted(KEY_PREFIX, count + 1))) {
             count++;
         }
 
@@ -23,6 +23,6 @@ public final class StatusPlaceholders {
             return FALLBACK;
         }
 
-        return I18n.get(KEY_PREFIX + (ThreadLocalRandom.current().nextInt(count) + 1));
+        return I18n.get("%s%s".formatted(KEY_PREFIX, ThreadLocalRandom.current().nextInt(count) + 1));
     }
 }

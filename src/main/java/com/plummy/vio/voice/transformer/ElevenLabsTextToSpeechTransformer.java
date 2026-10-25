@@ -68,7 +68,7 @@ public class ElevenLabsTextToSpeechTransformer implements TextToSpeechTransforme
         }
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(ELEVENLABS_URI + URLEncoder.encode(getVoiceId(), StandardCharsets.UTF_8) + "?output_format=" + getOutputFormat()))
+                .uri(URI.create("%s%s?output_format=%s".formatted(ELEVENLABS_URI, URLEncoder.encode(getVoiceId(), StandardCharsets.UTF_8), getOutputFormat())))
                 .timeout(TIMEOUT)
                 .header("Content-Type", "application/json")
                 .header("xi-api-key", getApiKey())
@@ -80,14 +80,14 @@ public class ElevenLabsTextToSpeechTransformer implements TextToSpeechTransforme
         try {
             response = getHttpClient().send(request, HttpResponse.BodyHandlers.ofByteArray());
         } catch (IOException e) {
-            throw new TransformerException("ElevenLabs request failed", e);
+            throw new TransformerException("Failed to send the ElevenLabs request", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TransformerException("ElevenLabs request interrupted", e);
         }
 
         if (response.statusCode() != 200) {
-            throw new TransformerException("ElevenLabs returned " + response.statusCode() + ": " + new String(response.body(), StandardCharsets.UTF_8));
+            throw new TransformerException("ElevenLabs returned %s: %s".formatted(response.statusCode(), new String(response.body(), StandardCharsets.UTF_8)));
         }
 
         return Resampler.resample(toSamples(response.body()), getSampleRate(), VoiceChat.SAMPLE_RATE);

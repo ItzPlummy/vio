@@ -93,11 +93,11 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
                 if (isValidName(name)) {
                     names.add(name);
                 } else {
-                    Vio.getLogger().warn("Skipping script {}: invalid name, script names are {}", file, NAME_RULE);
+                    Vio.getLogger().warn("Skipping script %s: invalid name, script names are %s".formatted(file, NAME_RULE));
                 }
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to list " + directory, e);
+            throw new UncheckedIOException("Failed to list %s".formatted(directory), e);
         }
 
         names.sort(Comparator.naturalOrder());
@@ -116,7 +116,7 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
         try {
             return deserialize(name, Files.readString(path, StandardCharsets.UTF_8));
         } catch (IOException | RuntimeException e) {
-            Vio.getLogger().warn("Failed to load script {}, ignoring it: {}", path, e.getMessage());
+            Vio.getLogger().warn("Failed to load script %s, ignoring it: %s".formatted(path, e.getMessage()));
             return null;
         }
     }
@@ -145,7 +145,7 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
                 Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to save " + path, e);
+            throw new UncheckedIOException("Failed to save %s".formatted(path), e);
         }
     }
 
@@ -156,20 +156,20 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
         try {
             Files.deleteIfExists(path);
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to delete " + path, e);
+            throw new UncheckedIOException("Failed to delete %s".formatted(path), e);
         }
     }
 
     private Path getPath(String name) {
         if (!isValidName(name)) {
-            throw new IllegalArgumentException("Invalid script name: " + name);
+            throw new IllegalArgumentException("Invalid script name: %s".formatted(name));
         }
 
-        Path path = directory.resolve(name + EXTENSION);
+        Path path = directory.resolve("%s%s".formatted(name, EXTENSION));
 
         // The name rule already rules out separators and dots; this keeps it that way if the rule ever changes.
         if (!directory.normalize().equals(path.normalize().getParent())) {
-            throw new IllegalArgumentException("Script name leaves the scripts directory: " + name);
+            throw new IllegalArgumentException("Script name leaves the scripts directory: %s".formatted(name));
         }
 
         return path;
@@ -180,7 +180,7 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
         String description = header.getDescription().replaceAll("\\R", " ");
 
         if (description.contains(HEADER_END)) {
-            throw new IllegalArgumentException("A script description can't contain " + HEADER_END);
+            throw new IllegalArgumentException("A script description can't contain %s".formatted(HEADER_END));
         }
 
         StringBuilder text = new StringBuilder();
@@ -228,7 +228,7 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
         String[] lines = text.split("\\R", -1);
 
         if (!lines[0].strip().equals(HEADER_START)) {
-            throw new IllegalArgumentException("the file must start with the line " + HEADER_START);
+            throw new IllegalArgumentException("the file must start with the line %s".formatted(HEADER_START));
         }
 
         int end = 1;
@@ -238,7 +238,7 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
         }
 
         if (end == lines.length) {
-            throw new IllegalArgumentException("the header is never closed with a " + HEADER_END + " line");
+            throw new IllegalArgumentException("the header is never closed with a %s line".formatted(HEADER_END));
         }
 
         Map<String, String> values = new HashMap<>();
@@ -254,15 +254,15 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
             String key = colon < 0 ? "" : line.substring(0, colon).strip();
 
             if (!KEY.matcher(key).matches()) {
-                throw new IllegalArgumentException("line %d: expected 'key: value', got \"%s\"".formatted(i + 1, line));
+                throw new IllegalArgumentException("line %s: expected 'key: value', got '%s'".formatted(i + 1, line));
             }
 
             if (!KEYS.contains(key)) {
-                throw new IllegalArgumentException("line %d: unknown key '%s'".formatted(i + 1, key));
+                throw new IllegalArgumentException("line %s: unknown key '%s'".formatted(i + 1, key));
             }
 
             if (values.put(key, line.substring(colon + 1).strip()) != null) {
-                throw new IllegalArgumentException("line %d: duplicate key '%s'".formatted(i + 1, key));
+                throw new IllegalArgumentException("line %s: duplicate key %s".formatted(i + 1, key));
             }
         }
 
@@ -273,7 +273,7 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
         checkPresence(values, ENABLED, type.isToggleable(), type);
 
         if (values.containsKey(TOGGLED_BY) != values.containsKey(TOGGLED_AT)) {
-            throw new IllegalArgumentException("'%s' and '%s' must be both present or both absent".formatted(TOGGLED_BY, TOGGLED_AT));
+            throw new IllegalArgumentException("%s and %s must be both present or both absent".formatted(TOGGLED_BY, TOGGLED_AT));
         }
 
         ScriptHeader header = new ScriptHeader(
@@ -297,7 +297,7 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
         String value = values.get(key);
 
         if (value == null) {
-            throw new IllegalArgumentException("missing key '%s'".formatted(key));
+            throw new IllegalArgumentException("missing key %s".formatted(key));
         }
 
         return value;
@@ -305,11 +305,11 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
 
     private static void checkPresence(Map<String, String> values, String key, boolean expected, ScriptType type) {
         if (expected && !values.containsKey(key)) {
-            throw new IllegalArgumentException("missing key '%s', which %s scripts need".formatted(key, type));
+            throw new IllegalArgumentException("missing key %s, which %s scripts need".formatted(key, type));
         }
 
         if (!expected && values.containsKey(key)) {
-            throw new IllegalArgumentException("key '%s' doesn't apply to %s scripts".formatted(key, type));
+            throw new IllegalArgumentException("key %s doesn't apply to %s scripts".formatted(key, type));
         }
     }
 
@@ -319,11 +319,11 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
         try {
             value = Integer.parseInt(values.get(key));
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("'%s' must be an integer, got \"%s\"".formatted(key, values.get(key)));
+            throw new IllegalArgumentException("%s must be an integer, got '%s'".formatted(key, values.get(key)));
         }
 
         if (value < min || value > max) {
-            throw new IllegalArgumentException("'%s' must be between %d and %d, got %d".formatted(key, min, max, value));
+            throw new IllegalArgumentException("%s must be between %s and %s, got %s".formatted(key, min, max, value));
         }
 
         return value;
@@ -333,7 +333,7 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
         return switch (values.get(key)) {
             case "true" -> true;
             case "false" -> false;
-            default -> throw new IllegalArgumentException("'%s' must be true or false, got \"%s\"".formatted(key, values.get(key)));
+            default -> throw new IllegalArgumentException("%s must be true or false, got '%s'".formatted(key, values.get(key)));
         };
     }
 }

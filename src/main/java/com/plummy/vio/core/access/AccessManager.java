@@ -13,14 +13,13 @@ public class AccessManager {
         this.storage = storage;
     }
 
-    public AccessLevel getServerAccessLevel() {
-        return AccessLevel.fromValue(ServerConfig.DEFAULT_ACCESS_LEVEL.get());
-    }
-
     public AccessLevel getAccessLevel(UUID playerId) {
         PlayerAccess playerAccess = getPlayerAccess(playerId);
+        return playerAccess == null ? getDefaultAccessLevel() : playerAccess.getAccessLevel();
+    }
 
-        return playerAccess == null ? getServerAccessLevel() : playerAccess.getLevel();
+    public AccessLevel getDefaultAccessLevel() {
+        return AccessLevel.fromValue(ServerConfig.DEFAULT_ACCESS_LEVEL.get());
     }
 
     public PlayerAccess getPlayerAccess(UUID playerId) {

@@ -30,6 +30,6 @@ public class ConversationStorage extends JsonDirectoryStorage<String, Conversati
 
     @Override
     protected String getFileName(String key) {
-        return key + ".json";
+        return "%s.json".formatted(key);
     }
 }

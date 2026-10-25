@@ -50,7 +50,7 @@ public abstract class JsonDirectoryStorage<K, T extends Storage.Item<K>> extends
         try {
             Files.deleteIfExists(path);
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to delete " + path, e);
+            throw new UncheckedIOException("Failed to delete %s".formatted(path), e);
         }
     }
 

@@ -35,7 +35,7 @@ public abstract class AbstractJsonStorage<K, T extends Storage.Item<K>> implemen
                 Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to save " + path, e);
+            throw new UncheckedIOException("Failed to save %s".formatted(path), e);
         }
     }
 }

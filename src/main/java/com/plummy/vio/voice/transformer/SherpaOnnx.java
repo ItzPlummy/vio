@@ -65,11 +65,11 @@ public final class SherpaOnnx {
             extractNatives(jar, directory, platform);
             Files.delete(jar);
         } catch (IOException e) {
-            throw new TransformerException("Failed to extract sherpa-onnx native libraries to " + directory, e);
+            throw new TransformerException("Failed to extract sherpa-onnx native libraries to %s".formatted(directory), e);
         }
 
         if (!hasNatives(directory)) {
-            throw new TransformerException("sherpa-onnx native libraries are missing from " + directory);
+            throw new TransformerException("sherpa-onnx native libraries are missing from %s".formatted(directory));
         }
 
         return directory;
@@ -87,7 +87,7 @@ public final class SherpaOnnx {
 
     // The jar holds the libraries under sherpa-onnx/native/<classifier>/; only their file names are used, never the entry paths.
     private static void extractNatives(Path jar, Path directory, NativePlatform platform) throws IOException {
-        String prefix = "sherpa-onnx/native/" + platform.getClassifier() + "/";
+        String prefix = "sherpa-onnx/native/%s/".formatted(platform.getClassifier());
 
         try (ZipFile zip = new ZipFile(jar.toFile())) {
             Enumeration<? extends ZipEntry> entries = zip.entries();
@@ -141,7 +141,7 @@ public final class SherpaOnnx {
                 return x64 ? MACOS_X64 : MACOS_AARCH64;
             }
 
-            throw new TransformerException("Local speech doesn't support " + os + " on " + arch);
+            throw new TransformerException("Local speech doesn't support %s on %s".formatted(os, arch));
         }
 
         public String getClassifier() {

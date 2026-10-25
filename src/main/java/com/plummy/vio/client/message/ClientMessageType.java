@@ -20,7 +20,7 @@ public enum ClientMessageType {
             }
         }
 
-        throw new IllegalArgumentException("Invalid client message type: " + value);
+        throw new IllegalArgumentException("Invalid client message type: %s".formatted(value));
     }
 
     public String getValue() {

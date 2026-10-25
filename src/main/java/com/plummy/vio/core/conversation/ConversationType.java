@@ -17,7 +17,7 @@ public enum ConversationType {
             }
         }
 
-        throw new IllegalArgumentException("Invalid conversation type: " + value);
+        throw new IllegalArgumentException("Invalid conversation type: %s".formatted(value));
     }
 
     public String getValue() {

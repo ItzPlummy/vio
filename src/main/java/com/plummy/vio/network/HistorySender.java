@@ -45,7 +45,7 @@ public class HistorySender {
                 entries = toEntries(conversation);
             }
         } catch (RuntimeException e) {
-            Vio.getLogger().error("Failed to load the conversation history of {}", player.getUUID(), e);
+            Vio.getLogger().error("Failed to load the conversation history of %s".formatted(player.getUUID()), e);
         }
 
         Networking.send(player, new HistoryPayload(agent.isBusy(player.getUUID()), entries));

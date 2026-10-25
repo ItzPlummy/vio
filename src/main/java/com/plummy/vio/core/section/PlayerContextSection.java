@@ -91,7 +91,7 @@ public class PlayerContextSection implements Section {
         ResourceLocation biome = serverLevel.registryAccess().registryOrThrow(Registries.BIOME).getKey(serverLevel.getNoiseBiome(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2).value());
 
         if (biome == null) {
-            throw new IllegalStateException("Player biome cannot be null");
+            throw new IllegalStateException("Player biome can't be null");
         }
 
         List<String> structures = new ArrayList<>();

@@ -29,7 +29,7 @@ public class ScriptLog {
     }
 
     public synchronized void add(Level level, String message) {
-        String text = message.length() > MAX_MESSAGE_LENGTH ? message.substring(0, MAX_MESSAGE_LENGTH) + " ..." : message;
+        String text = message.length() > MAX_MESSAGE_LENGTH ? "%s ...".formatted(message.substring(0, MAX_MESSAGE_LENGTH)) : message;
 
         if (entries.size() == CAPACITY) {
             entries.removeFirst();

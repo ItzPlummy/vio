@@ -38,16 +38,16 @@ public final class ScriptCompiler {
             compiled = loader.parseClass(new GroovyCodeSource(source, getFileName(name), "/groovy/script"));
         } catch (MultipleCompilationErrorsException e) {
             CompiledScript.close(loader);
-            throw new ScriptException("Compilation failed:\n" + String.join("\n", describe(e)), e);
+            throw new ScriptException("Couldn't compile the script:\n%s".formatted(String.join("\n", describe(e))), e);
         } catch (RuntimeException | LinkageError e) {
             CompiledScript.close(loader);
-            throw new ScriptException("Compilation failed: " + e, e);
+            throw new ScriptException("Couldn't compile the script: %s".formatted(e), e);
         }
 
         // A source with only class declarations compiles to those classes instead of a script.
         if (!VioScript.class.isAssignableFrom(compiled)) {
             CompiledScript.close(loader);
-            throw new ScriptException("The source must be a script with statements to run, not only class declarations.");
+            throw new ScriptException("The source must be a script with statements to run, not only class declarations");
         }
 
         return new CompiledScript(loader, compiled.asSubclass(VioScript.class));
@@ -56,7 +56,7 @@ public final class ScriptCompiler {
     // What stack traces of the script's code name as their file. The prefix keeps the class name, derived from it,
     // valid even for script names like "int".
     public static String getFileName(String name) {
-        return "script_" + name + ".groovy";
+        return "script_%s.groovy".formatted(name);
     }
 
     private static CompilerConfiguration createConfiguration(ScriptType type) {
@@ -93,7 +93,7 @@ public final class ScriptCompiler {
         for (Message message : exception.getErrorCollector().getErrors()) {
             if (message instanceof SyntaxErrorMessage syntaxError) {
                 SyntaxException cause = syntaxError.getCause();
-                errors.add("line %d, column %d: %s".formatted(cause.getLine(), cause.getStartColumn(), cause.getOriginalMessage().strip()));
+                errors.add("line %s, column %s: %s".formatted(cause.getLine(), cause.getStartColumn(), cause.getOriginalMessage().strip()));
             } else if (message instanceof ExceptionMessage exceptionMessage) {
                 errors.add(String.valueOf(exceptionMessage.getCause()));
             } else {

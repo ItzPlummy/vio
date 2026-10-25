@@ -42,11 +42,11 @@ public abstract class VioScript extends Script {
 
     @Override
     public void printf(String format, Object value) {
-        log.info(String.format(format, value));
+        log.info(format.formatted(value));
     }
 
     @Override
     public void printf(String format, Object[] values) {
-        log.info(String.format(format, values));
+        log.info(format.formatted(values));
     }
 }

@@ -23,7 +23,7 @@ public enum VoiceState {
             }
         }
 
-        throw new IllegalArgumentException("Invalid voice state: " + value);
+        throw new IllegalArgumentException("Invalid voice state: %s".formatted(value));
     }
 
     public String getValue() {

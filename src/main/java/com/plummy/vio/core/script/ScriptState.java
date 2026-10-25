@@ -20,7 +20,7 @@ public enum ScriptState {
             }
         }
 
-        throw new IllegalArgumentException("Invalid script state: " + value);
+        throw new IllegalArgumentException("Invalid script state: %s".formatted(value));
     }
 
     public String getValue() {

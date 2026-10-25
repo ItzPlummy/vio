@@ -24,7 +24,7 @@ public class PlayerAccessStorage extends JsonFileStorage<UUID, PlayerAccess> {
         JsonObject json = new JsonObject();
 
         json.addProperty("name", value.getName());
-        json.addProperty("level", value.getLevel().getValue());
+        json.addProperty("access_level", value.getAccessLevel().getValue());
 
         return json;
     }
@@ -34,7 +34,7 @@ public class PlayerAccessStorage extends JsonFileStorage<UUID, PlayerAccess> {
         return new PlayerAccess(
                 key,
                 json.get("name").getAsString(),
-                AccessLevel.fromValue(json.get("level").getAsString())
+                AccessLevel.fromValue(json.get("access_level").getAsString())
         );
     }
 

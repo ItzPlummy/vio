@@ -12,8 +12,8 @@ import com.plummy.vio.core.script.ScriptManager;
 import com.plummy.vio.core.conversation.ConversationStorage;
 import com.plummy.vio.core.access.PlayerAccessStorage;
 import com.plummy.vio.core.script.ScriptStorage;
-import com.plummy.vio.core.tool.BasicToolExecutor;
-import com.plummy.vio.core.tool.ServerToolExecutor;
+import com.plummy.vio.core.tool.executor.BasicToolExecutor;
+import com.plummy.vio.core.tool.executor.ServerToolExecutor;
 import com.plummy.vio.listener.AgentListener;
 import com.plummy.vio.listener.NetworkAgentListener;
 import com.plummy.vio.provider.Provider;
@@ -64,8 +64,8 @@ public class Vio {
     private static volatile VoiceChat voiceChat;
 
     public Vio(IEventBus modEventBus, ModContainer modContainer) {
-        modContainer.registerConfig(ModConfig.Type.COMMON, ServerConfig.SPEC, MODID + "/server.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, KeysConfig.SPEC, MODID + "/keys.toml");
+        modContainer.registerConfig(ModConfig.Type.COMMON, ServerConfig.SPEC, "%s/server.toml".formatted(MODID));
+        modContainer.registerConfig(ModConfig.Type.COMMON, KeysConfig.SPEC, "%s/keys.toml".formatted(MODID));
 
         NeoForge.EVENT_BUS.register(this);
     }

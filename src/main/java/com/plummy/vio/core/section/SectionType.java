@@ -22,7 +22,7 @@ public enum SectionType {
             }
         }
 
-        throw new IllegalArgumentException("Invalid section type: " + value);
+        throw new IllegalArgumentException("Invalid section type: %s".formatted(value));
     }
 
     public String getValue() {

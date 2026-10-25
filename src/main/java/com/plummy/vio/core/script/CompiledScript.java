@@ -36,9 +36,9 @@ public class CompiledScript {
                 throw cause;
             }
 
-            throw new IllegalStateException("Couldn't create an instance of " + scriptClass.getName(), e);
+            throw new IllegalStateException("Failed to create an instance of %s".formatted(scriptClass.getName()), e);
         } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Couldn't create an instance of " + scriptClass.getName(), e);
+            throw new IllegalStateException("Failed to create an instance of %s".formatted(scriptClass.getName()), e);
         }
     }
 

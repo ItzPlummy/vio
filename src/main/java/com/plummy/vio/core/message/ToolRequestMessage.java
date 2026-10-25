@@ -2,7 +2,7 @@ package com.plummy.vio.core.message;
 
 import com.plummy.vio.core.section.ActivityDescriptionSection;
 import com.plummy.vio.core.section.Section;
-import com.plummy.vio.core.tool.ExecutionRequest;
+import com.plummy.vio.core.tool.executor.ExecutionRequest;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

@@ -1,7 +1,7 @@
 package com.plummy.vio.core.message;
 
 import com.plummy.vio.core.section.Section;
-import com.plummy.vio.core.tool.ExecutionResult;
+import com.plummy.vio.core.tool.executor.ExecutionResult;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

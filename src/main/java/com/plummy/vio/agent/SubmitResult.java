@@ -20,7 +20,7 @@ public enum SubmitResult {
             }
         }
 
-        throw new IllegalArgumentException("Invalid submit result: " + value);
+        throw new IllegalArgumentException("Invalid submit result: %s".formatted(value));
     }
 
     public String getValue() {

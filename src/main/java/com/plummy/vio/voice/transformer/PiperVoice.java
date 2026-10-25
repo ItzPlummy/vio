@@ -82,7 +82,7 @@ public enum PiperVoice {
     }
 
     public String getModelFile() {
-        return name + ".onnx";
+        return "%s.onnx".formatted(name);
     }
 
     public String getTokensFile() {
@@ -114,7 +114,7 @@ public enum PiperVoice {
     }
 
     public URI getDataUri(String file) {
-        return getUri(DATA_DIRECTORY + "/" + file);
+        return getUri("%s/%s".formatted(DATA_DIRECTORY, file));
     }
 
     @Override

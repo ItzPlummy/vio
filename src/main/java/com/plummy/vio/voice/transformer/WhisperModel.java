@@ -52,7 +52,7 @@ public enum WhisperModel {
             }
         }
 
-        throw new IllegalArgumentException("Invalid Whisper model: " + value);
+        throw new IllegalArgumentException("Invalid Whisper model: %s".formatted(value));
     }
 
     public String getValue() {
@@ -60,15 +60,15 @@ public enum WhisperModel {
     }
 
     public String getEncoderFile() {
-        return size + "-encoder.int8.onnx";
+        return "%s-encoder.int8.onnx".formatted(size);
     }
 
     public String getDecoderFile() {
-        return size + "-decoder.int8.onnx";
+        return "%s-decoder.int8.onnx".formatted(size);
     }
 
     public String getTokensFile() {
-        return size + "-tokens.txt";
+        return "%s-tokens.txt".formatted(size);
     }
 
     public String getEncoderSha256() {

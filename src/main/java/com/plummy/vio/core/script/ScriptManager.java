@@ -79,7 +79,7 @@ public class ScriptManager {
         }
 
         long errored = scripts.values().stream().filter(script -> script.getState() == ScriptState.ERRORED).count();
-        Vio.getLogger().info("Loaded {} script(s) in {} ms, {} errored", scripts.size(), (System.nanoTime() - start) / 1_000_000, errored);
+        Vio.getLogger().info("Loaded %s script(s) in %s ms, %s errored".formatted(scripts.size(), (System.nanoTime() - start) / 1_000_000, errored));
     }
 
     public void shutdown() {
@@ -108,7 +108,7 @@ public class ScriptManager {
 
         if (exists && !replace) {
             compiled.close();
-            throw new ScriptException("A script named \"%s\" already exists. Pass replace: true to replace it, or choose another name.".formatted(name));
+            throw new ScriptException("A script named '%s' already exists. Pass replace: true to replace it, or choose another name".formatted(name));
         }
 
         Script previous = scripts.get(name);
@@ -120,7 +120,7 @@ public class ScriptManager {
                 activate(script);
             } catch (ScriptException e) {
                 script.close();
-                throw new ScriptException(e.getMessage() + "\nNothing was saved, and any previous version is unchanged.", e);
+                throw new ScriptException("%s\nNothing was saved, and any previous version is unchanged".formatted(e.getMessage()), e);
             }
         }
 
@@ -145,11 +145,11 @@ public class ScriptManager {
     // Also enables a script that was disabled after repeated failures. Returns false when nothing changed.
     public boolean setEnabled(Script script, boolean enabled, UUID playerId) {
         if (!(script instanceof Toggleable)) {
-            throw new ScriptException("\"%s\" is a %s script, which can't be enabled or disabled.".formatted(script.getName(), script.getType()));
+            throw new ScriptException("'%s' is a %s script, which can't be enabled or disabled".formatted(script.getName(), script.getType()));
         }
 
         if (script.getCompiled() == null) {
-            throw new ScriptException("\"%s\" doesn't compile, so it can't be enabled or disabled. Save a fixed version with replace: true.".formatted(script.getName()));
+            throw new ScriptException("'%s' doesn't compile, so it can't be enabled or disabled. Save a fixed version with replace: true".formatted(script.getName()));
         }
 
         if (script.getHeader().isEnabled() == enabled && script.getError() == null) {
@@ -165,7 +165,7 @@ public class ScriptManager {
             try {
                 activate(script);
             } catch (ScriptException e) {
-                throw new ScriptException(e.getMessage() + "\nThe script wasn't enabled.", e);
+                throw new ScriptException("%s\nThe script wasn't enabled".formatted(e.getMessage()), e);
             }
 
             try {
@@ -189,7 +189,7 @@ public class ScriptManager {
     // Also deletes a file that couldn't be loaded.
     public void delete(String name) {
         if (!storage.has(name)) {
-            throw new ScriptException("No script named \"%s\".".formatted(name));
+            throw new ScriptException("No script named '%s'".formatted(name));
         }
 
         storage.delete(name);
@@ -205,11 +205,11 @@ public class ScriptManager {
     // Runs a one-shot script, or a periodic one out of schedule. Failures here don't count toward disabling it.
     public RunResult run(Script script) {
         if (!(script instanceof Executable executable)) {
-            throw new ScriptException("\"%s\" is a %s script, which can't be run on demand.".formatted(script.getName(), script.getType()));
+            throw new ScriptException("'%s' is a %s script, which can't be run on demand".formatted(script.getName(), script.getType()));
         }
 
         if (script.getCompiled() == null) {
-            throw new ScriptException("\"%s\" doesn't compile, so it can't run. Save a fixed version with replace: true.".formatted(script.getName()));
+            throw new ScriptException("'%s' doesn't compile, so it can't run. Save a fixed version with replace: true".formatted(script.getName()));
         }
 
         long mark = script.getLog().mark();
@@ -232,7 +232,7 @@ public class ScriptManager {
                 if (dispatcher.getRoot().getChild(node.getName()) == null) {
                     dispatcher.getRoot().addChild(node);
                 } else {
-                    Vio.getLogger().warn("Command /{} of script {} is left out: another command with that name exists now", node.getName(), script.getName());
+                    Vio.getLogger().warn("Command /%s of script %s is left out: another command with that name exists now".formatted(node.getName(), script.getName()));
                 }
             }
         }
@@ -260,7 +260,7 @@ public class ScriptManager {
         try {
             script = Script.create(file, ScriptCompiler.compile(file.getName(), file.getHeader().getType(), file.getSource()), null);
         } catch (ScriptException e) {
-            Vio.getLogger().warn("Script {} is errored: {}", file.getName(), e.getMessage());
+            Vio.getLogger().warn("Script %s is errored: %s".formatted(file.getName(), e.getMessage()));
             return Script.create(file, null, e.getMessage());
         }
 
@@ -268,7 +268,7 @@ public class ScriptManager {
             try {
                 activate(script);
             } catch (ScriptException e) {
-                Vio.getLogger().warn("Script {} is errored: {}", file.getName(), e.getMessage());
+                Vio.getLogger().warn("Script %s is errored: %s".formatted(file.getName(), e.getMessage()));
                 script.setError(e.getMessage());
             }
         }
@@ -315,12 +315,12 @@ public class ScriptManager {
             boolean replacing = scripts.get(script.getName()) instanceof CommandScript previous && previous.getRegistration() != null && previous.getRegistration().node() == existing;
 
             if (!replacing) {
-                throw new ScriptException("/%s already exists. Choose another command name.".formatted(node.getName()));
+                throw new ScriptException("/%s already exists. Choose another command name".formatted(node.getName()));
             }
 
             // Adding the new node over the old one would merge their children instead.
             if (!BrigadierNodes.remove(root, existing)) {
-                throw new ScriptException("/%s can't be replaced until the server restarts.".formatted(node.getName()));
+                throw new ScriptException("/%s can't be replaced until the server restarts".formatted(node.getName()));
             }
         }
 
@@ -361,20 +361,20 @@ public class ScriptManager {
 
         if (!outcome.success()) {
             onFailure(script, outcome.error(), false);
-            throw new ScriptException("Declaring its command failed: " + outcome.error());
+            throw new ScriptException("Couldn't declare its command: %s".formatted(outcome.error()));
         }
 
         @SuppressWarnings("unchecked")
         LiteralArgumentBuilder<CommandSourceStack> declared = (LiteralArgumentBuilder<CommandSourceStack>) outcome.result();
 
         if (declared == null) {
-            throw new ScriptException("A command script must declare its command with command(Commands.literal('name')...).");
+            throw new ScriptException("A command script must declare its command with command(Commands.literal('name')...)");
         }
 
         String name = declared.getLiteral();
 
         if (!COMMAND_NAME.matcher(name).matches()) {
-            throw new ScriptException("Invalid command name \"%s\": 1 to 32 lowercase letters, digits and underscores, starting with a letter.".formatted(name));
+            throw new ScriptException("Invalid command name '%s': 1 to 32 lowercase letters, digits and underscores, starting with a letter".formatted(name));
         }
 
         int permissionLevel = script.getPermissionLevel();
@@ -389,7 +389,7 @@ public class ScriptManager {
     private void copyInto(CommandScript script, CommandNode<CommandSourceStack> node, ArgumentBuilder<CommandSourceStack, ?> builder) {
         // A redirect would lead to the declared nodes, which aren't wrapped.
         if (node.getRedirect() != null) {
-            throw new ScriptException("Script commands can't use redirect or fork.");
+            throw new ScriptException("Script commands can't use redirect or fork");
         }
 
         if (node.getCommand() != null) {
@@ -405,7 +405,7 @@ public class ScriptManager {
         ArgumentBuilder<CommandSourceStack, ?> builder = switch (node) {
             case LiteralCommandNode<CommandSourceStack> literal -> Commands.literal(literal.getLiteral());
             case ArgumentCommandNode<CommandSourceStack, ?> argument -> copyArgument(script, argument);
-            default -> throw new ScriptException("Unsupported command node " + node.getName());
+            default -> throw new ScriptException("Unsupported command node %s".formatted(node.getName()));
         };
 
         copyInto(script, node, builder);
@@ -415,7 +415,7 @@ public class ScriptManager {
     private RequiredArgumentBuilder<CommandSourceStack, ?> copyArgument(CommandScript script, ArgumentCommandNode<CommandSourceStack, ?> node) {
         // Players' games couldn't read a command tree with an argument type they don't know, and would disconnect.
         if (!ArgumentTypeInfos.isClassRecognized(node.getType().getClass())) {
-            throw new ScriptException("%s isn't a registered argument type: use the ones from Brigadier, Minecraft or NeoForge.".formatted(node.getType().getClass().getName()));
+            throw new ScriptException("%s isn't a registered argument type: use the ones from Brigadier, Minecraft or NeoForge".formatted(node.getType().getClass().getName()));
         }
 
         RequiredArgumentBuilder<CommandSourceStack, ?> builder = Commands.argument(node.getName(), node.getType());
@@ -446,7 +446,7 @@ public class ScriptManager {
 
             if (!outcome.success()) {
                 onFailure(script, outcome.error(), true);
-                context.getSource().sendFailure(Component.literal("/%s failed. Its script's log has the details.".formatted(context.getNodes().getFirst().getNode().getName())));
+                context.getSource().sendFailure(Component.literal("Couldn't run /%s. Its script's log has the details.".formatted(context.getNodes().getFirst().getNode().getName())));
                 return 0;
             }
 
@@ -491,34 +491,34 @@ public class ScriptManager {
 
         if (!outcome.success()) {
             onFailure(script, outcome.error(), false);
-            throw new ScriptException("Declaring its handlers failed: " + outcome.error());
+            throw new ScriptException("Couldn't declare its handlers: %s".formatted(outcome.error()));
         }
 
         @SuppressWarnings("unchecked")
         List<ListenerVioScript.Handler<?>> handlers = (List<ListenerVioScript.Handler<?>>) outcome.result();
 
         if (handlers.isEmpty()) {
-            throw new ScriptException("A listener script must declare at least one handler with on(EventClass) { e -> ... }.");
+            throw new ScriptException("A listener script must declare at least one handler with on(EventClass) { e -> ... }");
         }
 
         for (ListenerVioScript.Handler<?> handler : handlers) {
             Class<?> type = handler.type();
 
             if (type == null || handler.consumer() == null) {
-                throw new ScriptException("on(...) needs an event class and a handler.");
+                throw new ScriptException("on(...) needs an event class and a handler");
             }
 
             // The bus refuses these too, but with less helpful messages.
             if (Modifier.isAbstract(type.getModifiers())) {
-                throw new ScriptException("%s is abstract and never fired itself: listen to one of its concrete subclasses instead.".formatted(type.getName()));
+                throw new ScriptException("%s is abstract and never fired itself: listen to one of its concrete subclasses instead".formatted(type.getName()));
             }
 
             if (IModBusEvent.class.isAssignableFrom(type)) {
-                throw new ScriptException("%s is a mod loading event; scripts can only listen to game events.".formatted(type.getName()));
+                throw new ScriptException("%s is a mod loading event; scripts can only listen to game events".formatted(type.getName()));
             }
 
             if (type.getName().contains(".client.")) {
-                throw new ScriptException("%s is a client event, which never fires for server scripts.".formatted(type.getName()));
+                throw new ScriptException("%s is a client event, which never fires for server scripts".formatted(type.getName()));
             }
         }
 
@@ -535,7 +535,7 @@ public class ScriptManager {
             }
         } catch (RuntimeException e) {
             registered.forEach(NeoForge.EVENT_BUS::unregister);
-            throw new ScriptException("Registering its handlers failed: " + e.getMessage(), e);
+            throw new ScriptException("Couldn't register its handlers: %s".formatted(e.getMessage()), e);
         }
 
         return List.copyOf(registered);
@@ -556,7 +556,7 @@ public class ScriptManager {
                 String message = "Skipped %s, which fired off the server thread; handlers only run for events on the server thread".formatted(handler.type().getName());
 
                 script.getLog().warn(message);
-                Vio.getLogger().warn("Script {}: {}", script.getName(), message);
+                Vio.getLogger().warn("Script %s: %s".formatted(script.getName(), message));
             }
 
             return;
@@ -592,7 +592,7 @@ public class ScriptManager {
         } catch (ScriptTimeoutError e) {
             String message = limitedByCaller
                     ? "Stopped because the script code that triggered it ran out of its own budget"
-                    : "Stopped after taking longer than its %d ms budget".formatted(budgetMillis);
+                    : "Stopped after taking longer than its %s ms budget".formatted(budgetMillis);
 
             return failure(script, start, message, e);
         } catch (StackOverflowError e) {
@@ -610,7 +610,7 @@ public class ScriptManager {
 
         for (StackTraceElement element : throwable.getStackTrace()) {
             if (fileName.equals(element.getFileName()) && element.getLineNumber() > 0) {
-                message += " (line %d)".formatted(element.getLineNumber());
+                message = "%s (line %s)".formatted(message, element.getLineNumber());
                 break;
             }
         }
@@ -620,7 +620,7 @@ public class ScriptManager {
 
     private void onFailure(Script script, String error, boolean counted) {
         script.getLog().error(error);
-        Vio.getLogger().warn("Script {} failed: {}", script.getName(), error);
+        Vio.getLogger().warn("Failed to run script %s: %s".formatted(script.getName(), error));
 
         if (!counted) {
             return;
@@ -629,10 +629,10 @@ public class ScriptManager {
         int failures = script.recordFailure();
 
         if (failures >= ServerConfig.MAX_FAILURES.get() && script.getState() == ScriptState.ENABLED) {
-            script.setError("Disabled after %d failures in a row, the last one: %s".formatted(failures, error));
+            script.setError("Disabled after %s failures in a row, the last one: %s".formatted(failures, error));
             deactivate(script);
             script.getLog().error(script.getError());
-            Vio.getLogger().warn("Script {} disabled after {} failures in a row", script.getName(), failures);
+            Vio.getLogger().warn("Script %s disabled after %s failures in a row".formatted(script.getName(), failures));
         }
     }
 

@@ -20,7 +20,7 @@ public enum MessageType {
             }
         }
 
-        throw new IllegalArgumentException("Invalid message type: " + value);
+        throw new IllegalArgumentException("Invalid message type: %s".formatted(value));
     }
 
     public String getValue() {

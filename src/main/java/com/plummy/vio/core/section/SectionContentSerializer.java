@@ -34,7 +34,7 @@ public class SectionContentSerializer implements SectionVisitor<String> {
 
     @Override
     public String visitPlayerContextSection(PlayerContextSection section) {
-        return "<player_context>\nPlayer UUID: %s\nNickname: %s\nAccess level: %s\nPosition X: %.3f\nPosition Y: %.3f\nPosition Z: %.3f\nYaw: %.1f\nPitch: %.1f\nDimension: %s\nBiome: %s\nInside structures: %s\nHealth: %.1f\nArmor: %.0f\nFood: %.0f\nSaturation: %.1f\nExperience level: %d\nGame mode: %s\nMain hand item: %s\nOff hand item: %s\n</player_context>".formatted(
+        return "<player_context>\nPlayer UUID: %s\nNickname: %s\nAccess level: %s\nPosition X: %.3f\nPosition Y: %.3f\nPosition Z: %.3f\nYaw: %.1f\nPitch: %.1f\nDimension: %s\nBiome: %s\nInside structures: %s\nHealth: %.1f\nArmor: %.0f\nFood: %.0f\nSaturation: %.1f\nExperience level: %s\nGame mode: %s\nMain hand item: %s\nOff hand item: %s\n</player_context>".formatted(
                 section.getId(),
                 section.getName(),
                 section.getAccessLevel(),
@@ -59,7 +59,7 @@ public class SectionContentSerializer implements SectionVisitor<String> {
 
     @Override
     public String visitServerContextSection(ServerContextSection section) {
-        return "<server_context>\nDimensions: %s\nTime of day in ticks (0-23999): %d\nDay: %d\n</server_context>".formatted(
+        return "<server_context>\nDimensions: %s\nTime of day in ticks (0-23999): %s\nDay: %s\n</server_context>".formatted(
                 String.join(", ", section.getDimensions()),
                 section.getTime(),
                 section.getDay()

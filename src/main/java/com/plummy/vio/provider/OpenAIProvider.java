@@ -6,13 +6,13 @@ import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.conversation.Conversation;
 import com.plummy.vio.core.message.*;
 import com.plummy.vio.core.section.SectionContentSerializer;
-import com.plummy.vio.core.tool.ExecutionRequest;
-import com.plummy.vio.core.tool.ExecutionResult;
+import com.plummy.vio.core.tool.executor.ExecutionRequest;
+import com.plummy.vio.core.tool.executor.ExecutionResult;
 import com.plummy.vio.core.tool.Tool;
 import com.plummy.vio.core.tool.ToolRegistry;
-import com.plummy.vio.core.tool.argument.Argument;
-import com.plummy.vio.core.tool.argument.ArgumentSchemaJsonSerializer;
-import com.plummy.vio.core.tool.argument.Arguments;
+import com.plummy.vio.core.tool.value.argument.Argument;
+import com.plummy.vio.core.tool.value.argument.ArgumentSchemaJsonSerializer;
+import com.plummy.vio.core.tool.value.argument.Arguments;
 
 import java.io.IOException;
 import java.net.URI;
@@ -53,7 +53,7 @@ public class OpenAIProvider implements Provider {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(OPENAI_URI))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + getApiKey())
+                .header("Authorization", "Bearer %s".formatted(getApiKey()))
                 .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, conversation).toString()))
                 .build();
 
@@ -62,20 +62,20 @@ public class OpenAIProvider implements Provider {
         try {
             response = getHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
-            throw new ProviderException("OpenAI request failed", e);
+            throw new ProviderException("Failed to send the OpenAI request", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ProviderException("OpenAI request interrupted", e);
         }
 
         if (response.statusCode() != 200) {
-            throw new ProviderException("OpenAI returned " + response.statusCode() + ": " + response.body());
+            throw new ProviderException("OpenAI returned %s: %s".formatted(response.statusCode(), response.body()));
         }
 
         try {
             return parseResponseBody(JsonParser.parseString(response.body()).getAsJsonObject());
         } catch (JsonParseException | IllegalStateException | NullPointerException | Argument.ParseException e) {
-            throw new ProviderException("Malformed OpenAI response: " + response.body(), e);
+            throw new ProviderException("Malformed OpenAI response: %s".formatted(response.body()), e);
         }
     }
 
@@ -110,7 +110,7 @@ public class OpenAIProvider implements Provider {
     }
 
     private static JsonObject buildToolDefinition(Tool tool) {
-        JsonObject parameters = ArgumentSchemaJsonSerializer.getInstance().serialize(tool.getFullArgumentSchema());
+        JsonObject parameters = ArgumentSchemaJsonSerializer.getInstance().serialize(tool.getArgumentSchema());
 
         JsonObject json = new JsonObject();
 
@@ -127,7 +127,7 @@ public class OpenAIProvider implements Provider {
         String status = json.get("status").getAsString();
 
         if (!status.equals("completed")) {
-            throw new ProviderException("OpenAI response " + status + ": " + json.get("incomplete_details"));
+            throw new ProviderException("OpenAI response %s: %s".formatted(status, json.get("incomplete_details")));
         }
 
         StringBuilder text = new StringBuilder();

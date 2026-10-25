@@ -13,7 +13,13 @@ import com.plummy.vio.core.section.ScriptContextSection;
 import com.plummy.vio.core.section.ServerContextSection;
 import com.plummy.vio.core.storage.Storage;
 import com.plummy.vio.core.tool.*;
-import com.plummy.vio.core.tool.script.ScriptTools;
+import com.plummy.vio.core.tool.executor.BasicToolExecutor;
+import com.plummy.vio.core.tool.executor.ExecutionRequest;
+import com.plummy.vio.core.tool.executor.ExecutionResult;
+import com.plummy.vio.core.tool.executor.ServerToolExecutor;
+import com.plummy.vio.core.tool.requester.PlayerToolRequester;
+import com.plummy.vio.core.tool.requester.ToolRequester;
+import com.plummy.vio.core.tool.catalog.script.ScriptTools;
 import com.plummy.vio.listener.AgentListener;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderException;
@@ -151,12 +157,12 @@ public class VioAgent implements Agent {
                 }
 
                 if (!(response instanceof ToolRequestMessage toolRequest)) {
-                    throw new IllegalStateException("Unexpected provider response: " + response.getType());
+                    throw new IllegalStateException("Unexpected provider response: %s".formatted(response.getType()));
                 }
 
                 notify(server, playerId, (listener, player) -> listener.onActivity(player, toolRequest));
 
-                conversation.addMessage(ToolResponseMessage.of(executeTools(new Requester(playerId, accessLevel), toolRequest.getToolExecutionRequests())));
+                conversation.addMessage(ToolResponseMessage.of(executeTools(new PlayerToolRequester(playerId, accessLevel), toolRequest.getToolExecutionRequests())));
 
                 if (findPlayer(server, playerId) == null) {
                     return;
@@ -165,10 +171,10 @@ public class VioAgent implements Agent {
 
             notify(server, playerId, (listener, player) -> listener.onError(player, error("max_rounds", MAX_ROUNDS)));
         } catch (ProviderException e) {
-            Vio.getLogger().error("Agent request for {} failed", playerId, e);
+            Vio.getLogger().error("Failed to process the request of %s".formatted(playerId), e);
             notify(server, playerId, (listener, player) -> listener.onError(player, error("provider")));
         } catch (RuntimeException e) {
-            Vio.getLogger().error("Agent request for {} failed", playerId, e);
+            Vio.getLogger().error("Failed to process the request of %s".formatted(playerId), e);
             notify(server, playerId, (listener, player) -> listener.onError(player, error("internal")));
         } finally {
             if (conversation != null) {
@@ -183,14 +189,14 @@ public class VioAgent implements Agent {
         try {
             conversationStorage.save(conversation);
         } catch (RuntimeException e) {
-            Vio.getLogger().error("Failed to save conversation of {}", playerId, e);
+            Vio.getLogger().error("Failed to save the conversation of %s".formatted(playerId), e);
             notify(server, playerId, (listener, player) -> listener.onError(player, error("save")));
         }
     }
 
     // Translated on the client, in the player's language.
     private static Component error(String name, Object... args) {
-        return Component.translatable("vio.agent.error." + name, args);
+        return Component.translatable("vio.agent.error.%s".formatted(name), args);
     }
 
     private static ServerPlayer findPlayer(MinecraftServer server, UUID playerId) {
@@ -222,26 +228,26 @@ public class VioAgent implements Agent {
         });
     }
 
-    private SequencedMap<String, ExecutionResult> executeTools(Requester requester, SequencedMap<String, ExecutionRequest> tools) {
+    private SequencedMap<String, ExecutionResult> executeTools(ToolRequester requester, SequencedMap<String, ExecutionRequest> requests) {
         SequencedMap<String, ExecutionResult> results = new LinkedHashMap<>();
 
-        for (Map.Entry<String, ExecutionRequest> entry : tools.entrySet()) {
-            Tool tool = ToolRegistry.get(entry.getValue().getName());
-
-            ExecutionResult result;
-
-            if (tool == null) {
-                result = ExecutionResult.invalidArguments("Unknown tool: %s.".formatted(entry.getValue().getName()));
-            } else {
-                result = switch (tool.getType()) {
-                    case BASIC -> basicToolExecutor.execute(requester, entry.getValue());
-                    case SERVER -> serverToolExecutor.execute(requester, entry.getValue());
-                };
-            }
-
-            results.put(entry.getKey(), result);
+        for (Map.Entry<String, ExecutionRequest> entry : requests.entrySet()) {
+            results.put(entry.getKey(), executeTool(requester, entry.getValue()));
         }
 
         return results;
+    }
+
+    private ExecutionResult executeTool(ToolRequester requester, ExecutionRequest request) {
+        Tool tool = ToolRegistry.get(request.getName());
+
+        if (tool == null || !tool.isAvailable()) {
+            return ExecutionResult.invalidArguments("Unknown tool: %s".formatted(request.getName()));
+        }
+
+        return switch (tool) {
+            case BasicTool basicTool -> basicToolExecutor.execute(requester, basicTool, request.getArguments());
+            case ServerTool serverTool -> serverToolExecutor.execute(requester, serverTool, request.getArguments());
+        };
     }
 }

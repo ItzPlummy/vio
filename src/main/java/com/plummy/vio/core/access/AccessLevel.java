@@ -19,7 +19,7 @@ public enum AccessLevel {
             }
         }
 
-        throw new IllegalArgumentException("Invalid access level: " + value);
+        throw new IllegalArgumentException("Invalid access level: %s".formatted(value));
     }
 
     public String getValue() {

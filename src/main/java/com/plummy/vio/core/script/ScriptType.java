@@ -24,7 +24,7 @@ public enum ScriptType {
             }
         }
 
-        throw new IllegalArgumentException("Invalid script type: " + value);
+        throw new IllegalArgumentException("Invalid script type: %s".formatted(value));
     }
 
     public String getValue() {
