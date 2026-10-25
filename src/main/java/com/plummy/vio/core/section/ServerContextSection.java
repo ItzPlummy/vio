@@ -9,17 +9,17 @@ import java.util.List;
 
 public class ServerContextSection implements Section {
 
-    private final String[] dimensions;
+    private final List<String> dimensions;
 
     private final long time;
     private final long day;
 
     public ServerContextSection(
-            String[] dimensions,
+            List<String> dimensions,
             long time,
             long day
     ) {
-        this.dimensions = Arrays.copyOf(dimensions, dimensions.length);
+        this.dimensions = List.copyOf(dimensions);
         this.time = time;
         this.day = day;
     }
@@ -32,7 +32,7 @@ public class ServerContextSection implements Section {
         }
 
         return new ServerContextSection(
-                dimensions.toArray(new String[0]),
+                dimensions,
                 server.overworld().getDayTime() % 24000,
                 server.overworld().getDayTime() / 24000
         );
@@ -48,7 +48,7 @@ public class ServerContextSection implements Section {
         return visitor.visitServerContextSection(this);
     }
 
-    public String[] getDimensions() {
+    public List<String> getDimensions() {
         return dimensions;
     }
 

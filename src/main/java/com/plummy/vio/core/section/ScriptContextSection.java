@@ -8,7 +8,6 @@ import com.plummy.vio.core.script.ScriptType;
 import java.util.ArrayList;
 import java.util.List;
 
-// A summary of every saved script; the source, log and history stay behind the script tools.
 public class ScriptContextSection implements Section {
 
     private final List<Entry> scripts;

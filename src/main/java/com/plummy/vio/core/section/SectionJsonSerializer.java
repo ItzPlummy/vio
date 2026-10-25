@@ -47,7 +47,10 @@ public class SectionJsonSerializer implements SectionVisitor<JsonObject> {
     @Override
     public JsonObject visitPlayerContextSection(PlayerContextSection section) {
         JsonArray structures = new JsonArray();
-        for (String structure : section.getStructures()) structures.add(structure);
+
+        for (String structure : section.getStructures()) {
+            structures.add(structure);
+        }
 
         JsonObject json = new JsonObject();
 

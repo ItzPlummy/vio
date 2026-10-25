@@ -27,22 +27,43 @@ public class SectionContentSerializer implements SectionVisitor<String> {
 
     @Override
     public String visitPlayerRequestSection(PlayerRequestSection section) {
-        return "<player_request>\n%s\n</player_request>"
-                .formatted(section.getRequest());
+        return "<player_request>\n%s\n</player_request>".formatted(
+                section.getRequest()
+        );
     }
 
     @Override
     public String visitPlayerContextSection(PlayerContextSection section) {
-        String structures = section.getStructures().length == 0 ? "none" : String.join(", ", section.getStructures());
-
-        return "<player_context>\nPlayer UUID: %s\nNickname: %s\nPosition X: %.3f\nPosition Y: %.3f\nPosition Z: %.3f\nYaw: %.1f\nPitch: %.1f\nDimension: %s\nBiome: %s\nInside structures: %s\nHealth: %.1f\nArmor: %.0f\nFood: %.0f\nSaturation: %.1f\nExperience level: %d\nGame mode: %s\nMain hand item: %s\nOff hand item: %s\nAccess level: %s\n</player_context>"
-                .formatted(section.getId(), section.getName(), section.getX(), section.getY(), section.getZ(), section.getYaw(), section.getPitch(), section.getDimension(), section.getBiome(), structures, section.getHealth(), section.getArmor(), section.getFood(), section.getSaturation(), section.getLevel(), section.getGameMode(), section.getMainHandItem(), section.getOffHandItem(), section.getAccessLevel());
+        return "<player_context>\nPlayer UUID: %s\nNickname: %s\nAccess level: %s\nPosition X: %.3f\nPosition Y: %.3f\nPosition Z: %.3f\nYaw: %.1f\nPitch: %.1f\nDimension: %s\nBiome: %s\nInside structures: %s\nHealth: %.1f\nArmor: %.0f\nFood: %.0f\nSaturation: %.1f\nExperience level: %d\nGame mode: %s\nMain hand item: %s\nOff hand item: %s\n</player_context>".formatted(
+                section.getId(),
+                section.getName(),
+                section.getAccessLevel(),
+                section.getX(),
+                section.getY(),
+                section.getZ(),
+                section.getYaw(),
+                section.getPitch(),
+                section.getDimension(),
+                section.getBiome(),
+                section.getStructures().isEmpty() ? "none" : String.join(", ", section.getStructures()),
+                section.getHealth(),
+                section.getArmor(),
+                section.getFood(),
+                section.getSaturation(),
+                section.getLevel(),
+                section.getGameMode(),
+                section.getMainHandItem(),
+                section.getOffHandItem()
+        );
     }
 
     @Override
     public String visitServerContextSection(ServerContextSection section) {
-        return "<server_context>\nDimensions: %s\nTime of day in ticks (0-23999): %d\nDay: %d\n</server_context>"
-                .formatted(String.join(", ", section.getDimensions()), section.getTime(), section.getDay());
+        return "<server_context>\nDimensions: %s\nTime of day in ticks (0-23999): %d\nDay: %d\n</server_context>".formatted(
+                String.join(", ", section.getDimensions()),
+                section.getTime(),
+                section.getDay()
+        );
     }
 
     @Override
@@ -50,16 +71,23 @@ public class SectionContentSerializer implements SectionVisitor<String> {
         StringBuilder scripts = new StringBuilder();
 
         for (ScriptContextSection.Entry script : section.getScripts()) {
-            scripts.append("\n- %s (%s, %s): %s".formatted(script.name(), script.type(), script.state(), script.description()));
+            scripts.append(
+                    "\n- %s (%s, %s): %s".formatted(
+                            script.name(),
+                            script.type(),
+                            script.state(),
+                            script.description()
+                    )
+            );
         }
 
-        return "<script_context>\nSaved scripts: %s%s\n</script_context>"
-                .formatted(section.getScripts().isEmpty() ? "none" : section.getScripts().size(), scripts);
+        return "<script_context>\nSaved scripts: %s%s\n</script_context>".formatted(
+                section.getScripts().size(),
+                scripts
+        );
     }
 
     public String getMessageContent(Message message) {
-        return message.getSections().stream()
-                .map(section -> section.accept(this))
-                .collect(Collectors.joining("\n\n"));
+        return message.getSections().stream().map(section -> section.accept(this)).collect(Collectors.joining("\n\n"));
     }
 }

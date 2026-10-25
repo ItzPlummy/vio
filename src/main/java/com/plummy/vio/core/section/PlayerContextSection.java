@@ -10,10 +10,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class PlayerContextSection implements Section {
 
@@ -28,7 +25,7 @@ public class PlayerContextSection implements Section {
     private final double pitch;
     private final String dimension;
     private final String biome;
-    private final String[] structures;
+    private final List<String> structures;
 
     private final double health;
     private final double armor;
@@ -52,7 +49,7 @@ public class PlayerContextSection implements Section {
             double pitch,
             String dimension,
             String biome,
-            String[] structures,
+            List<String> structures,
             double health,
             double armor,
             double food,
@@ -72,7 +69,7 @@ public class PlayerContextSection implements Section {
         this.pitch = pitch;
         this.dimension = dimension;
         this.biome = biome;
-        this.structures = structures;
+        this.structures = List.copyOf(structures);
         this.health = health;
         this.armor = armor;
         this.food = food;
@@ -130,7 +127,7 @@ public class PlayerContextSection implements Section {
                 player.getXRot(),
                 player.level().dimension().location().toString(),
                 biome.toString(),
-                structures.toArray(new String[0]),
+                structures,
                 player.getHealth(),
                 player.getArmorValue(),
                 player.getFoodData().getFoodLevel(),
@@ -192,8 +189,8 @@ public class PlayerContextSection implements Section {
         return biome;
     }
 
-    public String[] getStructures() {
-        return structures;
+    public List<String> getStructures() {
+        return Collections.unmodifiableList(structures);
     }
 
     public double getHealth() {

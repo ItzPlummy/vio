@@ -51,7 +51,7 @@ public class SectionJsonDeserializer {
                         json.get("pitch").getAsDouble(),
                         json.get("dimension").getAsString(),
                         json.get("biome").getAsString(),
-                        structures.toArray(new String[0]),
+                        structures,
                         json.get("health").getAsDouble(),
                         json.get("armor").getAsDouble(),
                         json.get("food").getAsDouble(),
@@ -70,7 +70,7 @@ public class SectionJsonDeserializer {
                 }
 
                 yield new ServerContextSection(
-                        dimensions.toArray(new String[0]),
+                        dimensions,
                         json.get("time").getAsLong(),
                         json.get("day").getAsLong()
                 );
@@ -81,12 +81,14 @@ public class SectionJsonDeserializer {
                 for (JsonElement element : json.getAsJsonArray("scripts")) {
                     JsonObject script = element.getAsJsonObject();
 
-                    scripts.add(new ScriptContextSection.Entry(
-                            script.get("name").getAsString(),
-                            ScriptType.fromValue(script.get("type").getAsString()),
-                            ScriptState.fromValue(script.get("state").getAsString()),
-                            script.get("description").getAsString()
-                    ));
+                    scripts.add(
+                            new ScriptContextSection.Entry(
+                                    script.get("name").getAsString(),
+                                    ScriptType.fromValue(script.get("type").getAsString()),
+                                    ScriptState.fromValue(script.get("state").getAsString()),
+                                    script.get("description").getAsString()
+                            )
+                    );
                 }
 
                 yield new ScriptContextSection(scripts);
@@ -94,13 +96,13 @@ public class SectionJsonDeserializer {
         };
     }
 
-    public <T extends Section> T deserialize(JsonObject json, Class<T> expectedClass) {
+    public <T extends Section> T deserialize(JsonObject json, Class<T> sectionClass) {
         Section section = deserialize(json);
 
-        if (!expectedClass.isInstance(section)) {
-            throw new JsonParseException("Expected " + expectedClass.getSimpleName() + ", got " + section.getType());
+        if (!sectionClass.isInstance(section)) {
+            throw new JsonParseException("Expected " + sectionClass.getSimpleName() + ", got " + section.getType());
         }
 
-        return expectedClass.cast(section);
+        return sectionClass.cast(section);
     }
 }
