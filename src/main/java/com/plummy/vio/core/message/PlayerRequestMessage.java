@@ -6,27 +6,32 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PlayerRequestMessage implements Message {
+public class PlayerRequestMessage extends AbstractMessage {
 
     private final PlayerRequestSection request;
     private final PlayerContextSection playerContext;
     private final ServerContextSection serverContext;
-    // Null unless the player could use scripts when sending it.
     private final ScriptContextSection scriptContext;
-    private final Instant time;
-    private final boolean voice;
+    private final boolean isVoice;
 
-    public PlayerRequestMessage(PlayerRequestSection request, PlayerContextSection playerContext, ServerContextSection serverContext, ScriptContextSection scriptContext, Instant time, boolean voice) {
+    public PlayerRequestMessage(PlayerRequestSection request, PlayerContextSection playerContext, ServerContextSection serverContext, ScriptContextSection scriptContext, Instant time, boolean isVoice) {
+        super(time);
         this.request = request;
         this.playerContext = playerContext;
         this.serverContext = serverContext;
         this.scriptContext = scriptContext;
-        this.time = time;
-        this.voice = voice;
+        this.isVoice = isVoice;
     }
 
-    public static PlayerRequestMessage of(String request, PlayerContextSection playerContext, ServerContextSection serverContext, ScriptContextSection scriptContext, Instant time, boolean voice) {
-        return new PlayerRequestMessage(new PlayerRequestSection(request), playerContext, serverContext, scriptContext, time, voice);
+    public static PlayerRequestMessage of(String request, PlayerContextSection playerContext, ServerContextSection serverContext, ScriptContextSection scriptContext, Instant time, boolean isVoice) {
+        return new PlayerRequestMessage(
+                new PlayerRequestSection(request),
+                playerContext,
+                serverContext,
+                scriptContext,
+                time,
+                isVoice
+        );
     }
 
     @Override
@@ -55,11 +60,6 @@ public class PlayerRequestMessage implements Message {
         return visitor.visitPlayerRequestMessage(this);
     }
 
-    @Override
-    public Instant getTime() {
-        return time;
-    }
-
     public PlayerRequestSection getRequest() {
         return request;
     }
@@ -76,8 +76,7 @@ public class PlayerRequestMessage implements Message {
         return scriptContext;
     }
 
-    // Spoken through voice chat and transcribed, rather than typed.
     public boolean isVoice() {
-        return voice;
+        return isVoice;
     }
 }

@@ -1,9 +1,8 @@
-package com.plummy.vio.core.storage;
+package com.plummy.vio.core.access;
 
 import com.google.gson.JsonObject;
 import com.plummy.vio.Vio;
-import com.plummy.vio.core.access.AccessLevel;
-import com.plummy.vio.core.access.PlayerAccess;
+import com.plummy.vio.core.storage.JsonFileStorage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 

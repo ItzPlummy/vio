@@ -20,6 +20,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 @EventBusSubscriber(modid = Vio.MODID)
 public class Networking {
@@ -132,7 +133,7 @@ public class Networking {
         }
 
         Agent agent = Vio.getAgent();
-        Instant time = Message.now();
+        Instant time = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         SubmitResult result = agent == null
                 ? SubmitResult.UNAVAILABLE
                 : agent.submit(player, request, time, false);
@@ -153,7 +154,7 @@ public class Networking {
 
         // An accepted capture reports through its voice state; the request itself is submitted once it ends.
         if (result != SubmitResult.ACCEPTED) {
-            context.reply(new SubmitResultPayload(result, Message.now()));
+            context.reply(new SubmitResultPayload(result, Instant.now().truncatedTo(ChronoUnit.MILLIS)));
         }
     }
 

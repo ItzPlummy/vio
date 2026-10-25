@@ -10,9 +10,9 @@ public class PlayerAccess implements Storage.Item<UUID> {
     private final String name;
     private final AccessLevel level;
 
-    public PlayerAccess(UUID playerId, String playerName, AccessLevel level) {
+    public PlayerAccess(UUID playerId, String name, AccessLevel level) {
         this.playerId = playerId;
-        this.name = playerName;
+        this.name = name;
         this.level = level;
     }
 

@@ -26,13 +26,9 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
         json.addProperty("time", message.getTime().toString());
         json.add("player_context", message.getPlayerContext().accept(SectionJsonSerializer.getInstance()));
         json.add("server_context", message.getServerContext().accept(SectionJsonSerializer.getInstance()));
-
-        if (message.getScriptContext() != null) {
-            json.add("script_context", message.getScriptContext().accept(SectionJsonSerializer.getInstance()));
-        }
-
+        json.add("script_context", message.getScriptContext() == null ? null : message.getScriptContext().accept(SectionJsonSerializer.getInstance()));
         json.add("request", message.getRequest().accept(SectionJsonSerializer.getInstance()));
-        json.addProperty("voice", message.isVoice());
+        json.addProperty("isVoice", message.isVoice());
 
         return json;
     }

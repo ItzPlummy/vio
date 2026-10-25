@@ -31,11 +31,9 @@ public class MessageJsonDeserializer {
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("request"), PlayerRequestSection.class),
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("player_context"), PlayerContextSection.class),
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("server_context"), ServerContextSection.class),
-                    // Absent for players who couldn't use scripts, and in conversations stored before scripts existed.
-                    json.has("script_context") ? SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("script_context"), ScriptContextSection.class) : null,
-                    getTime(json),
-                    // Conversations stored before voice existed have no flag.
-                    json.has("voice") && json.get("voice").getAsBoolean()
+                    json.get("script_context") == null ? SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("script_context"), ScriptContextSection.class) : null,
+                    Instant.parse(json.get("time").getAsString()),
+                    json.get("isVoice").getAsBoolean()
             );
             case TOOL_REQUEST -> {
                 SequencedMap<String, ExecutionRequest> toolExecutionRequests = new LinkedHashMap<>();
@@ -52,7 +50,7 @@ public class MessageJsonDeserializer {
                 yield new ToolRequestMessage(
                         SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("activity_description"), ActivityDescriptionSection.class),
                         toolExecutionRequests,
-                        getTime(json)
+                        Instant.parse(json.get("time").getAsString())
                 );
             }
             case TOOL_RESPONSE -> {
@@ -67,27 +65,22 @@ public class MessageJsonDeserializer {
                     ));
                 }
 
-                yield new ToolResponseMessage(toolExecutionResults, getTime(json));
+                yield new ToolResponseMessage(toolExecutionResults, Instant.parse(json.get("time").getAsString()));
             }
             case AGENT_RESPONSE -> new AgentResponseMessage(
                     SectionJsonDeserializer.getInstance().deserialize(json.getAsJsonObject("response"), TextSection.class),
-                    getTime(json)
+                    Instant.parse(json.get("time").getAsString())
             );
         };
     }
 
-    // Stored as ISO-8601 in UTC, e.g. 2026-10-16T14:05:09.123Z.
-    private static Instant getTime(JsonObject json) {
-        return Instant.parse(json.get("time").getAsString());
-    }
-
-    public <T extends Message> T deserialize(JsonObject json, Class<T> expectedClass) {
+    public <T extends Message> T deserialize(JsonObject json, Class<T> messageClass) {
         Message message = deserialize(json);
 
-        if (!expectedClass.isInstance(message)) {
-            throw new JsonParseException("Expected " + expectedClass.getSimpleName() + ", got " + message.getType());
+        if (!messageClass.isInstance(message)) {
+            throw new JsonParseException("Expected %s, got %s".formatted(messageClass.getSimpleName(), message.getClass().getSimpleName()));
         }
 
-        return expectedClass.cast(message);
+        return messageClass.cast(message);
     }
 }

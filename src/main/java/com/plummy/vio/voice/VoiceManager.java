@@ -23,6 +23,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -301,7 +302,7 @@ public class VoiceManager {
             return;
         }
 
-        Instant time = Message.now();
+        Instant time = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         SubmitResult result = agent == null ? SubmitResult.UNAVAILABLE : agent.submit(player, text, time, true);
 
         if (result == SubmitResult.ACCEPTED) {

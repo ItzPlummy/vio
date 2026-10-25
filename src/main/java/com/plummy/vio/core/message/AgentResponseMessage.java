@@ -4,20 +4,23 @@ import com.plummy.vio.core.section.Section;
 import com.plummy.vio.core.section.TextSection;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-public class AgentResponseMessage implements Message {
+public class AgentResponseMessage extends AbstractMessage {
 
     private final TextSection response;
-    private final Instant time;
 
     public AgentResponseMessage(TextSection response, Instant time) {
+        super(time);
         this.response = response;
-        this.time = time;
     }
 
     public static AgentResponseMessage of(String response) {
-        return new AgentResponseMessage(new TextSection(response), Message.now());
+        return new AgentResponseMessage(
+                new TextSection(response),
+                Instant.now().truncatedTo(ChronoUnit.MILLIS)
+        );
     }
 
     @Override
@@ -35,11 +38,6 @@ public class AgentResponseMessage implements Message {
     @Override
     public <T> T accept(MessageVisitor<T> visitor) {
         return visitor.visitAgentResponseMessage(this);
-    }
-
-    @Override
-    public Instant getTime() {
-        return time;
     }
 
     public TextSection getResponse() {

@@ -4,23 +4,26 @@ import com.plummy.vio.core.section.Section;
 import com.plummy.vio.core.tool.ExecutionResult;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.SequencedMap;
 
-public class ToolResponseMessage implements Message {
+public class ToolResponseMessage extends AbstractMessage {
 
     private final SequencedMap<String, ExecutionResult> toolExecutionResults;
-    private final Instant time;
 
     public ToolResponseMessage(SequencedMap<String, ExecutionResult> toolExecutionResults, Instant time) {
+        super(time);
         this.toolExecutionResults = new LinkedHashMap<>(toolExecutionResults);
-        this.time = time;
     }
 
     public static ToolResponseMessage of(SequencedMap<String, ExecutionResult> toolExecutionResults) {
-        return new ToolResponseMessage(toolExecutionResults, Message.now());
+        return new ToolResponseMessage(
+                toolExecutionResults,
+                Instant.now().truncatedTo(ChronoUnit.MILLIS)
+        );
     }
 
     @Override
@@ -36,11 +39,6 @@ public class ToolResponseMessage implements Message {
     @Override
     public <T> T accept(MessageVisitor<T> visitor) {
         return visitor.visitToolResponseMessage(this);
-    }
-
-    @Override
-    public Instant getTime() {
-        return time;
     }
 
     public SequencedMap<String, ExecutionResult> getToolExecutionResults() {

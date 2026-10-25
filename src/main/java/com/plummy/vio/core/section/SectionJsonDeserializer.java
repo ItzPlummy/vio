@@ -100,7 +100,7 @@ public class SectionJsonDeserializer {
         Section section = deserialize(json);
 
         if (!sectionClass.isInstance(section)) {
-            throw new JsonParseException("Expected " + sectionClass.getSimpleName() + ", got " + section.getType());
+            throw new JsonParseException("Expected %s, got %s".formatted(sectionClass.getSimpleName(), section.getClass().getSimpleName()));
         }
 
         return sectionClass.cast(section);

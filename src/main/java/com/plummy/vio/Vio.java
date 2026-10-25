@@ -10,7 +10,7 @@ import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.core.access.AccessManager;
 import com.plummy.vio.core.script.ScriptManager;
 import com.plummy.vio.core.storage.ConversationStorage;
-import com.plummy.vio.core.storage.PlayerAccessStorage;
+import com.plummy.vio.core.access.PlayerAccessStorage;
 import com.plummy.vio.core.storage.ScriptStorage;
 import com.plummy.vio.core.tool.BasicToolExecutor;
 import com.plummy.vio.core.tool.ServerToolExecutor;
