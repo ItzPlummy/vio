@@ -5,7 +5,7 @@ import com.plummy.vio.Vio;
 import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.script.*;
-import com.plummy.vio.core.storage.ScriptStorage;
+import com.plummy.vio.core.script.ScriptStorage;
 import com.plummy.vio.core.tool.BasicTool;
 import com.plummy.vio.core.tool.ExecutionResult;
 import com.plummy.vio.core.tool.Requester;

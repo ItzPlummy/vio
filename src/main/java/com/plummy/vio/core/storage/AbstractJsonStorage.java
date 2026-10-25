@@ -8,8 +8,10 @@ import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public abstract class AbstractJsonStorage<K, T extends Storage.Item<K>> implements Storage<K, T> {
 
@@ -21,7 +23,17 @@ public abstract class AbstractJsonStorage<K, T extends Storage.Item<K>> implemen
 
     protected void writeJson(Path path, JsonObject json) {
         try {
-            AtomicFiles.writeString(path, GSON.toJson(json));
+            Path directory = path.getParent();
+            Files.createDirectories(directory);
+
+            Path temporary = Files.createTempFile(directory, path.getFileName().toString(), ".tmp");
+            Files.writeString(temporary, GSON.toJson(json), StandardCharsets.UTF_8);
+
+            try {
+                Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to save " + path, e);
         }

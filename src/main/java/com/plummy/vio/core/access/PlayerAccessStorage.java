@@ -39,12 +39,12 @@ public class PlayerAccessStorage extends JsonFileStorage<UUID, PlayerAccess> {
     }
 
     @Override
-    protected String keyToString(UUID key) {
-        return key.toString();
+    protected UUID keyFromString(String key) {
+        return UUID.fromString(key);
     }
 
     @Override
-    protected UUID keyFromString(String key) {
-        return UUID.fromString(key);
+    protected String keyToString(UUID key) {
+        return key.toString();
     }
 }

@@ -1,17 +1,17 @@
-package com.plummy.vio.core.storage;
+package com.plummy.vio.core.script;
 
 import com.plummy.vio.Vio;
-import com.plummy.vio.core.script.ScriptFile;
-import com.plummy.vio.core.script.ScriptHeader;
-import com.plummy.vio.core.script.ScriptType;
+import com.plummy.vio.core.storage.Storage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -132,7 +132,18 @@ public class ScriptStorage implements Storage<String, ScriptFile> {
         Path path = getPath(value.getName());
 
         try {
-            AtomicFiles.writeString(path, serialize(value));
+            Path directory = path.getParent();
+
+            Files.createDirectories(directory);
+
+            Path temporary = Files.createTempFile(directory, path.getFileName().toString(), ".tmp");
+            Files.writeString(temporary, serialize(value), StandardCharsets.UTF_8);
+
+            try {
+                Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to save " + path, e);
         }

@@ -68,7 +68,7 @@ public abstract class JsonDirectoryStorage<K, T extends Storage.Item<K>> extends
         try {
             return deserialize(readJson(path));
         } catch (IOException | RuntimeException e) {
-            Vio.getLogger().warn("Failed to load {}, ignoring it", path, e);
+            Vio.getLogger().warn("Failed to load %s, ignoring it".formatted(path), e);
             return null;
         }
     }

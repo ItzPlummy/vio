@@ -24,9 +24,9 @@ public abstract class JsonFileStorage<K, T extends Storage.Item<K>> extends Abst
 
     protected abstract T deserialize(K key, JsonObject json);
 
-    protected abstract String keyToString(K key);
-
     protected abstract K keyFromString(String key);
+
+    protected abstract String keyToString(K key);
 
     @Override
     public synchronized T get(K key) {
@@ -74,14 +74,13 @@ public abstract class JsonFileStorage<K, T extends Storage.Item<K>> extends Abst
 
             return loaded;
         } catch (IOException | RuntimeException e) {
-            // The next save rewrites the whole file, so keep the unreadable one instead of silently losing every entry.
             Path broken = file.resolveSibling(file.getFileName() + ".broken");
-            Vio.getLogger().error("Failed to load {}, moving it to {} and starting empty", file, broken, e);
+            Vio.getLogger().error("Failed to load %s, moving it to %s and starting empty".formatted(file, broken), e);
 
             try {
                 Files.move(file, broken, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException moveException) {
-                Vio.getLogger().error("Failed to move {} to {}", file, broken, moveException);
+                Vio.getLogger().error("Failed to move %s to %s".formatted(file, broken), moveException);
             }
 
             return new LinkedHashMap<>();

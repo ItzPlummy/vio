@@ -11,7 +11,7 @@ import com.plummy.vio.core.access.AccessManager;
 import com.plummy.vio.core.script.ScriptManager;
 import com.plummy.vio.core.conversation.ConversationStorage;
 import com.plummy.vio.core.access.PlayerAccessStorage;
-import com.plummy.vio.core.storage.ScriptStorage;
+import com.plummy.vio.core.script.ScriptStorage;
 import com.plummy.vio.core.tool.BasicToolExecutor;
 import com.plummy.vio.core.tool.ServerToolExecutor;
 import com.plummy.vio.listener.AgentListener;

@@ -8,7 +8,7 @@ import com.plummy.vio.core.script.Script;
 import com.plummy.vio.core.script.ScriptHeader;
 import com.plummy.vio.core.script.ScriptManager;
 import com.plummy.vio.core.script.ScriptType;
-import com.plummy.vio.core.storage.ScriptStorage;
+import com.plummy.vio.core.script.ScriptStorage;
 import com.plummy.vio.core.tool.ResultException;
 import com.plummy.vio.core.tool.argument.Arguments;
 import net.minecraft.server.MinecraftServer;

@@ -16,7 +16,6 @@ import com.plummy.vio.Vio;
 import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.core.script.dsl.CommandVioScript;
 import com.plummy.vio.core.script.dsl.ListenerVioScript;
-import com.plummy.vio.core.storage.ScriptStorage;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.synchronization.ArgumentTypeInfos;
