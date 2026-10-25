@@ -75,7 +75,6 @@ public class GetLootTableTool implements ServerTool {
         LootContextParamSet paramSet = table.getParamSet();
         Entity entity = resolved.entity() != null ? resolved.entity() : player;
 
-        // Every parameter the table's context allows that can be filled; the requester stands in as the killer and origin.
         Map<LootContextParam<?>, Object> values = new LinkedHashMap<>();
         values.put(LootContextParams.ORIGIN, player.position());
         values.put(LootContextParams.THIS_ENTITY, entity);
@@ -108,7 +107,6 @@ public class GetLootTableTool implements ServerTool {
         Map<String, int[]> drops = new TreeMap<>();
         RandomSource random = RandomSource.create();
 
-        // Per item: rolls that dropped it, total count, largest count in one roll.
         for (int roll = 0; roll < rolls; roll++) {
             Map<String, Integer> rollCounts = new HashMap<>();
 
@@ -149,14 +147,12 @@ public class GetLootTableTool implements ServerTool {
         return ExecutionResult.success(json);
     }
 
-    // A loot table id, else an entity or block id resolved to its default table.
     private static Source resolve(MinecraftServer server, ServerLevel level, ResourceLocation id, String source) {
         Collection<ResourceLocation> tables = server.reloadableRegistries().getKeys(Registries.LOOT_TABLE);
 
         if (tables.contains(id)) {
             ResourceKey<LootTable> key = ResourceKey.create(Registries.LOOT_TABLE, id);
 
-            // entities/<type> and blocks/<block> tables get a matching entity or block state when one exists.
             if (id.getPath().startsWith("entities/")) {
                 Optional<EntityType<?>> type = BuiltInRegistries.ENTITY_TYPE.getOptional(id.withPath(id.getPath().substring("entities/".length())));
                 return new Source(key, type.map(entityType -> createEntity(entityType, level)).orElse(null), null);
@@ -197,7 +193,6 @@ public class GetLootTableTool implements ServerTool {
         throw ExecutionResultException.invalidArguments("Unknown loot table, entity or block %s".formatted(id));
     }
 
-    // Never added to the level; it only stands in as this_entity.
     private static Entity createEntity(EntityType<?> type, ServerLevel level) {
         return type.create(level);
     }

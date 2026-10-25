@@ -41,6 +41,10 @@ public interface ServerTool extends Tool {
             return server;
         }
 
+        public ToolRequester getToolRequester() {
+            return requester;
+        }
+
         public AccessLevel getAccessLevel() {
             return requester.getAccessLevel();
         }
@@ -63,6 +67,14 @@ public interface ServerTool extends Tool {
             return player;
         }
 
+        public Entity getEntity(EntityReference reference) {
+            return switch (reference) {
+                case PlayerReference player -> getPlayer(player);
+                case UuidReference uuid -> getEntity(uuid);
+                default -> throw new IllegalArgumentException("Unknown entity reference: %s".formatted(reference.getClass().getSimpleName()));
+            };
+        }
+
         public ServerPlayer getPlayer(PlayerReference reference) {
             ServerPlayer player = server.getPlayerList().getPlayerByName(reference.getName());
 
@@ -71,14 +83,6 @@ public interface ServerTool extends Tool {
             }
 
             return player;
-        }
-
-        public Entity getEntity(EntityReference reference) {
-            return switch (reference) {
-                case PlayerReference player -> getPlayer(player);
-                case UuidReference uuid -> getEntity(uuid);
-                default -> throw new IllegalArgumentException("Unknown entity reference: %s".formatted(reference.getClass().getSimpleName()));
-            };
         }
 
         private Entity getEntity(UuidReference reference) {
@@ -105,7 +109,6 @@ public interface ServerTool extends Tool {
             return level;
         }
 
-        // A loaded position inside the build height.
         public void requireLoaded(ServerLevel level, BlockPos pos) {
             if (level.isOutsideBuildHeight(pos)) {
                 throw ExecutionResultException.invalidArguments("y %s is outside the build height of %s (%s to %s)".formatted(pos.getY(), level.dimension().location(), level.getMinBuildHeight(), level.getMaxBuildHeight() - 1));
@@ -116,7 +119,6 @@ public interface ServerTool extends Tool {
             }
         }
 
-        // The whole region inside the build height, with every chunk it touches loaded.
         public void requireLoaded(ServerLevel level, BoundingBox box) {
             if (level.isOutsideBuildHeight(box.minY()) || level.isOutsideBuildHeight(box.maxY())) {
                 throw ExecutionResultException.invalidArguments("y %s to %s is outside the build height of %s (%s to %s)".formatted(box.minY(), box.maxY(), level.dimension().location(), level.getMinBuildHeight(), level.getMaxBuildHeight() - 1));

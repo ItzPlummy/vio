@@ -48,8 +48,8 @@ public class GetStructuresAtTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel level = context.getLevel(arguments.getDimension("dimension"));
-        BlockPos pos = arguments.getBlockPosition("position").toBlockPos();
 
+        BlockPos pos = arguments.getBlockPosition("position").toBlockPos();
         context.requireLoaded(level, pos);
 
         StructureLookup.Result result = StructureLookup.getStructuresAt(level, pos);

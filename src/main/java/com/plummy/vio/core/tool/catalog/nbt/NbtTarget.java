@@ -25,7 +25,6 @@ import net.minecraft.world.level.storage.CommandStorage;
 
 import java.util.*;
 
-// The block entity, entity or command storage an NBT tool addresses, read and written like /data does.
 public class NbtTarget {
 
     private final String description;
@@ -50,7 +49,6 @@ public class NbtTarget {
         }
     }
 
-    // The tags at the path; when nothing matches, the error lists the keys at the deepest part of the path that did.
     static List<Tag> get(CompoundTag root, String path) {
         try {
             return parsePath(path).get(root);
@@ -81,7 +79,6 @@ public class NbtTarget {
         }
     }
 
-    // Path prefixes that end on a node boundary, shortest first: a.b[0].c -> a, a.b, a.b[0].
     private static List<String> getPrefixes(String path) {
         List<String> prefixes = new ArrayList<>();
         int depth = 0;
@@ -108,12 +105,11 @@ public class NbtTarget {
         return prefixes;
     }
 
-    // Key -> "compound[4]", "list[31]", "string", ... for results too large to show whole.
     static Map<String, String> describeKeys(CompoundTag tag) {
         Map<String, String> keys = new LinkedHashMap<>();
 
         for (String key : tag.getAllKeys().stream().sorted().toList()) {
-            keys.put(key, describeType(tag.get(key)));
+            keys.put(key, describeType(Objects.requireNonNull(tag.get(key))));
         }
 
         return keys;
@@ -135,7 +131,6 @@ public class NbtTarget {
         }
     }
 
-    // Entity.load on a player doesn't resync position, abilities, game mode or effects to the client, which is why vanilla refuses it too.
     void requireWritable() {
         if (player) {
             throw ExecutionResultException.invalidArguments("Player data can't be modified through NBT. Use give_player_item, or run_command with /item, /attribute, /effect, /tp, /gamemode or /xp");
@@ -158,7 +153,6 @@ public class NbtTarget {
         return player;
     }
 
-    // What an NBT tool addresses; each kind has its own tool per operation (get_block_nbt, modify_entity_nbt, ...) and its own arguments.
     public enum Kind {
         BLOCK("block", "the block entity at a position") {
             @Override

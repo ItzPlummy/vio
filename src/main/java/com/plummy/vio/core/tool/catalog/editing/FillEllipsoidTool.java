@@ -39,6 +39,7 @@ public class FillEllipsoidTool extends FillTool {
         int rz = arguments.getInt("radius_z", 0, Integer.MAX_VALUE);
 
         return new Shape() {
+
             @Override
             public BoundingBox bounds() {
                 return new BoundingBox(cx - rx, cy - ry, cz - rz, cx + rx, cy + ry, cz + rz);

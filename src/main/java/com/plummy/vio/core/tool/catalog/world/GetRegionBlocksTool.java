@@ -21,7 +21,6 @@ import java.util.SequencedMap;
 
 public class GetRegionBlocksTool implements ServerTool {
 
-    // Marks palette entries whose blocks carry block entity data; read the data with get_block_nbt.
     public static final String BLOCK_ENTITY_MARKER = "{…}";
 
     @Override

@@ -51,6 +51,7 @@ public class GetAdvancementProgressTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         MinecraftServer server = context.getServer();
+
         ServerPlayer player = context.getPlayer(arguments.getPlayerReference("player"));
         ResourceLocation location = arguments.getIdentifier("advancement").getId();
         List<AdvancementHolder> visible = GetAdvancementsTool.getVisible(server);

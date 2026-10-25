@@ -61,6 +61,7 @@ public class FindBlocksTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel level = context.getLevel(arguments.getDimension("dimension"));
+
         BlockPos center = arguments.getBlockPosition("center").toBlockPos();
         BlockPredicate predicate = arguments.getBlockPredicate("block_predicate");
         int radius = arguments.getInt("radius_blocks", 1, 256);
@@ -68,7 +69,6 @@ public class FindBlocksTool implements ServerTool {
 
         context.requireLoaded(level, center);
 
-        // Keeps only the nearest offset + limit matches while counting all of them.
         int keep = page.getOffset() + page.getLimit();
         PriorityQueue<Match> nearest = new PriorityQueue<>(NEAREST_FIRST.reversed());
         int total = 0;
@@ -91,7 +91,6 @@ public class FindBlocksTool implements ServerTool {
                 for (int sectionY = SectionPos.blockToSectionCoord(minY); sectionY <= SectionPos.blockToSectionCoord(maxY); sectionY++) {
                     LevelChunkSection section = chunk.getSection(chunk.getSectionIndexFromSectionY(sectionY));
 
-                    // The palette rules out most sections without looking at a single block.
                     if (section.hasOnlyAir() || !section.getStates().maybeHas(state -> predicate.matchesState(level, state))) {
                         continue;
                     }

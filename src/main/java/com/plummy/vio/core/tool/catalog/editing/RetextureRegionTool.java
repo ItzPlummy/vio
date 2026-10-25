@@ -57,6 +57,7 @@ public class RetextureRegionTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel level = context.getLevel(arguments.getDimension("dimension"));
+
         BoundingBox box = BoundingBox.fromCorners(
                 arguments.getBlockPosition("from").toBlockPos(),
                 arguments.getBlockPosition("to").toBlockPos()
@@ -80,33 +81,21 @@ public class RetextureRegionTool implements ServerTool {
         BuiltInRegistries.BLOCK.keySet().forEach(id -> paths.add(id.toString()));
 
         Map<Block, Optional<Block>> mapping = new LinkedHashMap<>();
-        Set<Block> otherBlocks = new HashSet<>();
         LongArrayList positions = new LongArrayList();
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
         for (BlockPos cell : BlockPos.betweenClosed(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ())) {
             Block block = level.getBlockState(cell).getBlock();
 
-            if (otherBlocks.contains(block)) {
-                continue;
-            }
-
             Optional<Block> target = mapping.get(block);
 
             if (target == null) {
                 target = map(block, from, to, paths);
-
-                if (target == null) {
-                    otherBlocks.add(block);
-                    continue;
-                }
-
                 mapping.put(block, target);
             }
 
-            if (target.isPresent()) {
-                positions.add(cell.asLong());
-            }
+            assert Objects.requireNonNull(target).isPresent();
+            positions.add(cell.asLong());
         }
 
         if (mapping.isEmpty()) {
@@ -123,7 +112,6 @@ public class RetextureRegionTool implements ServerTool {
                 nbt = old.saveWithoutMetadata(level.registryAccess());
             }
 
-            // No neighbor updates: sand doesn't fall and water doesn't flow until something else updates them.
             BlockPlacer.place(level, pos, replacement, nbt, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         }
 
@@ -147,7 +135,6 @@ public class RetextureRegionTool implements ServerTool {
         return ExecutionResult.success(json);
     }
 
-    // null = not this material at all; empty = this material, but no counterpart exists.
     private static Optional<Block> map(Block block, List<String> from, List<String> to, Set<String> ids) {
         ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block);
         List<String> parts = segments(id.getPath());
@@ -167,7 +154,6 @@ public class RetextureRegionTool implements ServerTool {
                 return Optional.of(BuiltInRegistries.BLOCK.get(targetId));
             }
 
-            // With the segment before it, the match names another material (dark_oak for oak), so it isn't this one.
             if (i > 0) {
                 String longer = "%s:%s_%s_".formatted(id.getNamespace(), parts.get(i - 1), String.join("_", from));
 
@@ -179,14 +165,13 @@ public class RetextureRegionTool implements ServerTool {
             return Optional.empty();
         }
 
-        return null;
+        return Optional.empty();
     }
 
     private static List<String> segments(String text) {
         return Arrays.stream(text.strip().toLowerCase(Locale.ROOT).split("_")).filter(part -> !part.isEmpty()).toList();
     }
 
-    // Properties both blocks have, by name and value.
     private static BlockState copyProperties(BlockState from, BlockState to) {
         BlockState result = to;
 
@@ -209,7 +194,6 @@ public class RetextureRegionTool implements ServerTool {
         return property.getValue(value).map(parsed -> state.setValue(property, parsed)).orElse(state);
     }
 
-    // Data carries over only between block entities of the same type, e.g. sign to sign.
     private static boolean isSameBlockEntityType(BlockEntity old, BlockState replacement, BlockPos pos) {
         if (!(replacement.getBlock() instanceof EntityBlock entityBlock)) {
             return false;

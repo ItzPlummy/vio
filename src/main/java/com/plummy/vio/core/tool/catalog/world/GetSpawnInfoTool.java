@@ -35,7 +35,6 @@ public class GetSpawnInfoTool implements ServerTool {
             MobCategory.UNDERGROUND_WATER_CREATURE, MobCategory.WATER_CREATURE, MobCategory.WATER_AMBIENT
     );
 
-    // Monsters roll a light level of 0-7 against the raw light in the overworld; brighter spots never pass.
     private static final int MAX_MONSTER_RAW_LIGHT = 7;
 
     @Override
@@ -67,8 +66,8 @@ public class GetSpawnInfoTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel level = context.getLevel(arguments.getDimension("dimension"));
-        BlockPos pos = arguments.getBlockPosition("position").toBlockPos();
 
+        BlockPos pos = arguments.getBlockPosition("position").toBlockPos();
         context.requireLoaded(level, pos);
 
         Holder<Biome> biome = level.getBiome(pos);
@@ -83,7 +82,6 @@ public class GetSpawnInfoTool implements ServerTool {
         for (MobCategory category : CATEGORIES) {
             WeightedRandomList<MobSpawnSettings.SpawnerData> list = biome.value().getMobSettings().getMobs(category);
 
-            // A structure's own list replaces the biome's for the categories it overrides, within its pieces or whole box.
             for (StructureLookup.Found found : structures.structures()) {
                 StructureSpawnOverride override = found.structure().spawnOverrides().get(category);
 
@@ -140,7 +138,6 @@ public class GetSpawnInfoTool implements ServerTool {
         return ExecutionResult.success(json);
     }
 
-    // Approximates NaturalSpawner and Monster.isDarkEnoughToSpawn, using a zombie as the typical hostile.
     private static boolean checkHostile(ServerLevel level, BlockPos pos, int blockLight, List<String> reasons) {
         boolean possible = true;
         int blockLightLimit = level.dimensionType().monsterSpawnBlockLightLimit();

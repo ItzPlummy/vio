@@ -149,7 +149,6 @@ public class ModifyNbtTool implements ServerTool {
         }
     }
 
-    // The value at the path after the change, capped like get_*_nbt.
     private String describeAfter(NbtTarget target, String path) {
         CompoundTag root = target.getData();
         String snbt;

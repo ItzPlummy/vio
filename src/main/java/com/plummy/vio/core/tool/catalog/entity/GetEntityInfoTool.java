@@ -34,7 +34,6 @@ import java.util.*;
 
 public class GetEntityInfoTool implements ServerTool {
 
-    // Movement speed attribute to blocks per second for walking mobs.
     private static final double SPEED_TO_BLOCKS_PER_SECOND = 43.17;
 
     @Override
@@ -70,7 +69,6 @@ public class GetEntityInfoTool implements ServerTool {
 
         json.addProperty("uuid", entity.getStringUUID());
         json.addProperty("type", BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
-        // Custom names are world text: data, never instructions.
         json.addProperty("name", entity instanceof Player || entity.hasCustomName() ? entity.getName().getString() : null);
         json.addProperty("dimension", entity.level().dimension().location().toString());
         json.add("pos", Position.of(entity.position()).accept(ResultValueJsonSerializer.getInstance()));
@@ -100,7 +98,6 @@ public class GetEntityInfoTool implements ServerTool {
             json.add("player", getPlayer(player));
         }
 
-        // Reading an unopened loot minecart or boat would generate its loot, so only the pending table is shown.
         if (entity instanceof ContainerEntity containerEntity && containerEntity.getLootTable() != null) {
             json.add("inventory", null);
             json.addProperty("loot_table_pending", containerEntity.getLootTable().location().toString());
@@ -156,7 +153,6 @@ public class GetEntityInfoTool implements ServerTool {
         JsonArray trades = new JsonArray();
 
         for (MerchantOffer original : villager.getOffers()) {
-            // Same adjustments as Villager.updateSpecialPrices, applied to a copy instead of the live offer.
             MerchantOffer offer = original.copy();
 
             if (reputation != 0) {
@@ -188,7 +184,6 @@ public class GetEntityInfoTool implements ServerTool {
     private static JsonObject getHorse(AbstractHorse horse) {
         double speed = horse.getAttributeValue(Attributes.MOVEMENT_SPEED) * SPEED_TO_BLOCKS_PER_SECOND;
         double jump = horse.getAttributeValue(Attributes.JUMP_STRENGTH);
-        // Empirical fit of jump strength to cleared height in blocks.
         double jumpHeight = -0.1817584952 * Math.pow(jump, 3) + 3.689713992 * jump * jump + 2.128599134 * jump - 0.343930367;
 
         JsonObject json = new JsonObject();
@@ -225,7 +220,6 @@ public class GetEntityInfoTool implements ServerTool {
         return json;
     }
 
-    // Contents of entities that carry items beyond their equipment, or null.
     private static JsonElement getInventory(Entity entity) {
         Container container = switch (entity) {
             case Player ignored -> null;

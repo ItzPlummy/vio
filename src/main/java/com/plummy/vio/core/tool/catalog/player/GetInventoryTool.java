@@ -51,6 +51,7 @@ public class GetInventoryTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerPlayer player = context.getPlayer(arguments.getPlayerReference("player"));
+
         boolean includeEnderChest = arguments.getBoolean("include_ender_chest");
         Inventory inventory = player.getInventory();
 

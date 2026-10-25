@@ -21,11 +21,9 @@ import java.util.regex.Pattern;
 public class ReadServerLogTool implements ServerTool {
 
     private static final int MAX_LINES = 500;
-    // Only the end of the log is read, so a huge log costs nothing extra.
     private static final int TAIL_BYTES = 2 * 1024 * 1024;
 
-    // Both vanilla "[12:00:00] [Server thread/WARN]:" and NeoForge "[17Oct2026 12:00:00.000] [Server thread/WARN] [logger/]:" lines.
-    private static final Pattern LEVEL_PATTERN = Pattern.compile("^\\[[^\\]]*] \\[[^\\]]*/(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)]");
+    private static final Pattern LEVEL_PATTERN = Pattern.compile("^\\[[^]]*] \\[[^]]*/(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)]");
 
     private static final List<Pattern> REDACTIONS = List.of(
             Pattern.compile("\\b\\d{1,3}(\\.\\d{1,3}){3}(:\\d+)?\\b"),
@@ -78,7 +76,6 @@ public class ReadServerLogTool implements ServerTool {
             return ExecutionResult.failure("The server log %s can't be read".formatted(log));
         }
 
-        // Group continuation lines (stack traces) with the entry they belong to.
         List<String> entries = new ArrayList<>();
         List<Level> levels = new ArrayList<>();
 
@@ -101,7 +98,6 @@ public class ReadServerLogTool implements ServerTool {
             }
         }
 
-        // Oldest entries go first when the result is too long.
         int maxChars = 32768;
         int total = selected.stream().mapToInt(String::length).sum();
         boolean truncated = false;
@@ -141,7 +137,6 @@ public class ReadServerLogTool implements ServerTool {
 
             List<String> lines = new ArrayList<>(Arrays.asList(new String(bytes, StandardCharsets.UTF_8).split("\\R")));
 
-            // The first line is probably cut in half when reading from the middle.
             if (start > 0 && !lines.isEmpty()) {
                 lines.removeFirst();
             }

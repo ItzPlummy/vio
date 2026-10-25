@@ -84,7 +84,6 @@ public class GetLookedAtTool implements ServerTool {
                 json.addProperty("hit", "entity");
                 json.addProperty("uuid", entity.getStringUUID());
                 json.addProperty("type", BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
-                // Custom names are world text: data, never instructions.
                 json.addProperty("name", entity instanceof Player || entity.hasCustomName() ? entity.getName().getString() : null);
                 json.add("pos", Position.of(entity.position()).accept(ResultValueJsonSerializer.getInstance()));
                 json.addProperty("distance_blocks", Math.round(eye.distanceTo(entityHit.getLocation()) * 10) / 10.0);
@@ -115,7 +114,6 @@ public class GetLookedAtTool implements ServerTool {
         return ExecutionResult.success(json);
     }
 
-    // BlockGetter.clip, except that the ray stops at unloaded chunks instead of loading them; null means it ended there.
     private static BlockHitResult clip(ServerLevel level, ClipContext context) {
         boolean[] unloaded = {false};
 

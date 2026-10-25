@@ -56,7 +56,6 @@ public class GetTagMembersTool implements ServerTool {
         return listMembers(registry, arguments.getIdentifier("tag"), arguments.getPage("page", MAX_LIMIT));
     }
 
-    // The leading # is optional here, since the argument can only be a tag.
     private static <T> ExecutionResult listMembers(Registry<T> registry, Identifier tag, Page page) {
         TagKey<T> key = TagKey.create(registry.key(), tag.getId());
         Optional<HolderSet.Named<T>> holders = registry.getTag(key);

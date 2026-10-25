@@ -20,8 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.SequencedMap;
 import java.util.concurrent.ExecutionException;
 
-// save_<type>_script: one per script type, since each has its own arguments. A basic tool, so compiling doesn't hold
-// up the server; only saving the file and swapping the script in happen on the server thread.
 public class SaveScriptTool implements BasicTool {
 
     private static final int MAX_DESCRIPTION_LENGTH = 200;
@@ -49,7 +47,6 @@ public class SaveScriptTool implements BasicTool {
                 + "Example:\n%s").formatted(type, getTypeDescription(), getExample());
     }
 
-    // Each one compiles as is; keep them that way when changing them.
     private String getExample() {
         return switch (type) {
             case ONE_SHOT -> """
@@ -158,7 +155,6 @@ public class SaveScriptTool implements BasicTool {
 
     @Override
     public ExecutionResult execute(ToolRequester requester, Arguments arguments) {
-        // The header records who created the script.
         if (!(requester instanceof PlayerToolRequester player)) {
             return ExecutionResult.failure("Only players can save scripts");
         }
@@ -175,7 +171,6 @@ public class SaveScriptTool implements BasicTool {
             return ExecutionResult.invalidArguments("description must be 1 to %s characters, got %s".formatted(MAX_DESCRIPTION_LENGTH, description.length()));
         }
 
-        // It would end the header comment early.
         if (description.contains("*/")) {
             return ExecutionResult.invalidArguments("description can't contain */");
         }
@@ -212,7 +207,6 @@ public class SaveScriptTool implements BasicTool {
         }
     }
 
-    // On the server thread.
     private static ExecutionResult save(ScriptManager manager, ScriptFile file, CompiledScript compiled, boolean replace) {
         boolean replaced;
 

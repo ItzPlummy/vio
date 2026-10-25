@@ -67,6 +67,7 @@ public class CloneRegionTool implements ServerTool {
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel source = context.getLevel(arguments.getDimension("dimension"));
         ServerLevel destination = context.getLevel(arguments.getDimension("dest_dimension"));
+
         BoundingBox box = BoundingBox.fromCorners(
                 arguments.getBlockPosition("from").toBlockPos(),
                 arguments.getBlockPosition("to").toBlockPos()
@@ -92,7 +93,6 @@ public class CloneRegionTool implements ServerTool {
             return ExecutionResult.invalidArguments("With mode move, the source and destination must not overlap in the same dimension");
         }
 
-        // Snapshot of the source, the same data StructureTemplate.fillFromWorld captures, so an overlapping destination can't overwrite blocks before they're copied.
         List<Long> destPositions = new ArrayList<>();
         List<BlockState> states = new ArrayList<>();
         List<CompoundTag> blockData = new ArrayList<>();
@@ -126,7 +126,6 @@ public class CloneRegionTool implements ServerTool {
         for (Entity entity : sourceEntities) {
             CompoundTag tag = new CompoundTag();
 
-            // Vehicles save their passengers with them; players are never copied.
             if (entity.save(tag)) {
                 tag.put("Pos", vec(Vec3.atLowerCornerOf(destOrigin).add(entity.position().subtract(sourceMin))));
                 removeUuids(tag);
@@ -135,11 +134,9 @@ public class CloneRegionTool implements ServerTool {
         }
 
         for (int i = 0; i < destPositions.size(); i++) {
-            // No neighbor updates: sand doesn't fall and water doesn't flow until something else updates them.
             BlockPlacer.place(destination, pos.set(destPositions.get(i)), states.get(i), blockData.get(i), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         }
 
-        // Entities go in once their blocks are there; with move, the originals leave at the same moment.
         for (CompoundTag tag : entityData) {
             Entity entity = EntityType.loadEntityRecursive(tag, destination, loaded -> loaded);
 
@@ -176,7 +173,6 @@ public class CloneRegionTool implements ServerTool {
         return list;
     }
 
-    // Copies get fresh UUIDs, passengers included, so they never clash with the originals.
     private static void removeUuids(CompoundTag tag) {
         tag.remove("UUID");
 

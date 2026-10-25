@@ -60,12 +60,12 @@ public class FindSafePositionTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel level = context.getLevel(arguments.getDimension("dimension"));
+
         BlockPos target = arguments.getBlockPosition("position").toBlockPos();
         int radius = arguments.getInt("search_radius_blocks", 0, MAX_RADIUS);
 
         context.requireLoaded(level, target);
 
-        // Columns nearest first; once a column is farther away horizontally than the best spot, nothing after it can win.
         List<int[]> columns = new ArrayList<>();
 
         for (int dx = -radius; dx <= radius; dx++) {
@@ -142,7 +142,6 @@ public class FindSafePositionTool implements ServerTool {
         return isFree(level, feet, false) && isFree(level, feet.above(), true);
     }
 
-    // Passable and harmless; the head can't be underwater either.
     private static boolean isFree(ServerLevel level, BlockPos pos, boolean head) {
         BlockState state = level.getBlockState(pos);
 

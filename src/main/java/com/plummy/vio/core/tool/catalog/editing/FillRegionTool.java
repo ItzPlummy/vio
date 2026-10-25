@@ -33,6 +33,7 @@ public class FillRegionTool extends FillTool {
         );
 
         return new Shape() {
+
             @Override
             public BoundingBox bounds() {
                 return box;

@@ -54,6 +54,7 @@ public class GetAdvancementsTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         MinecraftServer server = context.getServer();
+
         ServerPlayer player = context.getPlayer(arguments.getPlayerReference("player"));
         Page page = arguments.getPage("page", MAX_LIMIT);
 
@@ -106,7 +107,6 @@ public class GetAdvancementsTool implements ServerTool {
         return progress;
     }
 
-    // Advancements with a display, recipe unlocks excluded, sorted by id.
     static List<AdvancementHolder> getVisible(MinecraftServer server) {
         return server.getAdvancements().getAllAdvancements().stream()
                 .filter(holder -> holder.value().display().isPresent() && !holder.id().getPath().startsWith("recipes/"))
@@ -114,7 +114,6 @@ public class GetAdvancementsTool implements ServerTool {
                 .toList();
     }
 
-    // Requirement groups (any one criterion completes a group) still unmet.
     private static int countRemaining(AdvancementHolder holder, AdvancementProgress progress) {
         int remaining = 0;
 

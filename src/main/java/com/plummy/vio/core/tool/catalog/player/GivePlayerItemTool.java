@@ -18,7 +18,6 @@ import java.util.SequencedMap;
 
 public class GivePlayerItemTool implements ServerTool {
 
-    // Same cap as /give: 100 stacks.
     private static final int MAX_STACKS = 100;
 
     @Override
@@ -51,6 +50,7 @@ public class GivePlayerItemTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerPlayer player = context.getPlayer(arguments.getPlayerReference("player"));
+
         ItemStack template = arguments.getItemSpec("item").toItemStack(player.serverLevel());
         int maxStackSize = template.getMaxStackSize();
         int count = arguments.getInt("count", 1, maxStackSize * MAX_STACKS);
@@ -72,7 +72,6 @@ public class GivePlayerItemTool implements ServerTool {
                 continue;
             }
 
-            // Overflow drops like /give: pickable at once, only by this player.
             ItemEntity item = player.drop(stack, false);
 
             if (item != null) {

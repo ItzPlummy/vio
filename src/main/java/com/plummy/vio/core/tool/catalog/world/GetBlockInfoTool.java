@@ -62,8 +62,8 @@ public class GetBlockInfoTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel level = context.getLevel(arguments.getDimension("dimension"));
-        BlockPos pos = arguments.getBlockPosition("position").toBlockPos();
 
+        BlockPos pos = arguments.getBlockPosition("position").toBlockPos();
         context.requireLoaded(level, pos);
 
         BlockState state = level.getBlockState(pos);
@@ -82,7 +82,6 @@ public class GetBlockInfoTool implements ServerTool {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         JsonObject blockEntityJson = null;
 
-        // Sign text for signs, slot count for containers, the block entity type otherwise.
         if (blockEntity != null) {
             blockEntityJson = new JsonObject();
             blockEntityJson.addProperty("type", String.valueOf(BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType())));

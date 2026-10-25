@@ -48,6 +48,7 @@ public class GetPlayerStatTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerPlayer player = context.getPlayer(arguments.getPlayerReference("player"));
+
         GetPlayerStatsTool.Category category = arguments.getEnum("category", GetPlayerStatsTool.Category.class);
         ServerStatsCounter counter = player.getStats();
         GetPlayerStatsTool.Entry entry = read(context, counter, category.getType(), category == GetPlayerStatsTool.Category.CUSTOM, arguments.getIdentifier("stat"));

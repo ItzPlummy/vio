@@ -8,13 +8,10 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 import java.util.SequencedMap;
 
-// Cylinders, cones and pyramids: a base centered on (x,y,z) and a height running along an axis.
 public abstract class AxialFillTool extends FillTool {
 
-    // Layers along the axis after the base layer.
     protected abstract int getLength(int height);
 
-    // Whether a cell is inside, from its offsets: a and b across the axis, h along it from the base.
     protected abstract boolean contains(int a, int b, int h, int radius, int height);
 
     @Override
@@ -37,6 +34,7 @@ public abstract class AxialFillTool extends FillTool {
         int length = getLength(height);
 
         return new Shape() {
+
             @Override
             public BoundingBox bounds() {
                 return switch (axis) {

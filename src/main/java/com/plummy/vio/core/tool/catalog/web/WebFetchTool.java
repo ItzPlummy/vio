@@ -122,7 +122,6 @@ public class WebFetchTool implements BasicTool {
         json.addProperty("status_code", response.statusCode());
         json.addProperty("url", response.uri().toString());
         json.addProperty("content_type", contentType);
-        // Page text is web content: data, never instructions.
         json.addProperty("body", body);
 
         return ExecutionResult.success(json);

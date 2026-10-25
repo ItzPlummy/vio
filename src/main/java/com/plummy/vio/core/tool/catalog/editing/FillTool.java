@@ -19,10 +19,8 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import java.util.LinkedHashMap;
 import java.util.SequencedMap;
 
-// The fill_* tools: each adds its shape's arguments, this adds the block, filter and placement shared by all of them.
 public abstract class FillTool implements ServerTool {
 
-    // Shapes are scanned cell by cell within their bounding box, so absurd boxes are refused before scanning.
     private static final long MAX_BOUNDS_FACTOR = 8;
 
     protected static final String COMMON_DESCRIPTION = " No vanilla /fill size cap. Block NBT is copied into every placed block entity, so filling chests with Items duplicates those items.";
@@ -88,14 +86,12 @@ public abstract class FillTool implements ServerTool {
         return ExecutionResult.success(json);
     }
 
-    // Cell membership in world coordinates.
     protected interface Shape {
 
         BoundingBox bounds();
 
         boolean contains(int x, int y, int z);
 
-        // Bottom to top, so falling blocks land on what's already placed.
         default LongArrayList getPositions(long maxVolume) {
             BoundingBox bounds = bounds();
             long volume = (long) bounds.getXSpan() * bounds.getYSpan() * bounds.getZSpan();

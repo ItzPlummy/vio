@@ -4,10 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
 import com.plummy.vio.core.access.AccessLevel;
+import com.plummy.vio.core.tool.ServerTool;
 import com.plummy.vio.core.tool.executor.ExecutionResult;
 import com.plummy.vio.core.tool.executor.ExecutionResultException;
-import com.plummy.vio.core.tool.ServerTool;
-import com.plummy.vio.core.tool.value.argument.*;
+import com.plummy.vio.core.tool.value.argument.ArgumentDefinition;
+import com.plummy.vio.core.tool.value.argument.ArgumentType;
+import com.plummy.vio.core.tool.value.argument.Arguments;
 import com.plummy.vio.core.tool.value.catalog.Identifier;
 import com.plummy.vio.core.tool.value.catalog.Page;
 import com.plummy.vio.core.tool.value.catalog.Position;
@@ -68,6 +70,7 @@ public class FindEntitiesTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel level = context.getLevel(arguments.getDimension("dimension"));
+
         BlockPos pos = arguments.getBlockPosition("center").toBlockPos();
         int radius = arguments.getInt("radius_blocks", 1, 256);
         Predicate<Entity> typeFilter = getTypeFilter(context, arguments.isEmpty("entity_type") ? null : arguments.getIdentifier("entity_type"));
@@ -102,7 +105,6 @@ public class FindEntitiesTool implements ServerTool {
 
         JsonArray results = new JsonArray();
 
-        // Short entries; per-type extras keep them short: items show item + count, tamed mobs tamed_by, villagers profession.
         for (Entity entity : page.apply(entities)) {
             JsonObject result = new JsonObject();
 

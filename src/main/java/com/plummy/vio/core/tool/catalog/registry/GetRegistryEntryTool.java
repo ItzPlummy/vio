@@ -92,7 +92,6 @@ public class GetRegistryEntryTool implements ServerTool {
             return ExecutionResult.success(json);
         }
 
-        // Keep whole top-level keys while they fit, so the result stays valid JSON.
         JsonObject kept = new JsonObject();
         List<String> omitted = new ArrayList<>();
         int length = 2;
@@ -119,7 +118,7 @@ public class GetRegistryEntryTool implements ServerTool {
     private static <T> Codec<T> findCodec(Registry<T> registry) {
         return DataPackRegistriesHooks.getDataPackRegistriesWithDimensions()
                 .filter(data -> data.key().equals(registry.key()))
-                .map(data -> (Codec<T>) ((RegistryDataLoader.RegistryData<?>) data).elementCodec())
+                .map(data -> (Codec<T>) data.elementCodec())
                 .findFirst()
                 .orElse(null);
     }

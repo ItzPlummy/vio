@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.LinkedHashMap;
 import java.util.SequencedMap;
@@ -68,7 +69,6 @@ public class OpenContainerTool implements ServerTool {
             return ExecutionResult.invalidArguments("%s at %s %s %s (%s) isn't a container".formatted(BuiltInRegistries.BLOCK.getKey(state.getBlock()), pos.getX(), pos.getY(), pos.getZ(), level.dimension().location()));
         }
 
-        // Opening generates pending loot, just as opening it in person would.
         if (blockEntity instanceof RandomizableContainer randomizable) {
             randomizable.unpackLootTable(player);
         }
@@ -97,14 +97,14 @@ public class OpenContainerTool implements ServerTool {
         return ExecutionResult.success(json);
     }
 
-    // A menu over the real container that stays open at any distance while the block entity exists.
     private static MenuFactory getFactory(Container container, BlockState state, BlockEntity blockEntity) {
         int size = container.getContainerSize();
 
         if (state.getBlock() instanceof ShulkerBoxBlock) {
             return (id, inventory, owner) -> new ShulkerBoxMenu(id, inventory, container) {
+
                 @Override
-                public boolean stillValid(Player viewer) {
+                public boolean stillValid(@NotNull Player viewer) {
                     return !blockEntity.isRemoved();
                 }
             };
@@ -112,8 +112,9 @@ public class OpenContainerTool implements ServerTool {
 
         if (size == 5) {
             return (id, inventory, owner) -> new HopperMenu(id, inventory, container) {
+
                 @Override
-                public boolean stillValid(Player viewer) {
+                public boolean stillValid(@NotNull Player viewer) {
                     return !blockEntity.isRemoved();
                 }
             };
@@ -121,8 +122,9 @@ public class OpenContainerTool implements ServerTool {
 
         if (size == 9) {
             return (id, inventory, owner) -> new DispenserMenu(id, inventory, container) {
+
                 @Override
-                public boolean stillValid(Player viewer) {
+                public boolean stillValid(@NotNull Player viewer) {
                     return !blockEntity.isRemoved();
                 }
             };
@@ -134,7 +136,6 @@ public class OpenContainerTool implements ServerTool {
 
         int rows = size / 9;
         MenuType<?> type = switch (rows) {
-            case 1 -> MenuType.GENERIC_9x1;
             case 2 -> MenuType.GENERIC_9x2;
             case 3 -> MenuType.GENERIC_9x3;
             case 4 -> MenuType.GENERIC_9x4;
@@ -143,8 +144,9 @@ public class OpenContainerTool implements ServerTool {
         };
 
         return (id, inventory, owner) -> new ChestMenu(type, id, inventory, container, rows) {
+
             @Override
-            public boolean stillValid(Player viewer) {
+            public boolean stillValid(@NotNull Player viewer) {
                 return !blockEntity.isRemoved();
             }
         };

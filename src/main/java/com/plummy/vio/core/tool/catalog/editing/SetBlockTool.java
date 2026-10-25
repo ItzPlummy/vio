@@ -51,6 +51,7 @@ public class SetBlockTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel level = context.getLevel(arguments.getDimension("dimension"));
+
         BlockPos pos = arguments.getBlockPosition("position").toBlockPos();
         BlockSpec block = arguments.getBlockSpec("block");
         BlockState state = block.getState(level);

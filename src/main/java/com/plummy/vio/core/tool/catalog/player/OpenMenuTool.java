@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.LinkedHashMap;
 import java.util.SequencedMap;
@@ -46,23 +47,20 @@ public class OpenMenuTool implements ServerTool {
     public ExecutionResult execute(Context context, Arguments arguments) {
         Menu menu = arguments.getEnum("menu", Menu.class);
         ServerPlayer player = context.getPlayer();
-        // Workstations act at the player's position (returning crafting grid items, spawning grindstone XP); their distance checks are skipped.
         ContainerLevelAccess here = ContainerLevelAccess.create(player.level(), player.blockPosition());
         String opened;
 
         switch (menu) {
             case ENDER_CHEST -> {
                 PlayerEnderChestContainer enderChest = player.getEnderChestInventory();
-
-                // Without an active chest block, the ender chest container never fails its distance check.
-                enderChest.setActiveChest(null);
                 player.openMenu(new SimpleMenuProvider((id, inventory, owner) -> ChestMenu.threeRows(id, inventory, enderChest), Component.translatable("container.enderchest")));
                 opened = "minecraft:ender_chest";
             }
             case CRAFTING_TABLE -> {
                 player.openMenu(new SimpleMenuProvider((id, inventory, owner) -> new CraftingMenu(id, inventory, here) {
+
                     @Override
-                    public boolean stillValid(Player viewer) {
+                    public boolean stillValid(@NotNull Player viewer) {
                         return true;
                     }
                 }, Component.translatable("container.crafting")));
@@ -70,8 +68,9 @@ public class OpenMenuTool implements ServerTool {
             }
             case ANVIL -> {
                 player.openMenu(new SimpleMenuProvider((id, inventory, owner) -> new AnvilMenu(id, inventory, here) {
+
                     @Override
-                    public boolean stillValid(Player viewer) {
+                    public boolean stillValid(@NotNull Player viewer) {
                         return true;
                     }
                 }, Component.translatable("container.repair")));
@@ -79,8 +78,9 @@ public class OpenMenuTool implements ServerTool {
             }
             case STONECUTTER -> {
                 player.openMenu(new SimpleMenuProvider((id, inventory, owner) -> new StonecutterMenu(id, inventory, here) {
+
                     @Override
-                    public boolean stillValid(Player viewer) {
+                    public boolean stillValid(@NotNull Player viewer) {
                         return true;
                     }
                 }, Component.translatable("container.stonecutter")));
@@ -88,8 +88,9 @@ public class OpenMenuTool implements ServerTool {
             }
             case SMITHING_TABLE -> {
                 player.openMenu(new SimpleMenuProvider((id, inventory, owner) -> new SmithingMenu(id, inventory, here) {
+
                     @Override
-                    public boolean stillValid(Player viewer) {
+                    public boolean stillValid(@NotNull Player viewer) {
                         return true;
                     }
                 }, Component.translatable("container.upgrade")));
@@ -97,8 +98,9 @@ public class OpenMenuTool implements ServerTool {
             }
             case LOOM -> {
                 player.openMenu(new SimpleMenuProvider((id, inventory, owner) -> new LoomMenu(id, inventory, here) {
+
                     @Override
-                    public boolean stillValid(Player viewer) {
+                    public boolean stillValid(@NotNull Player viewer) {
                         return true;
                     }
                 }, Component.translatable("container.loom")));
@@ -106,8 +108,9 @@ public class OpenMenuTool implements ServerTool {
             }
             case GRINDSTONE -> {
                 player.openMenu(new SimpleMenuProvider((id, inventory, owner) -> new GrindstoneMenu(id, inventory, here) {
+
                     @Override
-                    public boolean stillValid(Player viewer) {
+                    public boolean stillValid(@NotNull Player viewer) {
                         return true;
                     }
                 }, Component.translatable("container.grindstone_title")));
@@ -115,8 +118,9 @@ public class OpenMenuTool implements ServerTool {
             }
             case CARTOGRAPHY_TABLE -> {
                 player.openMenu(new SimpleMenuProvider((id, inventory, owner) -> new CartographyTableMenu(id, inventory, here) {
+
                     @Override
-                    public boolean stillValid(Player viewer) {
+                    public boolean stillValid(@NotNull Player viewer) {
                         return true;
                     }
                 }, Component.translatable("container.cartography_table")));

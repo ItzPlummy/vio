@@ -12,7 +12,6 @@ final class BlockPlacer {
     private BlockPlacer() {
     }
 
-    // Places one exact state like /setblock: containers are emptied first so replacing them doesn't drop their items. Callers check loading with Context.requireLoaded.
     static void place(ServerLevel level, BlockPos pos, BlockState state, CompoundTag nbt, int flags) {
         Clearable.tryClear(level.getBlockEntity(pos));
         level.setBlock(pos, state, flags);

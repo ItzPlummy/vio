@@ -54,6 +54,7 @@ public class CountBlocksTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel level = context.getLevel(arguments.getDimension("dimension"));
+
         BoundingBox box = BoundingBox.fromCorners(arguments.getBlockPosition("from").toBlockPos(), arguments.getBlockPosition("to").toBlockPos());
         Page page = arguments.getPage("page", MAX_LIMIT);
 

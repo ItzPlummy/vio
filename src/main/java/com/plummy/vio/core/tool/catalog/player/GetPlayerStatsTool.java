@@ -23,7 +23,6 @@ public class GetPlayerStatsTool implements ServerTool {
 
     private static final int MAX_LIMIT = 100;
 
-    // Custom stats counted in ticks, shown in hours.
     private static final Set<String> TIME_STATS = Set.of("play_time", "total_world_time", "time_since_death", "time_since_rest", "sneak_time");
     private static final double TICKS_PER_HOUR = 72000.0;
 
@@ -57,6 +56,7 @@ public class GetPlayerStatsTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerPlayer player = context.getPlayer(arguments.getPlayerReference("player"));
+
         Category category = arguments.getEnum("category", Category.class);
         Page page = arguments.getPage("page", MAX_LIMIT);
         ServerStatsCounter counter = player.getStats();
@@ -115,7 +115,6 @@ public class GetPlayerStatsTool implements ServerTool {
                 return new Entry(id.toString(), Math.round(raw / 10.0) / 10.0, "blocks");
             }
 
-            // Damage stats are stored in tenths of a health point.
             if (path.startsWith("damage_")) {
                 return new Entry(id.toString(), raw / 10.0, "health_points");
             }

@@ -34,8 +34,8 @@ public class FillLineTool extends FillTool {
         BlockPos end = arguments.getBlockPosition("to").toBlockPos();
         LongArrayList cells = step(start, end);
 
-        // Stepped directly instead of scanning its box, which can be huge for a long diagonal line.
         return new Shape() {
+
             @Override
             public BoundingBox bounds() {
                 return BoundingBox.fromCorners(start, end);
@@ -60,7 +60,6 @@ public class FillLineTool extends FillTool {
         };
     }
 
-    // The cells a stepped line visits, one per step along its longest axis.
     private static LongArrayList step(BlockPos start, BlockPos end) {
         int dx = end.getX() - start.getX();
         int dy = end.getY() - start.getY();

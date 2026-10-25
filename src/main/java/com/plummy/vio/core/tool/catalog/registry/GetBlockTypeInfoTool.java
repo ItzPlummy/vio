@@ -64,7 +64,6 @@ public class GetBlockTypeInfoTool implements ServerTool {
             properties.add(property.getName(), getValues(property));
         }
 
-        // The lowest tier not in its incorrect_for_<tier>_tool tag; null when a hand works too.
         String minToolTier = null;
 
         if (state.requiresCorrectToolForDrops()) {

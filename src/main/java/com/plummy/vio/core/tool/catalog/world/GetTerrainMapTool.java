@@ -51,6 +51,7 @@ public class GetTerrainMapTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel level = context.getLevel(arguments.getDimension("dimension"));
+
         int centerX = arguments.getInt("x");
         int centerZ = arguments.getInt("z");
         int radius = arguments.getInt("radius_blocks", 1, 32);
@@ -76,7 +77,6 @@ public class GetTerrainMapTool implements ServerTool {
                     continue;
                 }
 
-                // y of the topmost block the heightmap counts.
                 int surfaceY = chunk.getHeight(heightmap, x & 15, z & 15);
 
                 heights[row][column] = surfaceY;

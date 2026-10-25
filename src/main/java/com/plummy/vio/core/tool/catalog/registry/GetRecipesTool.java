@@ -39,7 +39,6 @@ public class GetRecipesTool implements ServerTool {
     private static final int MAX_LIMIT = 50;
     private static final String BREWING_TYPE = "minecraft:brewing";
 
-    // Special recipes have no listable ingredients; what they make and use is known only for vanilla ones.
     private static final Map<String, SpecialRecipe> SPECIAL_RECIPES = Map.ofEntries(
             Map.entry("minecraft:crafting_special_firework_rocket", new SpecialRecipe(List.of(Items.FIREWORK_ROCKET), List.of(Items.PAPER, Items.GUNPOWDER, Items.FIREWORK_STAR), "Paper plus 1-3 gunpowder (flight duration) plus optional firework stars, shapeless.")),
             Map.entry("minecraft:crafting_special_firework_star", new SpecialRecipe(List.of(Items.FIREWORK_STAR), List.of(Items.GUNPOWDER), "Gunpowder plus at least one dye, optionally a shape modifier (fire charge, gold nugget, head, feather) and diamond (trail) or glowstone dust (twinkle).")),
@@ -132,7 +131,6 @@ public class GetRecipesTool implements ServerTool {
         return ExecutionResult.success(json);
     }
 
-    // null when the recipe doesn't produce or use the item.
     private static JsonObject describe(RegistryAccess registryAccess, RecipeHolder<?> holder, Item item, ItemStack stack, Direction direction) {
         Recipe<?> recipe = holder.value();
         String typeId = String.valueOf(BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType()));
@@ -227,7 +225,6 @@ public class GetRecipesTool implements ServerTool {
         json.add("key", key);
     }
 
-    // The first letter of the item's name when free, e.g. I for iron_ingot, otherwise the next free letter.
     private static char pickSymbol(String description, Collection<Character> used) {
         String path = description.substring(description.indexOf(':') + 1);
 
@@ -248,7 +245,6 @@ public class GetRecipesTool implements ServerTool {
         return '?';
     }
 
-    // Smithing ingredients aren't exposed, so they're read from the recipe's own codec.
     private static void addSmithing(JsonObject json, RegistryAccess registryAccess, SmithingRecipe recipe) {
         JsonElement encoded = Recipe.CODEC.encodeStart(RegistryOps.create(JsonOps.INSTANCE, registryAccess), recipe).result().orElse(null);
 
@@ -281,24 +277,22 @@ public class GetRecipesTool implements ServerTool {
         return value;
     }
 
-    // An item id, "#tag [first members, ...]", or "one of [...]".
     private static JsonPrimitive describe(Ingredient ingredient) {
         String prefix = "one of";
         List<String> members = new ArrayList<>();
         Ingredient.Value[] values = ingredient.isCustom() ? new Ingredient.Value[0] : ingredient.getValues();
 
-        if (values.length == 1 && values[0] instanceof Ingredient.ItemValue itemValue) {
-            return new JsonPrimitive(BuiltInRegistries.ITEM.getKey(itemValue.item().getItem()).toString());
+        if (values.length == 1 && values[0] instanceof Ingredient.ItemValue(ItemStack item)) {
+            return new JsonPrimitive(BuiltInRegistries.ITEM.getKey(item.getItem()).toString());
         }
 
-        if (values.length == 1 && values[0] instanceof Ingredient.TagValue tagValue) {
-            prefix = "#%s".formatted(tagValue.tag().location());
+        if (values.length == 1 && values[0] instanceof Ingredient.TagValue(TagKey<Item> tag)) {
+            prefix = "#%s".formatted(tag.location());
 
-            for (Holder<Item> holder : BuiltInRegistries.ITEM.getTagOrEmpty(tagValue.tag())) {
+            for (Holder<Item> holder : BuiltInRegistries.ITEM.getTagOrEmpty(tag)) {
                 members.add(holder.unwrapKey().map(key -> key.location().toString()).orElse("unknown"));
             }
         } else {
-            // Distinct items in the ingredient's own order.
             Arrays.stream(ingredient.getItems()).map(stack -> BuiltInRegistries.ITEM.getKey(stack.getItem()).toString()).distinct().forEach(members::add);
 
             if (members.size() == 1) {
@@ -311,7 +305,6 @@ public class GetRecipesTool implements ServerTool {
         return new JsonPrimitive("%s [%s%s]".formatted(prefix, shown, members.size() > INGREDIENT_MEMBERS_SHOWN ? ", ..." : ""));
     }
 
-    // Brewing isn't in the recipe manager, so every potion bottle is tried with every brewing ingredient through the public mix API, which covers modded mixes too.
     private static List<JsonObject> getBrewing(PotionBrewing brewing, Item item, Direction direction) {
         List<Item> reagents = BuiltInRegistries.ITEM.stream()
                 .filter(candidate -> brewing.isIngredient(new ItemStack(candidate)))

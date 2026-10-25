@@ -79,13 +79,11 @@ public class SearchRegistryTool implements ServerTool {
         return ExecutionResult.success(json);
     }
 
-    // Spaces match underscores, so "diamond sword" finds minecraft:diamond_sword.
     private static <T> List<Match> search(Registry<T> registry, String query) {
         List<Match> matches = new ArrayList<>();
 
         for (T value : registry) {
             String id = String.valueOf(registry.getKey(value));
-            // English display name, or null. A dedicated server only has en_us, so names are English regardless of the client.
             String name = switch (value) {
                 case Item item -> item.getDescription().getString();
                 case Block block -> block.getName().getString();
@@ -100,7 +98,6 @@ public class SearchRegistryTool implements ServerTool {
                 }
             };
 
-            // Untranslated entries echo their key back, which is not a name.
             if (name != null && name.contains(".") && !name.contains(" ")) {
                 name = null;
             }

@@ -49,7 +49,6 @@ public class RunCommandTool implements ServerTool {
         return AccessLevel.FULL;
     }
 
-    // Commands that must not be reachable through this tool, such as /vio access, check for this source.
     public static boolean isToolSource(CommandSourceStack source) {
         return source.source instanceof OutputCollector;
     }
@@ -71,7 +70,6 @@ public class RunCommandTool implements ServerTool {
         boolean[] success = {false};
         int[] result = {0};
 
-        // Level 2 regardless of the player's real level; output goes to the collector instead of chat or ops.
         CommandSourceStack source = player.createCommandSourceStack()
                 .withSource(output)
                 .withPermission(Commands.LEVEL_GAMEMASTERS)
@@ -103,7 +101,6 @@ public class RunCommandTool implements ServerTool {
         return ExecutionResult.success(json);
     }
 
-    // Collects what the command would print. Failures arrive red-styled through the same channel, so they're told apart by style.
     private static class OutputCollector implements CommandSource {
 
         private final List<String> output = new ArrayList<>();

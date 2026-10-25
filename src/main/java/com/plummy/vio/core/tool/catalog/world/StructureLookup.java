@@ -15,13 +15,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-// Structures containing a position, read only from loaded chunks. StructureManager would load the chunks holding structure starts, which tools never do.
 final class StructureLookup {
 
     private StructureLookup() {
     }
 
-    // The position's chunk must be loaded; starts in unloaded chunks are counted in unloadedStarts instead.
     static Result getStructuresAt(ServerLevel level, BlockPos pos) {
         LevelChunk chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
         List<Found> found = new ArrayList<>();

@@ -58,8 +58,8 @@ public class GetContainerContentsTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ServerLevel level = context.getLevel(arguments.getDimension("dimension"));
-        BlockPos pos = arguments.getBlockPosition("position").toBlockPos();
 
+        BlockPos pos = arguments.getBlockPosition("position").toBlockPos();
         context.requireLoaded(level, pos);
 
         BlockState state = level.getBlockState(pos);
@@ -76,7 +76,6 @@ public class GetContainerContentsTool implements ServerTool {
         if (state.getBlock() instanceof ChestBlock chest && state.getValue(ChestBlock.TYPE) != ChestType.SINGLE) {
             BlockPos otherPos = pos.relative(ChestBlock.getConnectedDirection(state));
 
-            // Combining looks up the other half, which must not load its chunk.
             if (level.isLoaded(otherPos)) {
                 Container combined = ChestBlock.getContainer(chest, state, level, pos, true);
 
@@ -94,7 +93,6 @@ public class GetContainerContentsTool implements ServerTool {
         json.addProperty("double", isDouble);
         json.addProperty("slots_total", container.getContainerSize());
 
-        // Reading the items of an unopened loot container generates its loot, so it's never read.
         for (BlockEntity part : parts) {
             if (part instanceof RandomizableContainer randomizable && randomizable.getLootTable() != null) {
                 json.add("items", new JsonArray());

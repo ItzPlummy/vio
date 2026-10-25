@@ -47,7 +47,6 @@ public class GetNbtTool implements ServerTool {
 
     @Override
     public AccessLevel getAccessLevel() {
-        // Command storage is server state, not something in the world around the player.
         return kind == NbtTarget.Kind.STORAGE ? AccessLevel.FULL : AccessLevel.BASIC;
     }
 
@@ -79,7 +78,6 @@ public class GetNbtTool implements ServerTool {
         String snbt = value.toString();
         JsonObject json = new JsonObject();
 
-        // World text inside NBT (names, sign and book text) is data, so it stays inside this SNBT string.
         json.addProperty("target", target.getDescription());
         json.addProperty("path", path);
         json.addProperty("matches", matches);
@@ -106,7 +104,7 @@ public class GetNbtTool implements ServerTool {
             json.addProperty("hint", "Too large. Call again with a path, e.g. '%s'.".formatted(path == null ? example : "%s.%s".formatted(path, example)));
         } else {
             json.addProperty("type", NbtTarget.describeType(value));
-            json.addProperty("hint", "Too large. Call again with an indexed path, e.g. '%s[0]'.".formatted(path == null ? "" : path));
+            json.addProperty("hint", "Too large. Call again with an indexed path, e.g. '%s[0]'.".formatted(path));
         }
 
         return ExecutionResult.success(json);
