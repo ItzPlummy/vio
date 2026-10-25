@@ -1,18 +1,10 @@
 package com.plummy.vio.client.screen;
 
-import com.plummy.vio.client.BoxRenderer;
-import com.plummy.vio.client.GlyphRenderer;
-import com.plummy.vio.client.ShimmerRenderer;
-import com.plummy.vio.client.TextLine;
-import com.plummy.vio.client.Theme;
+import com.plummy.vio.client.*;
 import com.plummy.vio.client.conversation.ClientConversation;
 import com.plummy.vio.client.markdown.InlineMarkdown;
 import com.plummy.vio.client.markdown.MarkdownLayout;
-import com.plummy.vio.client.message.ClientMessage;
-import com.plummy.vio.client.message.ClientMessageType;
-import com.plummy.vio.client.message.PlayerMessage;
-import com.plummy.vio.client.message.StatusMessage;
-import com.plummy.vio.client.message.ThoughtMessage;
+import com.plummy.vio.client.message.*;
 import net.minecraft.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;

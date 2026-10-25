@@ -23,7 +23,7 @@
   "vio.voice.error.speech": "Не удалось озвучить ответ.",
   "vio.voice.listening": "Слушаю...",
   "vio.voice.no_audio": "Нет звука: проверь микрофон или push-to-talk",
-  "vio.voice.transcribing": "Расшифровываю...",
+  "vio.voice.transcribing": "Перевожу...",
   "vio.voice.placeholder.capturing": "Нажми %s, чтобы отправить",
   "vio.voice.cancel": "Отмена (%s)",
   "vio.voice.unavailable.unsupported": "Этот сервер не поддерживает голос для Vio.",

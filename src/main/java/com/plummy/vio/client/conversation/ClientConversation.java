@@ -14,7 +14,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ClientConversation {
 

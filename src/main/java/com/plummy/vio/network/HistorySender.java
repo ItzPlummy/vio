@@ -2,11 +2,11 @@ package com.plummy.vio.network;
 
 import com.plummy.vio.Vio;
 import com.plummy.vio.agent.Agent;
-import com.plummy.vio.conversation.Conversation;
-import com.plummy.vio.message.*;
+import com.plummy.vio.core.conversation.Conversation;
+import com.plummy.vio.core.message.*;
+import com.plummy.vio.core.section.SectionContentSerializer;
+import com.plummy.vio.core.storage.ConversationStorage;
 import com.plummy.vio.network.payload.HistoryPayload;
-import com.plummy.vio.section.SectionContentSerializer;
-import com.plummy.vio.storage.ConversationStorage;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;

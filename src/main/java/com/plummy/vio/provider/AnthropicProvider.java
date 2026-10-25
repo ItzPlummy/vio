@@ -2,24 +2,23 @@ package com.plummy.vio.provider;
 
 import com.google.gson.*;
 import com.plummy.vio.Vio;
-import com.plummy.vio.access.AccessLevel;
-import com.plummy.vio.conversation.Conversation;
-import com.plummy.vio.message.*;
-import com.plummy.vio.registry.ToolRegistry;
-import com.plummy.vio.section.SectionContentSerializer;
-import com.plummy.vio.tool.ExecutionRequest;
-import com.plummy.vio.tool.ExecutionResult;
-import com.plummy.vio.tool.ExecutionStatus;
-import com.plummy.vio.tool.Tool;
-import com.plummy.vio.tool.argument.ArgumentSchemaJsonSerializer;
-import com.plummy.vio.tool.argument.Arguments;
+import com.plummy.vio.core.access.AccessLevel;
+import com.plummy.vio.core.conversation.Conversation;
+import com.plummy.vio.core.message.*;
+import com.plummy.vio.core.section.SectionContentSerializer;
+import com.plummy.vio.core.tool.*;
+import com.plummy.vio.core.tool.argument.ArgumentSchemaJsonSerializer;
+import com.plummy.vio.core.tool.argument.Arguments;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SequencedMap;
 
 public class AnthropicProvider implements Provider {
 

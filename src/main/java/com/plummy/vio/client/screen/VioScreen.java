@@ -1,11 +1,7 @@
 package com.plummy.vio.client.screen;
 
 import com.mojang.blaze3d.platform.Window;
-import com.plummy.vio.client.BoxRenderer;
-import com.plummy.vio.client.FrameRenderer;
-import com.plummy.vio.client.GlyphRenderer;
-import com.plummy.vio.client.KeyMappings;
-import com.plummy.vio.client.Theme;
+import com.plummy.vio.client.*;
 import com.plummy.vio.client.conversation.ClientConversation;
 import com.plummy.vio.client.hud.IconRenderer;
 import com.plummy.vio.client.message.ClientMessage;
@@ -15,8 +11,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Whence;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.sounds.SoundEvents;
