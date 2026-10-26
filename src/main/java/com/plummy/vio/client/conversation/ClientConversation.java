@@ -3,6 +3,7 @@ package com.plummy.vio.client.conversation;
 import com.plummy.vio.agent.SubmitResult;
 import com.plummy.vio.client.StatusPlaceholders;
 import com.plummy.vio.client.message.*;
+import com.plummy.vio.config.AgentLimits;
 import com.plummy.vio.network.payload.*;
 import com.plummy.vio.voice.VoiceAvailability;
 import com.plummy.vio.voice.VoiceState;
@@ -139,7 +140,7 @@ public class ClientConversation {
         String text = request.strip();
 
         // Not while talking: the live bubble is the pending request until the capture is sent.
-        if (text.isEmpty() || text.length() > PlayerRequestPayload.MAX_LENGTH || isBusy() || isCapturing() || voiceState == VoiceState.TRANSCRIBING) {
+        if (text.isEmpty() || text.length() > AgentLimits.MAX_REQUEST_LENGTH || isBusy() || isCapturing() || voiceState == VoiceState.TRANSCRIBING) {
             return false;
         }
 

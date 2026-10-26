@@ -1,5 +1,6 @@
 package com.plummy.vio.network.payload;
 
+import com.plummy.vio.config.AgentLimits;
 import com.plummy.vio.network.Networking;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -14,14 +15,12 @@ import java.util.List;
 
 public class HistoryPayload implements CustomPacketPayload {
 
-    public static final int MAX_ENTRIES = 200;
-
     private static final Type<HistoryPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("vio", "history"));
 
     private static final StreamCodec<RegistryFriendlyByteBuf, HistoryPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL,
             HistoryPayload::isBusy,
-            Entry.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_ENTRIES)),
+            Entry.STREAM_CODEC.apply(ByteBufCodecs.list(AgentLimits.MAX_HISTORY_ENTRIES)),
             HistoryPayload::getEntries,
             HistoryPayload::new
     );

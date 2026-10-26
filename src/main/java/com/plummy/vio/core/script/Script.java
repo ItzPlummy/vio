@@ -1,96 +1,44 @@
 package com.plummy.vio.core.script;
 
-// A loaded script: its file, compiled class and runtime-only state.
-public abstract class Script {
+import com.plummy.vio.core.script.dsl.CompiledScript;
+import com.plummy.vio.core.storage.Storage;
 
-    private ScriptFile file;
-    // Null when the script doesn't compile.
-    private final CompiledScript compiled;
-    private final ScriptLog log = new ScriptLog();
-    // Why the script is ERRORED, or null.
-    private String error;
-    private int failures;
+import java.time.Instant;
+import java.util.UUID;
 
-    protected Script(ScriptFile file, CompiledScript compiled, String error) {
-        this.file = file;
-        this.compiled = compiled;
-        this.error = error;
-    }
+public interface Script extends Storage.Item<String> {
 
-    public static Script create(ScriptFile file, CompiledScript compiled, String error) {
-        return switch (file.getHeader().getType()) {
-            case ONE_SHOT -> new OneShotScript(file, compiled, error);
-            case PERIODIC -> new PeriodicScript(file, compiled, error);
-            case LISTENER -> new ListenerScript(file, compiled, error);
-            case COMMAND -> new CommandScript(file, compiled, error);
-        };
-    }
+    ScriptType getType();
 
-    public String getName() {
-        return file.getName();
-    }
+    String getName();
 
-    public ScriptType getType() {
-        return getHeader().getType();
-    }
+    String getDescription();
 
-    public ScriptFile getFile() {
-        return file;
-    }
+    ScriptState getState();
 
-    // Only after the new file is saved, e.g. when toggled.
-    void setFile(ScriptFile file) {
-        this.file = file;
-    }
+    UUID getCreator();
 
-    public ScriptHeader getHeader() {
-        return file.getHeader();
-    }
+    Instant getCreatedAt();
 
-    public String getSource() {
-        return file.getSource();
-    }
+    String getSource();
 
-    public CompiledScript getCompiled() {
-        return compiled;
-    }
+    void compile();
 
-    public ScriptLog getLog() {
-        return log;
-    }
+    boolean isCompiled();
 
-    public String getError() {
-        return error;
-    }
+    CompiledScript newInstance();
 
-    void setError(String error) {
-        this.error = error;
-    }
+    ScriptLog getLog();
 
-    // Consecutive failures since the last success.
-    int recordFailure() {
-        return ++failures;
-    }
+    String getError();
 
-    void resetFailures() {
-        failures = 0;
-    }
+    void setError(String error);
 
-    public ScriptState getState() {
-        if (error != null) {
-            return ScriptState.ERRORED;
-        }
+    int recordFailure();
 
-        if (this instanceof Toggleable toggleable && !toggleable.isEnabled()) {
-            return ScriptState.DISABLED;
-        }
+    void resetFailures();
 
-        return ScriptState.ENABLED;
-    }
+    void dispose();
 
-    public void close() {
-        if (compiled != null) {
-            compiled.close();
-        }
-    }
+    <T> T accept(ScriptVisitor<T> visitor);
 }

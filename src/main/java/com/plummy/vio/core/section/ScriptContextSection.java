@@ -20,7 +20,7 @@ public class ScriptContextSection implements Section {
         List<Entry> scripts = new ArrayList<>();
 
         for (Script script : manager.getAll()) {
-            scripts.add(new Entry(script.getName(), script.getType(), script.getState(), script.getHeader().getDescription()));
+            scripts.add(new Entry(script.getName(), script.getType(), script.getState(), script.getDescription()));
         }
 
         return new ScriptContextSection(scripts);

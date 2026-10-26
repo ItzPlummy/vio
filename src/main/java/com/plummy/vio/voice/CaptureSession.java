@@ -1,5 +1,6 @@
 package com.plummy.vio.voice;
 
+import com.plummy.vio.config.VoiceLimits;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -7,11 +8,6 @@ import java.util.UUID;
 // everything else happens on the server thread, so all access is synchronized.
 public class CaptureSession {
 
-    // RMS of a 16-bit frame above which it counts as speech. Voice chat has already removed most noise.
-    private static final double SPEECH_LEVEL = 400;
-    private static final long NO_AUDIO_MILLIS = 1000;
-    // Nothing said for this long cancels the capture.
-    private static final long NO_SPEECH_MILLIS = 5000;
     // Kept around the speech, so the first and last sounds aren't clipped.
     private static final int SPEECH_PADDING = VoiceChat.SAMPLE_RATE / 5;
     private static final int INITIAL_CAPACITY = VoiceChat.SAMPLE_RATE * 5;
@@ -66,7 +62,7 @@ public class CaptureSession {
 
         System.arraycopy(frame, 0, samples, length, frame.length);
 
-        if (getLevel(frame) >= SPEECH_LEVEL) {
+        if (getLevel(frame) >= VoiceLimits.SPEECH_LEVEL) {
             if (speechStart < 0) {
                 speechStart = length;
             }
@@ -87,7 +83,7 @@ public class CaptureSession {
     }
 
     public synchronized boolean isWithoutAudio(long nowMillis) {
-        return lastFrameMillis < 0 && nowMillis - startMillis >= NO_AUDIO_MILLIS;
+        return lastFrameMillis < 0 && nowMillis - startMillis >= VoiceLimits.NO_AUDIO_MILLIS;
     }
 
     public synchronized boolean isFinished(long nowMillis) {
@@ -96,7 +92,7 @@ public class CaptureSession {
         }
 
         if (lastSpeechMillis < 0) {
-            return nowMillis - startMillis >= NO_SPEECH_MILLIS;
+            return nowMillis - startMillis >= VoiceLimits.NO_SPEECH_MILLIS;
         }
 
         return nowMillis - lastSpeechMillis >= silenceMillis;

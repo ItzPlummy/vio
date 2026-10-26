@@ -3,31 +3,40 @@ package com.plummy.vio.core.script;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.commands.CommandSourceStack;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.time.Instant;
+import java.util.UUID;
 
 public class CommandScript extends AbstractToggleableScript {
 
-    // Null while the script isn't active.
-    private Registration registration;
+    public static final int MAX_PERMISSION_LEVEL = 4;
 
-    public CommandScript(ScriptFile file, CompiledScript compiled, String error) {
-        super(file, compiled, error);
+    private final int permissionLevel;
+    private LiteralCommandNode<CommandSourceStack> node;
+
+    public CommandScript(String name, String description, UUID creator, Instant createdAt, int permissionLevel, boolean enabled, UUID toggledBy, Instant toggledAt, String source) {
+        super(name, description, creator, createdAt, enabled, toggledBy, toggledAt, source);
+        this.permissionLevel = permissionLevel;
+    }
+
+    @Override
+    public ScriptType getType() {
+        return ScriptType.COMMAND;
+    }
+
+    @Override
+    public <T> T accept(ScriptVisitor<T> visitor) {
+        return visitor.visitCommandScript(this);
     }
 
     public int getPermissionLevel() {
-        return getHeader().getPermissionLevel();
+        return permissionLevel;
     }
 
-    Registration getRegistration() {
-        return registration;
+    LiteralCommandNode<CommandSourceStack> getNode() {
+        return node;
     }
 
-    void setRegistration(Registration registration) {
-        this.registration = registration;
-    }
-
-    // The node Vio built and added to the dispatcher. Its requirement checks active, which hides the command even if
-    // the node can't be removed.
-    record Registration(LiteralCommandNode<CommandSourceStack> node, AtomicBoolean active) {
+    void setNode(LiteralCommandNode<CommandSourceStack> node) {
+        this.node = node;
     }
 }

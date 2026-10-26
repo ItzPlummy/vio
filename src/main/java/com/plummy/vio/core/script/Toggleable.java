@@ -1,7 +1,15 @@
 package com.plummy.vio.core.script;
 
-// A script that can be enabled and disabled; the choice is saved in its header.
-public interface Toggleable {
+import java.time.Instant;
+import java.util.UUID;
+
+public interface Toggleable extends Script {
 
     boolean isEnabled();
+
+    void setEnabled(boolean enabled, UUID toggledBy, Instant toggledAt);
+
+    UUID getToggledBy();
+
+    Instant getToggledAt();
 }

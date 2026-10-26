@@ -1,13 +1,46 @@
 package com.plummy.vio.core.script;
 
-public abstract class AbstractToggleableScript extends Script implements Toggleable {
+import java.time.Instant;
+import java.util.UUID;
 
-    protected AbstractToggleableScript(ScriptFile file, CompiledScript compiled, String error) {
-        super(file, compiled, error);
+public abstract class AbstractToggleableScript extends AbstractScript implements Toggleable {
+
+    private boolean enabled;
+    private UUID toggledBy;
+    private Instant toggledAt;
+
+    protected AbstractToggleableScript(String name, String description, UUID creator, Instant createdAt, boolean enabled, UUID toggledBy, Instant toggledAt, String source) {
+        super(name, description, creator, createdAt, source);
+        this.enabled = enabled;
+        this.toggledBy = toggledBy;
+        this.toggledAt = toggledAt;
     }
 
     @Override
     public boolean isEnabled() {
-        return getHeader().isEnabled();
+        return enabled;
+    }
+
+    @Override
+    public void setEnabled(boolean enabled, UUID toggledBy, Instant toggledAt) {
+        this.enabled = enabled;
+        this.toggledBy = toggledBy;
+        this.toggledAt = toggledAt;
+    }
+
+    @Override
+    public UUID getToggledBy() {
+        return toggledBy;
+    }
+
+    @Override
+    public Instant getToggledAt() {
+        return toggledAt;
+    }
+
+    @Override
+    public ScriptState getState() {
+        ScriptState state = super.getState();
+        return state == ScriptState.ENABLED && !enabled ? ScriptState.DISABLED : state;
     }
 }

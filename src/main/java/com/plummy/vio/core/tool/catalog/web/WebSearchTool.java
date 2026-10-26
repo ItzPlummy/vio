@@ -3,6 +3,7 @@ package com.plummy.vio.core.tool.catalog.web;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.plummy.vio.Vio;
+import com.plummy.vio.config.Endpoints;
 import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.tool.BasicTool;
 import com.plummy.vio.core.tool.executor.ExecutionResult;
@@ -29,8 +30,6 @@ import java.util.Set;
 
 public class WebSearchTool implements BasicTool {
 
-    private static final String SEARCH_URL = "https://html.duckduckgo.com/html/";
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
     private static final int MAX_RESULTS = 10;
 
     @Override
@@ -66,9 +65,9 @@ public class WebSearchTool implements BasicTool {
             return ExecutionResult.invalidArguments("Search query can't be empty");
         }
 
-        HttpRequest request = HttpRequest.newBuilder(URI.create(SEARCH_URL))
+        HttpRequest request = HttpRequest.newBuilder(URI.create(Endpoints.WEB_SEARCH_URL))
                 .timeout(Duration.ofSeconds(5))
-                .header("User-Agent", USER_AGENT)
+                .header("User-Agent", Endpoints.WEB_SEARCH_USER_AGENT)
                 .header("Accept", "text/html")
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString("q=%s".formatted(URLEncoder.encode(query, StandardCharsets.UTF_8))))
@@ -92,7 +91,7 @@ public class WebSearchTool implements BasicTool {
             return ExecutionResult.failure("Couldn't search: HTTP status %s".formatted(response.statusCode()));
         }
 
-        Document document = Jsoup.parse(response.body(), SEARCH_URL);
+        Document document = Jsoup.parse(response.body(), Endpoints.WEB_SEARCH_URL);
 
         if (document.selectFirst(".anomaly-modal, #challenge-form") != null) {
             return ExecutionResult.failure("Search was rate limited by DuckDuckGo, try again later");

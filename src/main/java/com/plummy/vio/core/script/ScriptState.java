@@ -4,7 +4,6 @@ public enum ScriptState {
 
     ENABLED("enabled"),
     DISABLED("disabled"),
-    // Failed to compile, or disabled after repeated failures. Never saved: it's worked out again on every load.
     ERRORED("errored");
 
     private final String value;

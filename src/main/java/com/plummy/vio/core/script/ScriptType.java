@@ -2,13 +2,9 @@ package com.plummy.vio.core.script;
 
 public enum ScriptType {
 
-    // Saved and run on demand; the script body is the action.
     ONE_SHOT("one_shot"),
-    // Runs every interval_ticks while enabled, and on demand.
     PERIODIC("periodic"),
-    // Handles NeoForge events declared with on(...) while enabled.
     LISTENER("listener"),
-    // Adds one server command, declared with command(...), while enabled.
     COMMAND("command");
 
     private final String value;

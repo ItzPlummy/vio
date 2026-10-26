@@ -1,19 +1,12 @@
 package com.plummy.vio.core.script;
 
-import com.plummy.vio.core.script.dsl.VioScript;
+import com.plummy.vio.core.script.dsl.CompiledScript;
 import net.minecraft.server.MinecraftServer;
 
-// A script whose body is an action that can be run on demand.
-public interface Executable {
+public interface Executable extends Script {
 
-    CompiledScript getCompiled();
-
-    ScriptLog getLog();
-
-    // Runs the body once on a fresh instance, so nothing carries over between runs. No budget or error handling:
-    // ScriptManager adds those.
     default Object execute(MinecraftServer server) {
-        VioScript instance = getCompiled().newInstance();
+        CompiledScript instance = newInstance();
 
         instance.init(server, getLog());
         return instance.run();

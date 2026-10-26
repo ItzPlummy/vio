@@ -1,6 +1,7 @@
 package com.plummy.vio.voice.transformer;
 
 import com.plummy.vio.Vio;
+import com.plummy.vio.config.Endpoints;
 import net.neoforged.fml.loading.FMLPaths;
 
 import java.io.IOException;
@@ -18,9 +19,6 @@ import java.util.zip.ZipFile;
 // They aren't bundled (they'd make every client's jar much bigger); they're downloaded on first use, or can be placed by hand.
 public final class SherpaOnnx {
 
-    // Must match sherpa_onnx_version in gradle.properties: the native libraries have to fit the bundled Java API.
-    private static final String VERSION = "1.13.8";
-    private static final String NATIVE_URI = "https://github.com/k2-fsa/sherpa-onnx/releases/download/v%1$s/sherpa-onnx-native-lib-%2$s-%1$s.jar";
     private static final String NATIVE_PATH_PROPERTY = "sherpa_onnx.native.path";
     private static final String[] NATIVE_LIBRARIES = {"onnxruntime", "sherpa-onnx-jni"};
 
@@ -52,14 +50,14 @@ public final class SherpaOnnx {
 
     private static Path prepareNatives() {
         NativePlatform platform = NativePlatform.detect();
-        Path directory = getDirectory().resolve("native").resolve(VERSION).resolve(platform.getClassifier());
+        Path directory = getDirectory().resolve("native").resolve(Endpoints.SHERPA_ONNX_VERSION).resolve(platform.getClassifier());
 
         if (hasNatives(directory)) {
             return directory;
         }
 
         Path jar = directory.resolve("natives.jar");
-        FileDownloader.download(URI.create(NATIVE_URI.formatted(VERSION, platform.getClassifier())), jar, platform.getSha256());
+        FileDownloader.download(URI.create(Endpoints.SHERPA_ONNX_NATIVE_URI.formatted(Endpoints.SHERPA_ONNX_VERSION, platform.getClassifier())), jar, platform.getSha256());
 
         try {
             extractNatives(jar, directory, platform);

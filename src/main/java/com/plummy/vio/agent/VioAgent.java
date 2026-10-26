@@ -1,6 +1,7 @@
 package com.plummy.vio.agent;
 
 import com.plummy.vio.Vio;
+import com.plummy.vio.config.AgentLimits;
 import com.plummy.vio.config.Instructions;
 import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.access.AccessManager;
@@ -34,10 +35,6 @@ import java.util.function.BiConsumer;
 
 public class VioAgent implements Agent {
 
-    private static final int MAX_ROUNDS = 15;
-    private static final int WORKER_THREADS = 4;
-    private static final long PLAYER_LOOKUP_TIMEOUT_SECONDS = 5;
-
     private final Provider provider;
     private final Storage<UUID, Conversation> conversationStorage;
     private final AccessManager accessManager;
@@ -47,7 +44,7 @@ public class VioAgent implements Agent {
     private final List<AgentListener> listeners;
 
     private final ExecutorService worker = Executors.newFixedThreadPool(
-            WORKER_THREADS,
+            AgentLimits.WORKER_THREADS,
             runnable -> {
                 Thread thread = new Thread(runnable, "vio_agent");
                 thread.setDaemon(true);
@@ -147,7 +144,7 @@ public class VioAgent implements Agent {
 
             conversation.addMessage(message);
 
-            for (int round = 0; round < MAX_ROUNDS; round++) {
+            for (int round = 0; round < AgentLimits.MAX_ROUNDS; round++) {
                 Message response = provider.request(accessLevel, instructions.getText(), conversation);
                 conversation.addMessage(response);
 
@@ -169,7 +166,7 @@ public class VioAgent implements Agent {
                 }
             }
 
-            notify(server, playerId, (listener, player) -> listener.onError(player, error("max_rounds", MAX_ROUNDS)));
+            notify(server, playerId, (listener, player) -> listener.onError(player, error("max_rounds", AgentLimits.MAX_ROUNDS)));
         } catch (ProviderException e) {
             Vio.getLogger().error("Failed to process the request of %s".formatted(playerId), e);
             notify(server, playerId, (listener, player) -> listener.onError(player, error("provider")));
@@ -205,7 +202,7 @@ public class VioAgent implements Agent {
         }
 
         try {
-            return server.submit(() -> server.getPlayerList().getPlayer(playerId)).get(PLAYER_LOOKUP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            return server.submit(() -> server.getPlayerList().getPlayer(playerId)).get(AgentLimits.PLAYER_LOOKUP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;

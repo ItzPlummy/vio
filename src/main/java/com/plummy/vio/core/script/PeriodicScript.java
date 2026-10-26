@@ -1,30 +1,43 @@
 package com.plummy.vio.core.script;
 
+import java.time.Instant;
+import java.util.UUID;
+
 public class PeriodicScript extends AbstractToggleableScript implements Executable {
 
-    // Runtime only: after a restart the first run is one interval away again, with no catching up.
-    private int ticksUntilRun;
+    private int ticks;
+    private final int intervalTicks;
 
-    public PeriodicScript(ScriptFile file, CompiledScript compiled, String error) {
-        super(file, compiled, error);
-        resetSchedule();
+    public PeriodicScript(String name, String description, UUID creator, Instant createdAt, int intervalTicks, boolean enabled, UUID toggledBy, Instant toggledAt, String source) {
+        super(name, description, creator, createdAt, enabled, toggledBy, toggledAt, source);
+        this.intervalTicks = intervalTicks;
+        reset();
+    }
+
+    @Override
+    public ScriptType getType() {
+        return ScriptType.PERIODIC;
+    }
+
+    @Override
+    public <T> T accept(ScriptVisitor<T> visitor) {
+        return visitor.visitPeriodicScript(this);
     }
 
     public int getIntervalTicks() {
-        return getHeader().getIntervalTicks();
+        return intervalTicks;
     }
 
-    void resetSchedule() {
-        ticksUntilRun = getIntervalTicks();
+    void reset() {
+        ticks = intervalTicks;
     }
 
-    // Counts down one tick; true when a run is due.
     boolean tick() {
-        if (--ticksUntilRun > 0) {
+        if (--ticks > 0) {
             return false;
         }
 
-        resetSchedule();
+        reset();
         return true;
     }
 }

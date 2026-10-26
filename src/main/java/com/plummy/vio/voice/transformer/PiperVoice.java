@@ -1,5 +1,6 @@
 package com.plummy.vio.voice.transformer;
 
+import com.plummy.vio.config.Endpoints;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,6 @@ public enum PiperVoice {
             "en_dict", "ru_dict", "lang/zle/ru"
     );
 
-    private static final String REPOSITORY_URI = "https://huggingface.co/csukuangfj/vits-piper-%s/resolve/%s/%s";
     private static final String DATA_DIRECTORY = "espeak-ng-data";
     private static final List<String> COMMON_DATA_FILES = List.of("phontab", "phonindex", "phondata", "intonations");
     // Every voice's repository holds the same espeak-ng data.
@@ -110,7 +110,7 @@ public enum PiperVoice {
     }
 
     public URI getUri(String file) {
-        return URI.create(REPOSITORY_URI.formatted(name, revision, file));
+        return URI.create(Endpoints.PIPER_REPOSITORY_URI.formatted(name, revision, file));
     }
 
     public URI getDataUri(String file) {

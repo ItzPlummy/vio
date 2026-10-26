@@ -1,5 +1,6 @@
 package com.plummy.vio.voice.transformer;
 
+import com.plummy.vio.config.Endpoints;
 import java.net.URI;
 
 // Multilingual Whisper models converted for sherpa-onnx, pinned to a Hugging Face revision and checked by SHA-256.
@@ -26,10 +27,6 @@ public enum WhisperModel {
             "4cbe7b22fa9026b843b60a68640c747de05bafb1a11b57edc0e66c232d9f33a9",
             "acad50b5c782696e91b55914cc5ab4f756f1532f76e22aa6fc615f39fb69a8ee"
     );
-
-    // Every size shares the same tokens.
-    private static final String TOKENS_SHA256 = "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126";
-    private static final String REPOSITORY_URI = "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-%s/resolve/%s/%s";
 
     private final String value;
     private final String size;
@@ -80,11 +77,11 @@ public enum WhisperModel {
     }
 
     public String getTokensSha256() {
-        return TOKENS_SHA256;
+        return Endpoints.WHISPER_TOKENS_SHA256;
     }
 
     public URI getUri(String file) {
-        return URI.create(REPOSITORY_URI.formatted(size, revision, file));
+        return URI.create(Endpoints.WHISPER_REPOSITORY_URI.formatted(size, revision, file));
     }
 
     @Override

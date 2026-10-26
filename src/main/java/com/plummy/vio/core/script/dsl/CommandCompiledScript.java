@@ -3,9 +3,7 @@ package com.plummy.vio.core.script.dsl;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 
-// Base class of command scripts. The body only declares one command with command(...); Vio registers it while the
-// script is enabled, adding the script's permission level and wrapping every executes.
-public abstract class CommandVioScript extends VioScript {
+public abstract class CommandCompiledScript extends CompiledScript {
 
     private LiteralArgumentBuilder<CommandSourceStack> command;
 

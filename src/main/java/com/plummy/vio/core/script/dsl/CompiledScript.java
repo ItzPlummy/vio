@@ -4,14 +4,11 @@ import com.plummy.vio.core.script.ScriptLog;
 import groovy.lang.Script;
 import net.minecraft.server.MinecraftServer;
 
-// Base class of every script: what a script can use besides the server's own API. Output goes to the script's
-// log instead of the console.
-public abstract class VioScript extends Script {
+public abstract class CompiledScript extends Script {
 
     private MinecraftServer server;
     private ScriptLog log;
 
-    // Called by Vio before the script body runs.
     public void init(MinecraftServer server, ScriptLog log) {
         this.server = server;
         this.log = log;
@@ -19,10 +16,6 @@ public abstract class VioScript extends Script {
 
     public MinecraftServer getServer() {
         return server;
-    }
-
-    public ScriptLog getLog() {
-        return log;
     }
 
     @Override

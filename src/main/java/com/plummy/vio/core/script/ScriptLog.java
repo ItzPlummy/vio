@@ -1,19 +1,14 @@
 package com.plummy.vio.core.script;
 
+import com.plummy.vio.config.ScriptLimits;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 
-// The latest output and errors of one script, kept in memory only. Synchronized, since a script may log from
-// threads of its own.
 public class ScriptLog {
 
-    private static final int CAPACITY = 200;
-    private static final int MAX_MESSAGE_LENGTH = 1000;
-
     private final Deque<Entry> entries = new ArrayDeque<>();
-    // Every entry ever added, so callers can tell which entries arrived after a point.
     private long added;
 
     public void info(String message) {
@@ -29,9 +24,9 @@ public class ScriptLog {
     }
 
     public synchronized void add(Level level, String message) {
-        String text = message.length() > MAX_MESSAGE_LENGTH ? "%s ...".formatted(message.substring(0, MAX_MESSAGE_LENGTH)) : message;
+        String text = message.length() > ScriptLimits.MAX_LOG_MESSAGE_LENGTH ? "%s ...".formatted(message.substring(0, ScriptLimits.MAX_LOG_MESSAGE_LENGTH)) : message;
 
-        if (entries.size() == CAPACITY) {
+        if (entries.size() == ScriptLimits.LOG_CAPACITY) {
             entries.removeFirst();
         }
 
@@ -39,17 +34,14 @@ public class ScriptLog {
         added++;
     }
 
-    // Oldest first.
     public synchronized List<Entry> getEntries() {
         return List.copyOf(entries);
     }
 
-    // A point to pass to getEntriesSince.
     public synchronized long mark() {
         return added;
     }
 
-    // Entries added after the mark that are still kept, oldest first.
     public synchronized List<Entry> getEntriesSince(long mark) {
         List<Entry> all = List.copyOf(entries);
         int count = (int) Math.min(all.size(), added - mark);

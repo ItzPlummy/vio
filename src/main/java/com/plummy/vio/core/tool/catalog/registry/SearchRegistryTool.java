@@ -102,7 +102,6 @@ public class SearchRegistryTool implements ServerTool {
                 name = null;
             }
 
-
             if (id.contains(query.replace(' ', '_')) || name != null && name.toLowerCase(Locale.ROOT).contains(query)) {
                 matches.add(new Match(id, name));
             }

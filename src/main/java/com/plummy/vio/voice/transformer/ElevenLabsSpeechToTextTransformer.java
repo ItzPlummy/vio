@@ -4,6 +4,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.plummy.vio.Vio;
+import com.plummy.vio.config.Endpoints;
+import com.plummy.vio.config.VoiceLimits;
 import com.plummy.vio.voice.VoiceChat;
 
 import java.io.ByteArrayOutputStream;
@@ -24,9 +26,6 @@ import java.util.UUID;
 // Scribe, in the cloud: the whole capture in one request, with the language detected. Short phrases are often
 // detected as some other language, so when Scribe isn't sure, the capture is transcribed again as the game's language.
 public class ElevenLabsSpeechToTextTransformer implements SpeechToTextTransformer {
-
-    private static final String ELEVENLABS_URI = "https://api.elevenlabs.io/v1/speech-to-text";
-    private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
     // Raw 16-bit little-endian mono PCM at this rate is the one format sent without a container.
     private static final String FILE_FORMAT = "pcm_s16le_16";
@@ -105,8 +104,8 @@ public class ElevenLabsSpeechToTextTransformer implements SpeechToTextTransforme
         body.addFile("file", "speech.pcm", pcm);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(ELEVENLABS_URI))
-                .timeout(TIMEOUT)
+                .uri(URI.create(Endpoints.ELEVENLABS_SPEECH_TO_TEXT_URI))
+                .timeout(VoiceLimits.REQUEST_TIMEOUT)
                 .header("Content-Type", "multipart/form-data; boundary=%s".formatted(boundary))
                 .header("xi-api-key", getApiKey())
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body.build()))

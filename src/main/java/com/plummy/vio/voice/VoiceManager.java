@@ -4,6 +4,7 @@ import com.plummy.vio.Vio;
 import com.plummy.vio.agent.Agent;
 import com.plummy.vio.agent.SubmitResult;
 import com.plummy.vio.config.ServerConfig;
+import com.plummy.vio.config.VoiceLimits;
 import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.message.Message;
 import com.plummy.vio.network.Networking;
@@ -32,8 +33,6 @@ import java.util.concurrent.TimeUnit;
 // Captures, transcription results and replies all change state on the server thread; only the transformers run on
 // their workers, and only microphone frames arrive on voice chat's thread, straight into their CaptureSession.
 public class VoiceManager {
-
-    private static final long SHUTDOWN_TIMEOUT_SECONDS = 5;
 
     private final SpeechToTextTransformer speechToText;
     private final TextToSpeechTransformer textToSpeech;
@@ -87,13 +86,13 @@ public class VoiceManager {
 
         // A model may still be in use by a running transcription or synthesis, so it's released only once that ends.
         try {
-            if (speechToTextWorker.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            if (speechToTextWorker.awaitTermination(VoiceLimits.SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 speechToText.release();
             } else {
                 Vio.getLogger().warn("Speech to text didn't stop in time, its model isn't released");
             }
 
-            if (textToSpeechWorker.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            if (textToSpeechWorker.awaitTermination(VoiceLimits.SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 textToSpeech.release();
             } else {
                 Vio.getLogger().warn("Text to speech didn't stop in time, its voices aren't released");

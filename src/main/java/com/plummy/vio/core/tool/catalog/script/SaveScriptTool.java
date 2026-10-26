@@ -2,10 +2,10 @@ package com.plummy.vio.core.tool.catalog.script;
 
 import com.google.gson.JsonObject;
 import com.plummy.vio.Vio;
+import com.plummy.vio.config.ScriptLimits;
 import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.script.*;
-import com.plummy.vio.core.script.ScriptStorage;
 import com.plummy.vio.core.tool.BasicTool;
 import com.plummy.vio.core.tool.executor.ExecutionResult;
 import com.plummy.vio.core.tool.requester.PlayerToolRequester;
@@ -18,12 +18,10 @@ import net.minecraft.server.MinecraftServer;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.SequencedMap;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 public class SaveScriptTool implements BasicTool {
-
-    private static final int MAX_DESCRIPTION_LENGTH = 200;
-    private static final int MAX_SOURCE_LENGTH = 65536;
 
     private final ScriptType type;
 
@@ -111,13 +109,13 @@ public class SaveScriptTool implements BasicTool {
                     + "Only concrete NeoForge game events work: not abstract ones like PlayerEvent itself, mod loading events or client events. Handlers don't see events another mod already canceled. "
                     + "Common events, in net.neoforged.neoforge.event: entity.player.PlayerEvent.PlayerLoggedInEvent, PlayerRespawnEvent and ItemCraftedEvent; entity.player.PlayerInteractEvent.RightClickBlock; level.BlockEvent.BreakEvent and EntityPlaceEvent; entity.living.LivingDeathEvent and LivingIncomingDamageEvent; entity.EntityJoinLevelEvent; ServerChatEvent. Import the outer class for nested ones, as in the example. "
                     + "Each handler call runs on the server thread within %s ms, declaring within %s ms; after %s failures in a row the script is disabled. Prefer rare, specific events: frequent ones like every entity's tick cost a call each time.")
-                    .formatted(ServerConfig.LISTENER_BUDGET_MILLIS.get(), 100, ServerConfig.MAX_FAILURES.get());
+                    .formatted(ServerConfig.LISTENER_BUDGET_MILLIS.get(), ScriptLimits.DECLARE_BUDGET_MILLIS, ServerConfig.MAX_FAILURES.get());
             case COMMAND -> ("The script body only declares the command, and runs whenever the script is enabled (also when it's saved enabled and when the server starts): command(Commands.literal('name')...) exactly once, with Brigadier builder calls chained inside the parentheses as in the example; .executes takes a closure { ctx -> ...; return 1 }. "
                     + "Import net.minecraft.commands.Commands and the argument types (com.mojang.brigadier.arguments.*, net.minecraft.commands.arguments.*); item and block arguments take CommandBuildContext.simple(server.registryAccess(), server.worldData.enabledFeatures()). "
                     + "The name is 1 to 32 lowercase letters, digits and underscores and can't be an existing command. permission_level decides who can use it, so .requires is ignored; redirect, fork and custom argument types aren't supported. "
                     + "Executes and suggestions run on the server thread within %s ms per call, declaring within %s ms; after %s failures in a row the script is disabled. For errors meant for the player, throw a CommandSyntaxException or call ctx.source.sendFailure(...): those aren't failures. "
                     + "The command runs with full server authority whoever types it, so choose permission_level deliberately.")
-                    .formatted(ServerConfig.COMMAND_BUDGET_MILLIS.get(), 100, ServerConfig.MAX_FAILURES.get());
+                    .formatted(ServerConfig.COMMAND_BUDGET_MILLIS.get(), ScriptLimits.DECLARE_BUDGET_MILLIS, ServerConfig.MAX_FAILURES.get());
         };
     }
 
@@ -127,10 +125,10 @@ public class SaveScriptTool implements BasicTool {
 
         schema.put("status", ArgumentDefinition.status());
         schema.put("name", new ArgumentDefinition(ArgumentType.STRING, "Script name, also its file name: %s.".formatted(ScriptStorage.NAME_RULE)));
-        schema.put("description", new ArgumentDefinition(ArgumentType.STRING, "What the script does, one line of up to %s characters.".formatted(MAX_DESCRIPTION_LENGTH)));
+        schema.put("description", new ArgumentDefinition(ArgumentType.STRING, "What the script does, one line of up to %s characters.".formatted(ScriptLimits.MAX_DESCRIPTION_LENGTH)));
 
         if (type == ScriptType.PERIODIC) {
-            schema.put("interval_ticks", new ArgumentDefinition(ArgumentType.INTEGER, "Ticks between runs, %s to %s; 20 ticks = 1 second.".formatted(ScriptHeader.MIN_INTERVAL_TICKS, ScriptHeader.MAX_INTERVAL_TICKS)));
+            schema.put("interval_ticks", new ArgumentDefinition(ArgumentType.INTEGER, "Ticks between runs, %s to %s; 20 ticks = 1 second.".formatted(ScriptLimits.MIN_INTERVAL_TICKS, ScriptLimits.MAX_INTERVAL_TICKS)));
         }
 
         if (type == ScriptType.COMMAND) {
@@ -162,42 +160,47 @@ public class SaveScriptTool implements BasicTool {
         ScriptManager manager = ScriptTools.getManager();
         String name = ScriptTools.getName(arguments);
         String description = arguments.getString("description").replaceAll("\\R", " ").strip();
-        Integer intervalTicks = type == ScriptType.PERIODIC ? arguments.getInt("interval_ticks", ScriptHeader.MIN_INTERVAL_TICKS, ScriptHeader.MAX_INTERVAL_TICKS) : null;
-        Integer permissionLevel = type == ScriptType.COMMAND ? arguments.getInt("permission_level", 0, ScriptHeader.MAX_PERMISSION_LEVEL) : null;
+        Integer intervalTicks = type == ScriptType.PERIODIC ? arguments.getInt("interval_ticks", ScriptLimits.MIN_INTERVAL_TICKS, ScriptLimits.MAX_INTERVAL_TICKS) : null;
+        Integer permissionLevel = type == ScriptType.COMMAND ? arguments.getInt("permission_level", 0, CommandScript.MAX_PERMISSION_LEVEL) : null;
         String source = arguments.getString("source");
         boolean replace = arguments.getBoolean("replace");
 
-        if (description.isEmpty() || description.length() > MAX_DESCRIPTION_LENGTH) {
-            return ExecutionResult.invalidArguments("description must be 1 to %s characters, got %s".formatted(MAX_DESCRIPTION_LENGTH, description.length()));
+        if (description.isEmpty() || description.length() > ScriptLimits.MAX_DESCRIPTION_LENGTH) {
+            return ExecutionResult.invalidArguments("description must be 1 to %s characters, got %s".formatted(ScriptLimits.MAX_DESCRIPTION_LENGTH, description.length()));
         }
 
         if (description.contains("*/")) {
             return ExecutionResult.invalidArguments("description can't contain */");
         }
 
-        if (source.isBlank() || source.length() > MAX_SOURCE_LENGTH) {
-            return ExecutionResult.invalidArguments("source must be 1 to %s characters, got %s".formatted(MAX_SOURCE_LENGTH, source.length()));
+        if (source.isBlank() || source.length() > ScriptLimits.MAX_SOURCE_LENGTH) {
+            return ExecutionResult.invalidArguments("source must be 1 to %s characters, got %s".formatted(ScriptLimits.MAX_SOURCE_LENGTH, source.length()));
         }
 
-        CompiledScript compiled;
+        UUID creator = player.getPlayerId();
+        Instant createdAt = Instant.now();
+        Script script = switch (type) {
+            case ONE_SHOT -> new OneShotScript(name, description, creator, createdAt, source);
+            case PERIODIC -> new PeriodicScript(name, description, creator, createdAt, intervalTicks, true, creator, createdAt, source);
+            case LISTENER -> new ListenerScript(name, description, creator, createdAt, true, creator, createdAt, source);
+            case COMMAND -> new CommandScript(name, description, creator, createdAt, permissionLevel, true, creator, createdAt, source);
+        };
 
-        try {
-            compiled = ScriptCompiler.compile(name, type, source);
-        } catch (ScriptException e) {
-            return ExecutionResult.invalidArguments("%s\nNothing was saved, and any previous version is unchanged".formatted(e.getMessage()));
+        script.compile();
+
+        if (!script.isCompiled()) {
+            return ExecutionResult.invalidArguments("%s\nNothing was saved, and any previous version is unchanged".formatted(script.getError()));
         }
 
-        ScriptHeader header = new ScriptHeader(type, description, intervalTicks, permissionLevel, true, player.getPlayerId(), Instant.now(), null, null);
-        ScriptFile file = new ScriptFile(name, header, source);
         MinecraftServer server = manager.getServer();
 
         if (!server.isRunning()) {
-            compiled.close();
+            script.dispose();
             return ExecutionResult.failure("Server isn't running");
         }
 
         try {
-            return server.submit(() -> save(manager, file, compiled, replace)).get();
+            return server.submit(() -> save(manager, script, replace)).get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return ExecutionResult.failure("Execution interrupted");
@@ -207,16 +210,15 @@ public class SaveScriptTool implements BasicTool {
         }
     }
 
-    private static ExecutionResult save(ScriptManager manager, ScriptFile file, CompiledScript compiled, boolean replace) {
+    private static ExecutionResult save(ScriptManager manager, Script script, boolean replace) {
         boolean replaced;
 
         try {
-            replaced = manager.save(file, compiled, replace);
+            replaced = manager.save(script, replace);
         } catch (ScriptException e) {
             return ExecutionResult.invalidArguments(e.getMessage());
         }
 
-        Script script = manager.get(file.getName());
         JsonObject json = new JsonObject();
 
         json.addProperty("name", script.getName());

@@ -2,6 +2,7 @@ package com.plummy.vio.core.tool.catalog.script;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.plummy.vio.config.ScriptLimits;
 import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.script.Script;
 import com.plummy.vio.core.script.ScriptLog;
@@ -16,8 +17,6 @@ import java.util.List;
 import java.util.SequencedMap;
 
 public class ReadScriptLogTool implements ServerTool {
-
-    private static final int MAX_LINES = 200;
 
     @Override
     public String getName() {
@@ -53,7 +52,7 @@ public class ReadScriptLogTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         Script script = ScriptTools.getScript(ScriptTools.getManager(), arguments);
-        int lines = arguments.getInt("lines", 1, MAX_LINES);
+        int lines = arguments.getInt("lines", 1, ScriptLimits.MAX_LOG_LINES);
         List<ScriptLog.Entry> entries = script.getLog().getEntries();
         List<ScriptLog.Entry> selected = entries.subList(Math.max(0, entries.size() - lines), entries.size());
         JsonArray entriesJson = new JsonArray();

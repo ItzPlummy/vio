@@ -2,6 +2,8 @@ package com.plummy.vio.voice.transformer;
 
 import com.google.gson.JsonObject;
 import com.plummy.vio.Vio;
+import com.plummy.vio.config.Endpoints;
+import com.plummy.vio.config.VoiceLimits;
 import com.plummy.vio.voice.VoiceChat;
 
 import java.io.IOException;
@@ -17,9 +19,7 @@ import java.time.Duration;
 
 public class ElevenLabsTextToSpeechTransformer implements TextToSpeechTransformer {
 
-    private static final String ELEVENLABS_URI = "https://api.elevenlabs.io/v1/text-to-speech/";
     private static final String PCM_FORMAT_PREFIX = "pcm_";
-    private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
     private final String voiceId;
     private final String model;
@@ -68,8 +68,8 @@ public class ElevenLabsTextToSpeechTransformer implements TextToSpeechTransforme
         }
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("%s%s?output_format=%s".formatted(ELEVENLABS_URI, URLEncoder.encode(getVoiceId(), StandardCharsets.UTF_8), getOutputFormat())))
-                .timeout(TIMEOUT)
+                .uri(URI.create("%s%s?output_format=%s".formatted(Endpoints.ELEVENLABS_TEXT_TO_SPEECH_URI, URLEncoder.encode(getVoiceId(), StandardCharsets.UTF_8), getOutputFormat())))
+                .timeout(VoiceLimits.REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .header("xi-api-key", getApiKey())
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))

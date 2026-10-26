@@ -13,6 +13,7 @@ public class ServerConfig {
 
     public static final ModConfigSpec.ConfigValue<String> OPENAI_MODEL;
     public static final ModConfigSpec.ConfigValue<String> ANTHROPIC_MODEL;
+    public static final ModConfigSpec.ConfigValue<String> OLLAMA_URI;
     public static final ModConfigSpec.ConfigValue<String> OLLAMA_MODEL;
     public static final ModConfigSpec.IntValue OLLAMA_CONTEXT_LENGTH;
 
@@ -60,6 +61,10 @@ public class ServerConfig {
         builder.pop();
 
         builder.push("ollama");
+        OLLAMA_URI = builder
+                .comment("Chat endpoint of the Ollama server. Use 127.0.0.1 rather than localhost: Ollama listens on IPv4 only, and Java may resolve localhost to ::1 first")
+                .define("uri", "http://127.0.0.1:11434/api/chat");
+
         OLLAMA_MODEL = builder
                 .comment("Model ID for Ollama provider")
                 .define("model", "qwen3.5:4b");

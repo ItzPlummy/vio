@@ -2,6 +2,7 @@ package com.plummy.vio.provider;
 
 import com.google.gson.*;
 import com.plummy.vio.Vio;
+import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.conversation.Conversation;
 import com.plummy.vio.core.message.*;
@@ -21,9 +22,6 @@ import java.net.http.HttpResponse;
 import java.util.*;
 
 public class OllamaProvider implements Provider {
-
-    // Not localhost: Ollama listens on IPv4 only, and the JVM may resolve localhost to ::1 first.
-    private static final String OLLAMA_URI = "http://127.0.0.1:11434/api/chat";
 
     private final String model;
     private final int contextLength;
@@ -50,7 +48,7 @@ public class OllamaProvider implements Provider {
     @Override
     public Message request(AccessLevel accessLevel, String instructions, Conversation conversation) {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(OLLAMA_URI))
+                .uri(URI.create(ServerConfig.OLLAMA_URI.get()))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, conversation).toString()))
                 .build();

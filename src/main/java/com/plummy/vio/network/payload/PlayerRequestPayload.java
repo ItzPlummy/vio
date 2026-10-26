@@ -1,5 +1,6 @@
 package com.plummy.vio.network.payload;
 
+import com.plummy.vio.config.AgentLimits;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -9,12 +10,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class PlayerRequestPayload implements CustomPacketPayload {
 
-    public static final int MAX_LENGTH = 1000;
-
     private static final Type<PlayerRequestPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("vio", "player_request"));
 
     private static final StreamCodec<RegistryFriendlyByteBuf, PlayerRequestPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.stringUtf8(MAX_LENGTH),
+            ByteBufCodecs.stringUtf8(AgentLimits.MAX_REQUEST_LENGTH),
             PlayerRequestPayload::getRequest,
             PlayerRequestPayload::new
     );

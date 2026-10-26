@@ -2,6 +2,7 @@ package com.plummy.vio.provider;
 
 import com.google.gson.*;
 import com.plummy.vio.Vio;
+import com.plummy.vio.config.Endpoints;
 import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.conversation.Conversation;
 import com.plummy.vio.core.message.*;
@@ -24,7 +25,6 @@ import java.util.*;
 public class OpenAIProvider implements Provider {
 
     private static final OpenAIMessageJsonSerializer OPENAI_MESSAGE_JSON_SERIALIZER = new OpenAIMessageJsonSerializer();
-    private static final String OPENAI_URI = "https://api.openai.com/v1/responses";
 
     private final String model;
     private final String apiKey;
@@ -51,7 +51,7 @@ public class OpenAIProvider implements Provider {
     @Override
     public Message request(AccessLevel accessLevel, String instructions, Conversation conversation) {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(OPENAI_URI))
+                .uri(URI.create(Endpoints.OPENAI_URI))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer %s".formatted(getApiKey()))
                 .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, conversation).toString()))

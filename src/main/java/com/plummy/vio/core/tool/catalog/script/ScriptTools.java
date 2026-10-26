@@ -4,11 +4,7 @@ import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
 import com.plummy.vio.Vio;
 import com.plummy.vio.config.ServerConfig;
-import com.plummy.vio.core.script.Script;
-import com.plummy.vio.core.script.ScriptHeader;
-import com.plummy.vio.core.script.ScriptManager;
-import com.plummy.vio.core.script.ScriptType;
-import com.plummy.vio.core.script.ScriptStorage;
+import com.plummy.vio.core.script.*;
 import com.plummy.vio.core.tool.executor.ExecutionResultException;
 import com.plummy.vio.core.tool.value.argument.Arguments;
 import net.minecraft.server.MinecraftServer;
@@ -60,29 +56,31 @@ public final class ScriptTools {
     }
 
     public static JsonObject describe(MinecraftServer server, Script script) {
-        ScriptHeader header = script.getHeader();
         JsonObject json = new JsonObject();
 
         json.addProperty("name", script.getName());
-        json.addProperty("type", header.getType().getValue());
+        json.addProperty("type", script.getType().getValue());
         json.addProperty("state", script.getState().getValue());
         json.addProperty("error", script.getError());
-        json.addProperty("description", header.getDescription());
+        json.addProperty("description", script.getDescription());
 
-        if (header.getType() == ScriptType.PERIODIC) {
-            json.addProperty("interval_ticks", header.getIntervalTicks());
+        if (script instanceof PeriodicScript periodic) {
+            json.addProperty("interval_ticks", periodic.getIntervalTicks());
         }
 
-        if (header.getType() == ScriptType.COMMAND) {
-            json.addProperty("permission_level", header.getPermissionLevel());
+        if (script instanceof CommandScript command) {
+            json.addProperty("permission_level", command.getPermissionLevel());
         }
 
-        json.addProperty("creator", header.getCreator().toString());
-        json.addProperty("creator_name", getPlayerName(server, header.getCreator()));
-        json.addProperty("created_at", header.getCreatedAt().toString());
-        json.addProperty("toggled_by", header.getToggledBy() == null ? null : header.getToggledBy().toString());
-        json.addProperty("toggled_by_name", header.getToggledBy() == null ? null : getPlayerName(server, header.getToggledBy()));
-        json.addProperty("toggled_at", header.getToggledAt() == null ? null : header.getToggledAt().toString());
+        json.addProperty("creator", script.getCreator().toString());
+        json.addProperty("creator_name", getPlayerName(server, script.getCreator()));
+        json.addProperty("created_at", script.getCreatedAt().toString());
+
+        if (script instanceof Toggleable toggleable) {
+            json.addProperty("toggled_by", toggleable.getToggledBy().toString());
+            json.addProperty("toggled_by_name", getPlayerName(server, toggleable.getToggledBy()));
+            json.addProperty("toggled_at", toggleable.getToggledAt().toString());
+        }
 
         return json;
     }

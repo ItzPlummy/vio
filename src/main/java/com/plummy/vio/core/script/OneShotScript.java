@@ -1,8 +1,21 @@
 package com.plummy.vio.core.script;
 
-public class OneShotScript extends Script implements Executable {
+import java.time.Instant;
+import java.util.UUID;
 
-    public OneShotScript(ScriptFile file, CompiledScript compiled, String error) {
-        super(file, compiled, error);
+public class OneShotScript extends AbstractScript implements Executable {
+
+    public OneShotScript(String name, String description, UUID creator, Instant createdAt, String source) {
+        super(name, description, creator, createdAt, source);
+    }
+
+    @Override
+    public ScriptType getType() {
+        return ScriptType.ONE_SHOT;
+    }
+
+    @Override
+    public <T> T accept(ScriptVisitor<T> visitor) {
+        return visitor.visitOneShotScript(this);
     }
 }

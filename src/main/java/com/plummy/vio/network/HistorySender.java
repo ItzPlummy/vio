@@ -2,6 +2,7 @@ package com.plummy.vio.network;
 
 import com.plummy.vio.Vio;
 import com.plummy.vio.agent.Agent;
+import com.plummy.vio.config.AgentLimits;
 import com.plummy.vio.core.conversation.Conversation;
 import com.plummy.vio.core.message.*;
 import com.plummy.vio.core.section.SectionContentSerializer;
@@ -17,9 +18,6 @@ import java.util.List;
 
 @EventBusSubscriber(modid = Vio.MODID)
 public class HistorySender {
-
-    // Keeps the payload well below the 1 MiB packet limit, even for 3-byte characters.
-    private static final int MAX_TOTAL_LENGTH = 200_000;
 
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
@@ -67,10 +65,10 @@ public class HistorySender {
         int start = entries.size();
         int totalLength = 0;
 
-        while (start > 0 && entries.size() - start < HistoryPayload.MAX_ENTRIES) {
+        while (start > 0 && entries.size() - start < AgentLimits.MAX_HISTORY_ENTRIES) {
             int length = entries.get(start - 1).getText().length();
 
-            if (totalLength + length > MAX_TOTAL_LENGTH) {
+            if (totalLength + length > AgentLimits.MAX_HISTORY_LENGTH) {
                 break;
             }
 

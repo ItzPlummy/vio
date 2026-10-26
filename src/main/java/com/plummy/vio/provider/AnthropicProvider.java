@@ -2,6 +2,7 @@ package com.plummy.vio.provider;
 
 import com.google.gson.*;
 import com.plummy.vio.Vio;
+import com.plummy.vio.config.Endpoints;
 import com.plummy.vio.core.access.AccessLevel;
 import com.plummy.vio.core.conversation.Conversation;
 import com.plummy.vio.core.message.*;
@@ -25,8 +26,6 @@ import java.util.SequencedMap;
 
 public class AnthropicProvider implements Provider {
 
-    private static final String ANTHROPIC_URI = "https://api.anthropic.com/v1/messages";
-    private static final String ANTHROPIC_VERSION = "2023-06-01";
     private static final String REFUSAL_RESPONSE = "Sorry, I can't help with that one.";
 
     private static final AnthropicMessageJsonSerializer ANTHROPIC_MESSAGE_JSON_SERIALIZER = new AnthropicMessageJsonSerializer();
@@ -56,10 +55,10 @@ public class AnthropicProvider implements Provider {
     @Override
     public Message request(AccessLevel accessLevel, String instructions, Conversation conversation) {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(ANTHROPIC_URI))
+                .uri(URI.create(Endpoints.ANTHROPIC_URI))
                 .header("Content-Type", "application/json")
                 .header("x-api-key", getApiKey())
-                .header("anthropic-version", ANTHROPIC_VERSION)
+                .header("anthropic-version", Endpoints.ANTHROPIC_VERSION)
                 .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, conversation).toString()))
                 .build();
 

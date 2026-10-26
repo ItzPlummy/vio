@@ -2,11 +2,14 @@ package com.plummy.vio.core.tool.catalog.script;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.plummy.vio.config.ScriptLimits;
 import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.core.access.AccessLevel;
+import com.plummy.vio.core.script.Script;
 import com.plummy.vio.core.script.ScriptException;
 import com.plummy.vio.core.script.ScriptLog;
 import com.plummy.vio.core.script.ScriptManager;
+import com.plummy.vio.core.script.ScriptOutcome;
 import com.plummy.vio.core.tool.executor.ExecutionResult;
 import com.plummy.vio.core.tool.ServerTool;
 import com.plummy.vio.core.tool.value.argument.ArgumentDefinition;
@@ -18,9 +21,6 @@ import java.util.List;
 import java.util.SequencedMap;
 
 public class RunScriptTool implements ServerTool {
-
-    private static final int MAX_OUTPUT_LINES = 50;
-    private static final int MAX_RESULT_LENGTH = 2000;
 
     @Override
     public String getName() {
@@ -56,34 +56,36 @@ public class RunScriptTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ScriptManager manager = ScriptTools.getManager();
-        ScriptManager.RunResult result;
+        Script script = ScriptTools.getScript(manager, arguments);
+        long mark = script.getLog().mark();
+        ScriptOutcome result;
 
         try {
-            result = manager.run(ScriptTools.getScript(manager, arguments));
+            result = manager.run(script);
         } catch (ScriptException e) {
             return ExecutionResult.invalidArguments(e.getMessage());
         }
 
-        List<ScriptLog.Entry> output = result.output();
+        List<ScriptLog.Entry> output = script.getLog().getEntriesSince(mark);
         JsonArray outputJson = new JsonArray();
 
-        for (ScriptLog.Entry entry : output.subList(0, Math.min(output.size(), MAX_OUTPUT_LINES))) {
+        for (ScriptLog.Entry entry : output.subList(0, Math.min(output.size(), ScriptLimits.MAX_OUTPUT_LINES))) {
             outputJson.add(entry.level() == ScriptLog.Level.INFO ? entry.message() : "[%s] %s".formatted(entry.level(), entry.message()));
         }
 
         JsonObject json = new JsonObject();
 
-        json.addProperty("success", result.success());
-        json.addProperty("result", result.result() == null ? null : truncate(String.valueOf(result.result())));
+        json.addProperty("success", result.isSuccessful());
+        json.addProperty("result", result.getResult() == null ? null : truncate(String.valueOf(result.getResult())));
         json.add("output", outputJson);
-        json.addProperty("error", result.error());
-        json.addProperty("duration_ms", result.durationMillis());
-        json.addProperty("truncated", output.size() > MAX_OUTPUT_LINES);
+        json.addProperty("error", result.getError());
+        json.addProperty("duration_ms", result.getDurationMillis());
+        json.addProperty("truncated", output.size() > ScriptLimits.MAX_OUTPUT_LINES);
 
         return ExecutionResult.success(json);
     }
 
     private static String truncate(String text) {
-        return text.length() > MAX_RESULT_LENGTH ? "%s ...".formatted(text.substring(0, MAX_RESULT_LENGTH)) : text;
+        return text.length() > ScriptLimits.MAX_RESULT_LENGTH ? "%s ...".formatted(text.substring(0, ScriptLimits.MAX_RESULT_LENGTH)) : text;
     }
 }

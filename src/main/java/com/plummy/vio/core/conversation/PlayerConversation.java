@@ -1,5 +1,6 @@
 package com.plummy.vio.core.conversation;
 
+import com.plummy.vio.config.AgentLimits;
 import com.plummy.vio.core.message.Message;
 import com.plummy.vio.core.message.PlayerRequestMessage;
 
@@ -9,8 +10,6 @@ import java.util.List;
 import java.util.UUID;
 
 public class PlayerConversation implements Conversation {
-
-    private static final int MESSAGE_LIMIT = 100;
 
     private final UUID playerId;
     private final Deque<Message> messages = new ArrayDeque<>();
@@ -38,7 +37,7 @@ public class PlayerConversation implements Conversation {
     public void addMessage(Message message) {
         messages.add(message);
 
-        while (!messages.isEmpty() && (messages.size() > MESSAGE_LIMIT || !(messages.getFirst() instanceof PlayerRequestMessage))) {
+        while (!messages.isEmpty() && (messages.size() > AgentLimits.MAX_CONVERSATION_MESSAGES || !(messages.getFirst() instanceof PlayerRequestMessage))) {
             messages.removeFirst();
         }
     }
