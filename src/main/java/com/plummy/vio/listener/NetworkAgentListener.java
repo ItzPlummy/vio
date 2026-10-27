@@ -1,12 +1,12 @@
 package com.plummy.vio.listener;
 
-import com.plummy.vio.core.message.AgentResponseMessage;
-import com.plummy.vio.core.message.ToolRequestMessage;
-import com.plummy.vio.core.section.SectionContentSerializer;
+import com.plummy.vio.message.AgentResponseMessage;
+import com.plummy.vio.message.ToolRequestMessage;
 import com.plummy.vio.network.Networking;
 import com.plummy.vio.network.payload.AgentErrorPayload;
 import com.plummy.vio.network.payload.AgentResponsePayload;
 import com.plummy.vio.network.payload.AgentStatusPayload;
+import com.plummy.vio.section.SectionContentSerializer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
