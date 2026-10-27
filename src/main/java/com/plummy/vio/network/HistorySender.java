@@ -37,7 +37,7 @@ public class HistorySender {
         List<HistoryPayload.Entry> entries = List.of();
 
         try {
-            Conversation conversation = storage.get(player.getUUID());
+            Conversation conversation = storage.get(String.valueOf(player.getUUID()));
 
             if (conversation != null) {
                 entries = toEntries(conversation);

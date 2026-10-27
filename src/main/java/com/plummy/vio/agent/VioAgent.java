@@ -36,7 +36,7 @@ import java.util.function.BiConsumer;
 public class VioAgent implements Agent {
 
     private final Provider provider;
-    private final Storage<UUID, Conversation> conversationStorage;
+    private final Storage<String, Conversation> conversationStorage;
     private final AccessManager accessManager;
     private final BasicToolExecutor basicToolExecutor;
     private final ServerToolExecutor serverToolExecutor;
@@ -54,7 +54,7 @@ public class VioAgent implements Agent {
 
     private final Set<UUID> busyPlayers = ConcurrentHashMap.newKeySet();
 
-    public VioAgent(Provider provider, Storage<UUID, Conversation> conversationStorage, AccessManager accessManager, BasicToolExecutor basicToolExecutor, ServerToolExecutor serverToolExecutor, Instructions instructions, List<AgentListener> listeners) {
+    public VioAgent(Provider provider, Storage<String, Conversation> conversationStorage, AccessManager accessManager, BasicToolExecutor basicToolExecutor, ServerToolExecutor serverToolExecutor, Instructions instructions, List<AgentListener> listeners) {
         this.provider = provider;
         this.conversationStorage = conversationStorage;
         this.accessManager = accessManager;
@@ -84,7 +84,6 @@ public class VioAgent implements Agent {
             return SubmitResult.UNAVAILABLE;
         }
 
-        // Only FULL players get the script tools, so only they see the scripts.
         ScriptManager scriptManager = Vio.getScriptManager();
         boolean scripts = accessLevel == AccessLevel.FULL && ScriptTools.isAvailable() && scriptManager != null;
 
@@ -119,7 +118,7 @@ public class VioAgent implements Agent {
         }
 
         try {
-            conversationStorage.delete(playerId);
+            conversationStorage.delete(String.valueOf(playerId));
         } finally {
             busyPlayers.remove(playerId);
         }
@@ -136,7 +135,7 @@ public class VioAgent implements Agent {
         Conversation conversation = null;
 
         try {
-            conversation = conversationStorage.get(playerId);
+            conversation = conversationStorage.get(String.valueOf(playerId));
 
             if (conversation == null) {
                 conversation = new PlayerConversation(playerId);
@@ -245,6 +244,7 @@ public class VioAgent implements Agent {
         return switch (tool) {
             case BasicTool basicTool -> basicToolExecutor.execute(requester, basicTool, request.getArguments());
             case ServerTool serverTool -> serverToolExecutor.execute(requester, serverTool, request.getArguments());
+            default -> ExecutionResult.invalidArguments("Unknown tool type: %s".formatted(tool.getClass().getName()));
         };
     }
 }
