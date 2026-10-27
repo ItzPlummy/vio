@@ -1,75 +1,58 @@
 package com.plummy.vio.storage;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.plummy.vio.Vio;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+public abstract class JsonDirectoryStorage<K, V extends StorageItem<K>> extends DirectoryStorage<K, V> {
 
-public abstract class JsonDirectoryStorage<K, T extends Storage.Item<K>> extends AbstractJsonStorage<K, T> {
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    private final Path directory;
-    private final Map<K, T> cache = new ConcurrentHashMap<>();
+    protected abstract String serializeKey(K key);
 
-    protected JsonDirectoryStorage(Path directory) {
-        this.directory = directory;
-    }
+    protected abstract K deserializeKey(String value);
 
-    protected abstract JsonObject serialize(T value);
+    protected abstract JsonObject serializeItemToJson(V item);
 
-    protected abstract T deserialize(JsonObject json);
-
-    protected abstract String getFileName(K key);
+    protected abstract V deserializeItemFromJson(K key, JsonObject json);
 
     @Override
-    public T get(K key) {
-        return cache.computeIfAbsent(key, this::load);
+    protected String getFileNameFromKey(K key) {
+        return "%s%s".formatted(serializeKey(key), ".json");
     }
 
     @Override
-    public boolean has(K key) {
-        return get(key) != null;
-    }
-
-    @Override
-    public void save(T value) {
-        cache.put(value.getKey(), value);
-        writeJson(getPath(value.getKey()), serialize(value));
-    }
-
-    @Override
-    public void delete(K key) {
-        cache.remove(key);
-
-        Path path = getPath(key);
-
-        try {
-            Files.deleteIfExists(path);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to delete %s".formatted(path), e);
-        }
-    }
-
-    protected Path getPath(K key) {
-        return directory.resolve(getFileName(key));
-    }
-
-    protected T load(K key) {
-        Path path = getPath(key);
-
-        if (!Files.exists(path)) {
+    protected K getKeyFromFileName(String fileName) {
+        if (!fileName.endsWith(".json")) {
             return null;
         }
 
+        String value = fileName.substring(0, fileName.length() - ".json".length());
+
         try {
-            return deserialize(readJson(path));
-        } catch (IOException | RuntimeException e) {
-            Vio.getLogger().warn("Failed to load %s, ignoring it".formatted(path), e);
+            K key = deserializeKey(value);
+
+            if (!serializeKey(key).equals(value)) {
+                Vio.getLogger().warn("Skipping %s: its name isn't a canonical key".formatted(fileName));
+                return null;
+            }
+
+            return key;
+        } catch (RuntimeException e) {
+            Vio.getLogger().warn("Skipping %s: its name isn't a valid key".formatted(fileName), e);
             return null;
         }
+    }
+
+    @Override
+    protected String serializeItem(V item) {
+        return GSON.toJson(serializeItemToJson(item));
+    }
+
+    @Override
+    protected V deserializeItem(K key, String value) {
+        return deserializeItemFromJson(key, JsonParser.parseString(value).getAsJsonObject());
     }
 }

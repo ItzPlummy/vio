@@ -1,11 +1,11 @@
 package com.plummy.vio.conversation;
 
 import com.plummy.vio.message.Message;
-import com.plummy.vio.storage.Storage;
+import com.plummy.vio.storage.StorageItem;
 
 import java.util.List;
 
-public interface Conversation extends Storage.Item<String> {
+public interface Conversation extends StorageItem<String> {
 
     ConversationType getType();
 

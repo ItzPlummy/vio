@@ -1,10 +1,10 @@
 package com.plummy.vio.access;
 
-import com.plummy.vio.storage.Storage;
+import com.plummy.vio.storage.StorageItem;
 
 import java.util.UUID;
 
-public class PlayerAccess implements Storage.Item<UUID> {
+public class PlayerAccess implements StorageItem<UUID> {
 
     private final UUID playerId;
     private final String name;

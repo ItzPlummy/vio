@@ -11,8 +11,10 @@ import java.util.UUID;
 
 public class PlayerAccessStorage extends JsonFileStorage<UUID, PlayerAccess> {
 
+    private final Path file;
+
     public PlayerAccessStorage(Path file) {
-        super(file);
+        this.file = file;
     }
 
     public static PlayerAccessStorage fromServer(MinecraftServer server) {
@@ -20,31 +22,36 @@ public class PlayerAccessStorage extends JsonFileStorage<UUID, PlayerAccess> {
     }
 
     @Override
-    protected JsonObject serialize(PlayerAccess value) {
+    public Path getPath() {
+        return file;
+    }
+
+    @Override
+    protected String serializeKey(UUID key) {
+        return key.toString();
+    }
+
+    @Override
+    protected UUID deserializeKey(String value) {
+        return UUID.fromString(value);
+    }
+
+    @Override
+    protected JsonObject serializeItemToJson(PlayerAccess item) {
         JsonObject json = new JsonObject();
 
-        json.addProperty("name", value.getName());
-        json.addProperty("access_level", value.getAccessLevel().getValue());
+        json.addProperty("name", item.getName());
+        json.addProperty("access_level", item.getAccessLevel().getValue());
 
         return json;
     }
 
     @Override
-    protected PlayerAccess deserialize(UUID key, JsonObject json) {
+    protected PlayerAccess deserializeItemFromJson(UUID key, JsonObject json) {
         return new PlayerAccess(
                 key,
                 json.get("name").getAsString(),
                 AccessLevel.fromValue(json.get("access_level").getAsString())
         );
-    }
-
-    @Override
-    protected UUID keyFromString(String key) {
-        return UUID.fromString(key);
-    }
-
-    @Override
-    protected String keyToString(UUID key) {
-        return key.toString();
     }
 }

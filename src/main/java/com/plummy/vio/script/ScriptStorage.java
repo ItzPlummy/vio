@@ -15,12 +15,13 @@ public class ScriptStorage extends GroovyDirectoryStorage<String, Script> {
 
     public static final String NAME_RULE = "1 to 48 characters: lowercase letters, digits and underscores, starting with a letter";
 
-    private static final String EXTENSION = ".groovy";
     private static final Pattern NAME =Pattern.compile("[a-z][a-z0-9_]{0,47}");
     private static final Pattern RESERVED_NAME = Pattern.compile("con|prn|aux|nul|com[0-9]|lpt[0-9]");
 
+    private final Path directory;
+
     public ScriptStorage(Path directory) {
-        super(directory);
+        this.directory = directory;
     }
 
     public static ScriptStorage fromServer(MinecraftServer server) {
@@ -28,38 +29,28 @@ public class ScriptStorage extends GroovyDirectoryStorage<String, Script> {
     }
 
     @Override
-    protected String serialize(Script value) {
-        return value.accept(ScriptSerializer.getInstance());
+    public Path getPath() {
+        return directory;
     }
 
     @Override
-    protected Script deserialize(String key, String source) {
-        return ScriptDeserializer.getInstance().deserialize(key, source);
+    protected String serializeKey(String key) {
+        return requireValidName(key);
     }
 
     @Override
-    protected String getFileName(String key) {
-        if (!isValidName(key)) {
-            throw new IllegalArgumentException("Invalid script name: %s".formatted(key));
-        }
-
-        return "%s%s".formatted(key, EXTENSION);
+    protected String deserializeKey(String value) {
+        return requireValidName(value);
     }
 
     @Override
-    protected String getKey(String fileName) {
-        if (!fileName.endsWith(EXTENSION)) {
-            return null;
-        }
+    protected String serializeItem(Script item) {
+        return item.accept(ScriptSerializer.getInstance());
+    }
 
-        String name = fileName.substring(0, fileName.length() - EXTENSION.length());
-
-        if (!isValidName(name)) {
-            Vio.getLogger().warn("Skipping script %s: invalid name, script names are %s".formatted(fileName, NAME_RULE));
-            return null;
-        }
-
-        return name;
+    @Override
+    protected Script deserializeItem(String key, String value) {
+        return ScriptDeserializer.getInstance().deserialize(key, value);
     }
 
     public static boolean isValidName(String name) {
@@ -71,5 +62,13 @@ public class ScriptStorage extends GroovyDirectoryStorage<String, Script> {
 
         names.sort(Comparator.naturalOrder());
         return names;
+    }
+
+    private static String requireValidName(String name) {
+        if (!isValidName(name)) {
+            throw new IllegalArgumentException("Invalid script name '%s': names are %s".formatted(name, NAME_RULE));
+        }
+
+        return name;
     }
 }

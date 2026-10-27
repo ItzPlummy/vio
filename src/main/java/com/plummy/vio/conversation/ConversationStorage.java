@@ -10,8 +10,10 @@ import java.nio.file.Path;
 
 public class ConversationStorage extends JsonDirectoryStorage<String, Conversation> {
 
+    private final Path directory;
+
     public ConversationStorage(Path directory) {
-        super(directory);
+        this.directory = directory;
     }
 
     public static ConversationStorage fromServer(MinecraftServer server) {
@@ -19,17 +21,27 @@ public class ConversationStorage extends JsonDirectoryStorage<String, Conversati
     }
 
     @Override
-    protected JsonObject serialize(Conversation value) {
-        return value.accept(ConversationJsonSerializer.getInstance());
+    public Path getPath() {
+        return directory;
     }
 
     @Override
-    protected Conversation deserialize(JsonObject json) {
+    protected String serializeKey(String key) {
+        return key;
+    }
+
+    @Override
+    protected String deserializeKey(String value) {
+        return value;
+    }
+
+    @Override
+    protected JsonObject serializeItemToJson(Conversation item) {
+        return item.accept(ConversationJsonSerializer.getInstance());
+    }
+
+    @Override
+    protected Conversation deserializeItemFromJson(String key, JsonObject json) {
         return ConversationJsonDeserializer.getInstance().deserialize(json);
-    }
-
-    @Override
-    protected String getFileName(String key) {
-        return "%s.json".formatted(key);
     }
 }

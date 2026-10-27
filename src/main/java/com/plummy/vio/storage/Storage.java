@@ -1,17 +1,22 @@
 package com.plummy.vio.storage;
 
-public interface Storage<K, T extends Storage.Item<K>> {
+import java.util.Collection;
 
-    T get(K key);
+public interface Storage<K, V extends StorageItem<K>> {
+
+    V get(K key);
+
+    Collection<K> getKeys();
+
+    Collection<V> getItems();
+
+    int getSize();
 
     boolean has(K key);
 
-    void save(T value);
+    void save(V item);
 
     void delete(K key);
 
-    interface Item<T> {
-
-        T getKey();
-    }
+    void clear();
 }

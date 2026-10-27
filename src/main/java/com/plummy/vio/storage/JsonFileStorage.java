@@ -1,99 +1,42 @@
 package com.plummy.vio.storage;
 
-import com.google.gson.JsonElement;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import com.plummy.vio.Vio;
+import com.google.gson.JsonParser;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Collection;
 
-public abstract class JsonFileStorage<K, T extends Storage.Item<K>> extends AbstractJsonStorage<K, T> {
+public abstract class JsonFileStorage<K, V extends StorageItem<K>> extends FileStorage<K, V> {
 
-    private final Path file;
-    private Map<K, T> items;
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    protected JsonFileStorage(Path file) {
-        this.file = file;
-    }
+    protected abstract String serializeKey(K key);
 
-    protected abstract JsonObject serialize(T value);
+    protected abstract K deserializeKey(String value);
 
-    protected abstract T deserialize(K key, JsonObject json);
+    protected abstract JsonObject serializeItemToJson(V item);
 
-    protected abstract K keyFromString(String key);
-
-    protected abstract String keyToString(K key);
+    protected abstract V deserializeItemFromJson(K key, JsonObject json);
 
     @Override
-    public synchronized T get(K key) {
-        return getItems().get(key);
-    }
-
-    @Override
-    public synchronized boolean has(K key) {
-        return getItems().containsKey(key);
-    }
-
-    @Override
-    public synchronized void save(T value) {
-        getItems().put(value.getKey(), value);
-        write();
-    }
-
-    @Override
-    public synchronized void delete(K key) {
-        if (getItems().remove(key) != null) {
-            write();
-        }
-    }
-
-    private Map<K, T> getItems() {
-        if (items == null) {
-            items = load();
-        }
-
-        return items;
-    }
-
-    private Map<K, T> load() {
-        Map<K, T> loaded = new LinkedHashMap<>();
-
-        if (!Files.exists(file)) {
-            return loaded;
-        }
-
-        try {
-            for (Map.Entry<String, JsonElement> entry : readJson(file).entrySet()) {
-                K key = keyFromString(entry.getKey());
-                loaded.put(key, deserialize(key, entry.getValue().getAsJsonObject()));
-            }
-
-            return loaded;
-        } catch (IOException | RuntimeException e) {
-            Path broken = file.resolveSibling("%s.broken".formatted(file.getFileName()));
-            Vio.getLogger().error("Failed to load %s, moving it to %s and starting empty".formatted(file, broken), e);
-
-            try {
-                Files.move(file, broken, StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException moveException) {
-                Vio.getLogger().error("Failed to move %s to %s".formatted(file, broken), moveException);
-            }
-
-            return new LinkedHashMap<>();
-        }
-    }
-
-    private void write() {
+    protected String serializeItems(Collection<V> items) {
         JsonObject json = new JsonObject();
 
-        for (Map.Entry<K, T> entry : items.entrySet()) {
-            json.add(keyToString(entry.getKey()), serialize(entry.getValue()));
+        for (V item : items) {
+            json.add(serializeKey(item.getKey()), serializeItemToJson(item));
         }
 
-        writeJson(file, json);
+        return GSON.toJson(json);
+    }
+
+    @Override
+    protected Collection<V> deserializeItems(String value) {
+        JsonObject json = JsonParser.parseString(value).getAsJsonObject();
+
+        return json.entrySet().stream()
+                .filter(entry -> entry.getValue().isJsonObject())
+                .map(entry -> deserializeItemFromJson(deserializeKey(entry.getKey()), entry.getValue().getAsJsonObject()))
+                .toList();
     }
 }

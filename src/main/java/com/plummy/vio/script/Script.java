@@ -1,12 +1,12 @@
 package com.plummy.vio.script;
 
 import com.plummy.vio.script.dsl.CompiledScript;
-import com.plummy.vio.storage.Storage;
+import com.plummy.vio.storage.StorageItem;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public interface Script extends Storage.Item<String> {
+public interface Script extends StorageItem<String> {
 
     ScriptType getType();
 

@@ -71,10 +71,6 @@ public class ScriptManager {
             for (String name : storage.getNames()) {
                 Script script = storage.get(name);
 
-                if (script == null) {
-                    continue;
-                }
-
                 if (script.getState() == ScriptState.ENABLED) {
                     try {
                         activate(script);
