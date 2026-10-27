@@ -9,7 +9,7 @@ import com.plummy.vio.command.VioCommand;
 import com.plummy.vio.config.Instructions;
 import com.plummy.vio.config.KeysConfig;
 import com.plummy.vio.config.ServerConfig;
-import com.plummy.vio.conversation.ConversationStorage;
+import com.plummy.vio.conversation.PlayerConversationStorage;
 import com.plummy.vio.listener.AgentListener;
 import com.plummy.vio.listener.NetworkAgentListener;
 import com.plummy.vio.provider.Provider;
@@ -54,7 +54,7 @@ public class Vio {
     private static Provider provider;
     private static AccessManager accessManager;
 
-    private static ConversationStorage conversationStorage;
+    private static PlayerConversationStorage conversationStorage;
     private static PlayerAccessStorage playerAccessStorage;
 
     private static VoiceManager voiceManager;
@@ -75,7 +75,7 @@ public class Vio {
         MinecraftServer server = event.getServer();
 
         provider = ProviderFactory.createProvider();
-        conversationStorage = ConversationStorage.fromServer(server);
+        conversationStorage = PlayerConversationStorage.fromServer(server);
         playerAccessStorage = PlayerAccessStorage.fromServer(server);
         accessManager = new AccessManager(getPlayerAccessStorage());
 
@@ -165,7 +165,7 @@ public class Vio {
         return accessManager;
     }
 
-    public static ConversationStorage getConversationStorage() {
+    public static PlayerConversationStorage getConversationStorage() {
         return conversationStorage;
     }
 

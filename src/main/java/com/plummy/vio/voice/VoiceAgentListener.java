@@ -3,7 +3,6 @@ package com.plummy.vio.voice;
 import com.plummy.vio.listener.AgentListener;
 import com.plummy.vio.message.AgentResponseMessage;
 import com.plummy.vio.message.ToolRequestMessage;
-import com.plummy.vio.section.SectionContentSerializer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -22,7 +21,7 @@ public class VoiceAgentListener implements AgentListener {
 
     @Override
     public void onResponse(ServerPlayer player, AgentResponseMessage response) {
-        voiceManager.speakReply(player, SectionContentSerializer.getInstance().getMessageContent(response));
+        voiceManager.speakReply(player, response.getResponse());
     }
 
     @Override

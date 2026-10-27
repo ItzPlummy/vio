@@ -5,16 +5,12 @@ import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.access.AccessManager;
 import com.plummy.vio.config.AgentLimits;
 import com.plummy.vio.config.Instructions;
-import com.plummy.vio.conversation.Conversation;
 import com.plummy.vio.conversation.PlayerConversation;
 import com.plummy.vio.listener.AgentListener;
 import com.plummy.vio.message.*;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderException;
 import com.plummy.vio.script.ScriptManager;
-import com.plummy.vio.section.PlayerContextSection;
-import com.plummy.vio.section.ScriptContextSection;
-import com.plummy.vio.section.ServerContextSection;
 import com.plummy.vio.storage.Storage;
 import com.plummy.vio.tool.BasicTool;
 import com.plummy.vio.tool.ServerTool;
@@ -39,7 +35,7 @@ import java.util.function.BiConsumer;
 public class VioAgent implements Agent {
 
     private final Provider provider;
-    private final Storage<String, Conversation> conversationStorage;
+    private final Storage<UUID, PlayerConversation> conversationStorage;
     private final AccessManager accessManager;
     private final BasicToolExecutor basicToolExecutor;
     private final ServerToolExecutor serverToolExecutor;
@@ -57,7 +53,7 @@ public class VioAgent implements Agent {
 
     private final Set<UUID> busyPlayers = ConcurrentHashMap.newKeySet();
 
-    public VioAgent(Provider provider, Storage<String, Conversation> conversationStorage, AccessManager accessManager, BasicToolExecutor basicToolExecutor, ServerToolExecutor serverToolExecutor, Instructions instructions, List<AgentListener> listeners) {
+    public VioAgent(Provider provider, Storage<UUID, PlayerConversation> conversationStorage, AccessManager accessManager, BasicToolExecutor basicToolExecutor, ServerToolExecutor serverToolExecutor, Instructions instructions, List<AgentListener> listeners) {
         this.provider = provider;
         this.conversationStorage = conversationStorage;
         this.accessManager = accessManager;
@@ -92,11 +88,12 @@ public class VioAgent implements Agent {
 
         PlayerRequestMessage message = PlayerRequestMessage.of(
                 request,
-                PlayerContextSection.fromPlayer(player, accessLevel),
-                ServerContextSection.fromServer(server),
-                scripts ? ScriptContextSection.fromManager(scriptManager) : null,
-                time,
-                voice
+                player,
+                server,
+                accessLevel,
+                scripts ? PlayerRequestMessage.ScriptInfo.of(scriptManager) : null,
+                voice,
+                time
         );
 
         try {
@@ -121,7 +118,7 @@ public class VioAgent implements Agent {
         }
 
         try {
-            conversationStorage.delete(String.valueOf(playerId));
+            conversationStorage.delete(playerId);
         } finally {
             busyPlayers.remove(playerId);
         }
@@ -135,10 +132,10 @@ public class VioAgent implements Agent {
     }
 
     private void process(MinecraftServer server, UUID playerId, AccessLevel accessLevel, PlayerRequestMessage message) {
-        Conversation conversation = null;
+        PlayerConversation conversation = null;
 
         try {
-            conversation = conversationStorage.get(String.valueOf(playerId));
+            conversation = conversationStorage.get(playerId);
 
             if (conversation == null) {
                 conversation = new PlayerConversation(playerId);
@@ -156,12 +153,12 @@ public class VioAgent implements Agent {
                 }
 
                 if (!(response instanceof ToolRequestMessage toolRequest)) {
-                    throw new IllegalStateException("Unexpected provider response: %s".formatted(response.getType()));
+                    throw new IllegalStateException("Unexpected provider response: %s".formatted(response.getClass().getSimpleName()));
                 }
 
                 notify(server, playerId, (listener, player) -> listener.onActivity(player, toolRequest));
 
-                conversation.addMessage(ToolResponseMessage.of(executeTools(new PlayerToolRequester(playerId, accessLevel), toolRequest.getToolExecutionRequests())));
+                conversation.addMessage(new ToolResponseMessage(executeTools(new PlayerToolRequester(playerId, accessLevel), toolRequest.getToolExecutionRequests())));
 
                 if (findPlayer(server, playerId) == null) {
                     return;
@@ -184,7 +181,7 @@ public class VioAgent implements Agent {
         }
     }
 
-    private void save(MinecraftServer server, UUID playerId, Conversation conversation) {
+    private void save(MinecraftServer server, UUID playerId, PlayerConversation conversation) {
         try {
             conversationStorage.save(conversation);
         } catch (RuntimeException e) {

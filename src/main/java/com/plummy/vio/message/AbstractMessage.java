@@ -1,17 +1,22 @@
 package com.plummy.vio.message;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 public abstract class AbstractMessage implements Message {
 
-    private final Instant time;
+    private final Instant dispatchTime;
 
-    public AbstractMessage(Instant time) {
-        this.time = time;
+    public AbstractMessage() {
+        this(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+    }
+
+    public AbstractMessage(Instant dispatchTime) {
+        this.dispatchTime = dispatchTime;
     }
 
     @Override
-    public Instant getTime() {
-        return time;
+    public Instant getDispatchTime() {
+        return dispatchTime;
     }
 }

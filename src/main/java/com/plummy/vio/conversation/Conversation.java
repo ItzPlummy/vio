@@ -5,9 +5,7 @@ import com.plummy.vio.storage.StorageItem;
 
 import java.util.List;
 
-public interface Conversation extends StorageItem<String> {
-
-    ConversationType getType();
+public interface Conversation<K> extends StorageItem<K> {
 
     List<Message> getMessages();
 

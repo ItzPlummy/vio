@@ -25,8 +25,6 @@ public class ConversationJsonSerializer implements ConversationVisitor<JsonObjec
             messages.add(message.accept(MessageJsonSerializer.getInstance()));
         }
 
-        json.addProperty("type", conversation.getType().getValue());
-        json.addProperty("player_id", conversation.getPlayerId().toString());
         json.add("messages", messages);
 
         return json;

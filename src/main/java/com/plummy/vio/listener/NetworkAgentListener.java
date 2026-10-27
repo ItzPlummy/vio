@@ -6,7 +6,6 @@ import com.plummy.vio.network.Networking;
 import com.plummy.vio.network.payload.AgentErrorPayload;
 import com.plummy.vio.network.payload.AgentResponsePayload;
 import com.plummy.vio.network.payload.AgentStatusPayload;
-import com.plummy.vio.section.SectionContentSerializer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -14,12 +13,12 @@ public class NetworkAgentListener implements AgentListener {
 
     @Override
     public void onActivity(ServerPlayer player, ToolRequestMessage request) {
-        Networking.send(player, new AgentStatusPayload(request.getActivityDescription().getActivityDescription(), request.getTime()));
+        Networking.send(player, new AgentStatusPayload(request.getActivityDescription(), request.getDispatchTime()));
     }
 
     @Override
     public void onResponse(ServerPlayer player, AgentResponseMessage response) {
-        Networking.send(player, new AgentResponsePayload(SectionContentSerializer.getInstance().getMessageContent(response), response.getTime()));
+        Networking.send(player, new AgentResponsePayload(response.getResponse(), response.getDispatchTime()));
     }
 
     @Override

@@ -1,39 +1,24 @@
 package com.plummy.vio.message;
 
-import com.plummy.vio.section.Section;
 import com.plummy.vio.tool.executor.ExecutionResult;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.SequencedMap;
 
 public class ToolResponseMessage extends AbstractMessage {
 
     private final SequencedMap<String, ExecutionResult> toolExecutionResults;
 
-    public ToolResponseMessage(SequencedMap<String, ExecutionResult> toolExecutionResults, Instant time) {
-        super(time);
+    public ToolResponseMessage(SequencedMap<String, ExecutionResult> toolExecutionResults) {
         this.toolExecutionResults = new LinkedHashMap<>(toolExecutionResults);
     }
 
-    public static ToolResponseMessage of(SequencedMap<String, ExecutionResult> toolExecutionResults) {
-        return new ToolResponseMessage(
-                toolExecutionResults,
-                Instant.now().truncatedTo(ChronoUnit.MILLIS)
-        );
-    }
+    public ToolResponseMessage(SequencedMap<String, ExecutionResult> toolExecutionResults, Instant dispatchTime) {
+        super(dispatchTime);
 
-    @Override
-    public MessageType getType() {
-        return MessageType.TOOL_RESPONSE;
-    }
-
-    @Override
-    public List<Section> getSections() {
-        return List.of();
+        this.toolExecutionResults = new LinkedHashMap<>(toolExecutionResults);
     }
 
     @Override

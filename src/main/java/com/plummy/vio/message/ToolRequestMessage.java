@@ -1,51 +1,27 @@
 package com.plummy.vio.message;
 
-import com.plummy.vio.section.ActivityDescriptionSection;
-import com.plummy.vio.section.Section;
 import com.plummy.vio.tool.executor.ExecutionRequest;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.SequencedMap;
 
 public class ToolRequestMessage extends AbstractMessage {
 
-    private final ActivityDescriptionSection activityDescription;
+    private final String activityDescription;
     private final SequencedMap<String, ExecutionRequest> toolExecutionRequests;
 
-    public ToolRequestMessage(ActivityDescriptionSection activityDescription, SequencedMap<String, ExecutionRequest> toolExecutionRequests, Instant time) {
-        super(time);
-        this.activityDescription = activityDescription;
+    public ToolRequestMessage(SequencedMap<String, ExecutionRequest> toolExecutionRequests) {
+        this.activityDescription = getDescribedActivity(toolExecutionRequests);
         this.toolExecutionRequests = new LinkedHashMap<>(toolExecutionRequests);
     }
 
-    public static ToolRequestMessage of(SequencedMap<String, ExecutionRequest> toolExecutionRequests) {
-        String activityDescription = toolExecutionRequests.values().stream()
-                .map(request -> request.getArguments().getStatus())
-                .filter(status -> !status.isBlank())
-                .findFirst()
-                .orElse("");
+    public ToolRequestMessage(String activityDescription, SequencedMap<String, ExecutionRequest> toolExecutionRequests, Instant dispatchTime) {
+        super(dispatchTime);
 
-        return new ToolRequestMessage(
-                new ActivityDescriptionSection(activityDescription),
-                toolExecutionRequests,
-                Instant.now().truncatedTo(ChronoUnit.MILLIS)
-        );
-    }
-
-    @Override
-    public MessageType getType() {
-        return MessageType.TOOL_REQUEST;
-    }
-
-    @Override
-    public List<Section> getSections() {
-        return List.of(
-                getActivityDescription()
-        );
+        this.activityDescription = activityDescription;
+        this.toolExecutionRequests = new LinkedHashMap<>(toolExecutionRequests);
     }
 
     @Override
@@ -53,11 +29,15 @@ public class ToolRequestMessage extends AbstractMessage {
         return visitor.visitToolRequestMessage(this);
     }
 
-    public ActivityDescriptionSection getActivityDescription() {
+    public String getActivityDescription() {
         return activityDescription;
     }
 
     public SequencedMap<String, ExecutionRequest> getToolExecutionRequests() {
         return Collections.unmodifiableSequencedMap(toolExecutionRequests);
+    }
+
+    private static String getDescribedActivity(SequencedMap<String, ExecutionRequest> toolExecutionRequests) {
+        return toolExecutionRequests.values().stream().map(request -> request.getArguments().getStatus()).filter(status -> !status.isBlank()).findFirst().orElse("");
     }
 }
