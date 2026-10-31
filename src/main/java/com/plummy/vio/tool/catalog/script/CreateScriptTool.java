@@ -5,6 +5,7 @@ import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.config.ScriptLimits;
 import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.script.*;
+import com.plummy.vio.script.state.StateItem;
 import com.plummy.vio.tool.BasicTool;
 import com.plummy.vio.tool.executor.ExecutionResult;
 import com.plummy.vio.tool.requester.PlayerToolRequester;
@@ -35,9 +36,13 @@ public class CreateScriptTool implements BasicTool {
                 + "Scripts are Groovy 4, compiled with @CompileStatic on NeoForge 1.21.1, which uses Mojang's official names (ServerPlayer, ServerLevel, Component, BlockPos, ...), so wrong names or types fail right here: fix them and create it again. "
                 + "A script is plain top-level statements, like the example: no class declarations, no main method. It's not Bukkit, Spigot, Paper, Fabric or old Forge: their classes don't exist. "
                 + "Nothing is imported automatically: write every import. Besides the server's own API, scripts get server (the MinecraftServer), and println writes to the script's log, read with read_script_log. "
+                + "Scripts also get two key-value states shared by every script: memoryState, emptied when the server stops, and fileState, kept on disk across restarts. "
+                + "Both hold StateItem values (import com.plummy.vio.script.state.StateItem and com.google.gson.JsonObject): get(key) returns the item or null, save(new StateItem(key, data)) adds or replaces one, and has(key), delete(key), getKeys() and getItems() work as named. "
+                + "Items are immutable and getData() returns a copy, so to change data, save a new item. Keys are %s; start them with the script name, like my_script.count, so scripts don't overwrite each other. "
+                + "Every fileState save rewrites its file, so save only when something changes and keep fast-changing data in memoryState. "
                 + "Scripts run on the server thread with full server authority: keep every run short, never sleep, block or load chunks, and never do what your tools couldn't, such as level 3-4 operator actions. "
                 + "A new script is enabled right away. If compiling fails, nothing is saved. The name must be free: to change only an existing script's source use update_script_source, and to change anything else, delete_script it and create it again.\n"
-                + "Example:\n%s").formatted(type, getTypeDescription(), getExample());
+                + "Example:\n%s").formatted(type, getTypeDescription(), StateItem.KEY_RULE, getExample());
     }
 
     private String getExample() {
@@ -99,7 +104,7 @@ public class CreateScriptTool implements BasicTool {
         return switch (type) {
             case ONE_SHOT -> "The script body is the action: run it with run_script as often as needed, within %s ms per run; its return value comes back as the result."
                     .formatted(ServerConfig.RUN_BUDGET_MILLIS.get());
-            case PERIODIC -> "The script body runs every interval_ticks ticks (20 ticks = 1 second) while the script is enabled, the first time one interval after it's enabled or the server starts, within %s ms per run. Every run starts fresh, so script variables don't keep values between runs. run_script runs it once right away for testing."
+            case PERIODIC -> "The script body runs every interval_ticks ticks (20 ticks = 1 second) while the script is enabled, the first time one interval after it's enabled or the server starts, within %s ms per run. Every run starts fresh, so script variables don't keep values between runs: keep them in memoryState or fileState. run_script runs it once right away for testing."
                     .formatted(ServerConfig.PERIODIC_BUDGET_MILLIS.get());
             case LISTENER -> ("The script body only declares event handlers, and runs whenever the script is enabled (also when it's saved enabled and when the server starts): on(EventClass) { e -> ... }, as many as needed; e is typed as the event. "
                     + "Only concrete NeoForge game events work: not abstract ones like PlayerEvent itself, mod loading events or client events. Handlers don't see events another mod already canceled. "

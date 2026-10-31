@@ -18,6 +18,8 @@ import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.script.runtime.CommandRuntimeScript;
 import com.plummy.vio.script.runtime.ListenerRuntimeScript;
 import com.plummy.vio.script.runtime.RuntimeScript;
+import com.plummy.vio.script.state.FileState;
+import com.plummy.vio.script.state.MemoryState;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
 import groovy.transform.CompileStatic;
@@ -66,6 +68,8 @@ public final class DefaultScriptManager implements ScriptManager {
     private final MinecraftServer server;
     private final ScriptStorage scriptStorage;
     private final ScriptSourceStorage scriptSourceStorage;
+    private final MemoryState memoryState;
+    private final FileState fileState;
 
     private final Map<ScriptKey, GroovyClassLoader> loaders = new HashMap<>();
     private final Map<ScriptKey, Class<? extends RuntimeScript>> runtimeClasses = new HashMap<>();
@@ -78,6 +82,8 @@ public final class DefaultScriptManager implements ScriptManager {
         this.server = server;
         this.scriptStorage = ScriptStorage.fromServer(server);
         this.scriptSourceStorage = ScriptSourceStorage.fromServer(server);
+        this.memoryState = new MemoryState();
+        this.fileState = FileState.fromServer(server);
     }
 
     public static boolean isBudgetExceeded() {
@@ -638,7 +644,7 @@ public final class DefaultScriptManager implements ScriptManager {
             throw new IllegalStateException("Failed to create an instance of %s".formatted(runtimeClass.getName()), e);
         }
 
-        runtimeScript.init(server, log);
+        runtimeScript.init(server, log, memoryState, fileState);
         return runtimeScript;
     }
 
