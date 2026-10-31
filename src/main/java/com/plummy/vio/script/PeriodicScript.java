@@ -1,17 +1,28 @@
 package com.plummy.vio.script;
 
-import java.time.Instant;
-import java.util.UUID;
+import com.plummy.vio.script.runtime.RuntimeScript;
 
-public class PeriodicScript extends AbstractToggleableScript implements Executable {
+public final class PeriodicScript implements Script, Executable, Toggleable {
 
-    private int ticks;
-    private final int intervalTicks;
+    private final ScriptKey key;
+    private final String description;
+    private final boolean isEnabled;
+    private final long periodTicks;
 
-    public PeriodicScript(String name, String description, UUID creator, Instant createdAt, int intervalTicks, boolean enabled, UUID toggledBy, Instant toggledAt, String source) {
-        super(name, description, creator, createdAt, enabled, toggledBy, toggledAt, source);
-        this.intervalTicks = intervalTicks;
-        reset();
+    public PeriodicScript(ScriptKey key, String description, boolean isEnabled, long periodTicks) {
+        if (periodTicks < 1) {
+            throw new ScriptException("Invalid period of %s ticks: it must be at least 1".formatted(periodTicks));
+        }
+
+        this.key = key;
+        this.description = description;
+        this.isEnabled = isEnabled;
+        this.periodTicks = periodTicks;
+    }
+
+    @Override
+    public ScriptKey getKey() {
+        return key;
     }
 
     @Override
@@ -20,24 +31,31 @@ public class PeriodicScript extends AbstractToggleableScript implements Executab
     }
 
     @Override
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public Class<? extends RuntimeScript> getRuntimeBaseClass() {
+        return RuntimeScript.class;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return isEnabled;
+    }
+
+    @Override
+    public PeriodicScript withEnabled(boolean isEnabled) {
+        return new PeriodicScript(key, description, isEnabled, periodTicks);
+    }
+
+    @Override
     public <T> T accept(ScriptVisitor<T> visitor) {
         return visitor.visitPeriodicScript(this);
     }
 
-    public int getIntervalTicks() {
-        return intervalTicks;
-    }
-
-    void reset() {
-        ticks = intervalTicks;
-    }
-
-    boolean tick() {
-        if (--ticks > 0) {
-            return false;
-        }
-
-        reset();
-        return true;
+    public long getPeriodTicks() {
+        return periodTicks;
     }
 }

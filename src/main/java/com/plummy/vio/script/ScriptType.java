@@ -4,8 +4,8 @@ public enum ScriptType {
 
     ONE_SHOT("one_shot"),
     PERIODIC("periodic"),
-    LISTENER("listener"),
-    COMMAND("command");
+    COMMAND("command"),
+    LISTENER("listener");
 
     private final String value;
 
@@ -14,25 +14,21 @@ public enum ScriptType {
     }
 
     public static ScriptType fromValue(String value) {
-        for (ScriptType type : values()) {
-            if (type.getValue().equals(value)) {
-                return type;
+        for (ScriptType scriptType : values()) {
+            if (scriptType.getValue().equals(value)) {
+                return scriptType;
             }
         }
 
-        throw new IllegalArgumentException("Invalid script type: %s".formatted(value));
+        throw new IllegalArgumentException("Invalid script type: " + value);
     }
 
     public String getValue() {
         return value;
     }
 
-    public boolean isToggleable() {
-        return this != ONE_SHOT;
-    }
-
     @Override
     public String toString() {
-        return value;
+        return getValue();
     }
 }

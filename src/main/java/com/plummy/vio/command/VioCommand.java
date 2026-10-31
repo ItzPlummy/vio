@@ -8,10 +8,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.plummy.vio.Vio;
 import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.access.AccessManager;
-import com.plummy.vio.access.PlayerAccess;
 import com.plummy.vio.agent.Agent;
 import com.plummy.vio.network.Networking;
 import com.plummy.vio.network.payload.ClearHistoryPayload;
+import com.plummy.vio.user.PlayerUser;
 import com.plummy.vio.tool.catalog.server.RunCommandTool;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -74,10 +74,10 @@ public class VioCommand {
         }
 
         for (GameProfile profile : profiles) {
-            PlayerAccess playerAccess = accessManager.getPlayerAccess(profile.getId());
-            String text = playerAccess == null
+            PlayerUser playerUser = accessManager.getPlayerUser(profile.getId());
+            String text = playerUser == null
                     ? "%s has access level %s (server default).".formatted(profile.getName(), accessManager.getDefaultAccessLevel())
-                    : "%s has access level %s.".formatted(profile.getName(), playerAccess.getAccessLevel());
+                    : "%s has access level %s.".formatted(profile.getName(), playerUser.getAccessLevel());
 
             context.getSource().sendSystemMessage(Component.literal(text));
         }
@@ -95,7 +95,7 @@ public class VioCommand {
         }
 
         for (GameProfile profile : profiles) {
-            accessManager.setPlayerAccessLevel(profile.getId(), profile.getName(), level);
+            accessManager.setPlayerAccessLevel(profile.getId(), level);
             context.getSource().sendSuccess(() -> Component.literal("Set %s's Vio access level to %s.".formatted(profile.getName(), level)), true);
         }
 

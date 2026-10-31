@@ -16,12 +16,14 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class PlayerRequestMessage extends AbstractMessage {
+public final class PlayerRequestMessage implements Message {
 
     private final String request;
     private final PlayerInfo playerInfo;
@@ -31,6 +33,7 @@ public class PlayerRequestMessage extends AbstractMessage {
     private final ServerInfo serverInfo;
     private final ScriptInfo scriptInfo;
     private final boolean isVoice;
+    private final Instant dispatchTime;
 
     public PlayerRequestMessage(String request, PlayerInfo playerInfo, PlayerLocation playerLocation, PlayerState playerState, PlayerInventory playerInventory, ServerInfo serverInfo, ScriptInfo scriptInfo, boolean isVoice) {
         this.request = request;
@@ -41,11 +44,10 @@ public class PlayerRequestMessage extends AbstractMessage {
         this.serverInfo = serverInfo;
         this.scriptInfo = scriptInfo;
         this.isVoice = isVoice;
+        this.dispatchTime = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     }
 
     public PlayerRequestMessage(String request, PlayerInfo playerInfo, PlayerLocation playerLocation, PlayerState playerState, PlayerInventory playerInventory, ServerInfo serverInfo, ScriptInfo scriptInfo, boolean isVoice, Instant dispatchTime) {
-        super(dispatchTime);
-
         this.request = request;
         this.playerInfo = playerInfo;
         this.playerLocation = playerLocation;
@@ -54,6 +56,7 @@ public class PlayerRequestMessage extends AbstractMessage {
         this.serverInfo = serverInfo;
         this.scriptInfo = scriptInfo;
         this.isVoice = isVoice;
+        this.dispatchTime = dispatchTime;
     }
 
     public static PlayerRequestMessage of(String request, ServerPlayer player, MinecraftServer server, AccessLevel accessLevel, ScriptInfo scriptInfo, boolean isVoice) {
@@ -62,6 +65,11 @@ public class PlayerRequestMessage extends AbstractMessage {
 
     public static PlayerRequestMessage of(String request, ServerPlayer player, MinecraftServer server, AccessLevel accessLevel, ScriptInfo scriptInfo, boolean isVoice, Instant dispatchTime) {
         return new PlayerRequestMessage(request, PlayerInfo.of(player, accessLevel), PlayerLocation.of(player), PlayerState.of(player), PlayerInventory.of(player), ServerInfo.of(server), scriptInfo, isVoice, dispatchTime);
+    }
+
+    @Override
+    public Instant getDispatchTime() {
+        return dispatchTime;
     }
 
     @Override
@@ -184,9 +192,11 @@ public class PlayerRequestMessage extends AbstractMessage {
         public static ScriptInfo of(ScriptManager manager) {
             List<Entry> scripts = new ArrayList<>();
 
-            for (Script script : manager.getAll()) {
-                scripts.add(new Entry(script.getName(), script.getType(), script.getState(), script.getDescription()));
+            for (Script script : manager.getScripts()) {
+                scripts.add(new Entry(script.getKey().getKey(), script.getType(), manager.getScriptState(script.getKey()), script.getDescription()));
             }
+
+            scripts.sort(Comparator.comparing(Entry::name));
 
             return new ScriptInfo(scripts);
         }

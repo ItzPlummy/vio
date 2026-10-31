@@ -1,9 +1,9 @@
-package com.plummy.vio.script.dsl;
+package com.plummy.vio.script.runtime;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 
-public abstract class CommandCompiledScript extends CompiledScript {
+public abstract class CommandRuntimeScript extends RuntimeScript {
 
     private LiteralArgumentBuilder<CommandSourceStack> command;
 

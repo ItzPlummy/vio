@@ -6,7 +6,7 @@ public interface ScriptVisitor<T> {
 
     T visitPeriodicScript(PeriodicScript script);
 
-    T visitListenerScript(ListenerScript script);
-
     T visitCommandScript(CommandScript script);
+
+    T visitListenerScript(ListenerScript script);
 }

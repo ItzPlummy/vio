@@ -1,10 +1,10 @@
-package com.plummy.vio.script.dsl;
+package com.plummy.vio.script.runtime;
 
 import com.plummy.vio.script.ScriptLog;
 import groovy.lang.Script;
 import net.minecraft.server.MinecraftServer;
 
-public abstract class CompiledScript extends Script {
+public abstract class RuntimeScript extends Script {
 
     private MinecraftServer server;
     private ScriptLog log;

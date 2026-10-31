@@ -1,15 +1,8 @@
 package com.plummy.vio.script;
 
-import java.time.Instant;
-import java.util.UUID;
-
-public interface Toggleable extends Script {
+public sealed interface Toggleable extends Script permits PeriodicScript, CommandScript, ListenerScript {
 
     boolean isEnabled();
 
-    void setEnabled(boolean enabled, UUID toggledBy, Instant toggledAt);
-
-    UUID getToggledBy();
-
-    Instant getToggledAt();
+    Toggleable withEnabled(boolean isEnabled);
 }

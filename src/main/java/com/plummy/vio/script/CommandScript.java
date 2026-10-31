@@ -1,21 +1,23 @@
 package com.plummy.vio.script;
 
-import com.mojang.brigadier.tree.LiteralCommandNode;
-import net.minecraft.commands.CommandSourceStack;
+import com.plummy.vio.script.runtime.CommandRuntimeScript;
+import com.plummy.vio.script.runtime.RuntimeScript;
 
-import java.time.Instant;
-import java.util.UUID;
+public final class CommandScript implements Script, Toggleable {
 
-public class CommandScript extends AbstractToggleableScript {
+    private final ScriptKey key;
+    private final String description;
+    private final boolean isEnabled;
 
-    public static final int MAX_PERMISSION_LEVEL = 4;
+    public CommandScript(ScriptKey key, String description, boolean isEnabled) {
+        this.key = key;
+        this.description = description;
+        this.isEnabled = isEnabled;
+    }
 
-    private final int permissionLevel;
-    private LiteralCommandNode<CommandSourceStack> node;
-
-    public CommandScript(String name, String description, UUID creator, Instant createdAt, int permissionLevel, boolean enabled, UUID toggledBy, Instant toggledAt, String source) {
-        super(name, description, creator, createdAt, enabled, toggledBy, toggledAt, source);
-        this.permissionLevel = permissionLevel;
+    @Override
+    public ScriptKey getKey() {
+        return key;
     }
 
     @Override
@@ -24,19 +26,27 @@ public class CommandScript extends AbstractToggleableScript {
     }
 
     @Override
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public Class<? extends RuntimeScript> getRuntimeBaseClass() {
+        return CommandRuntimeScript.class;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return isEnabled;
+    }
+
+    @Override
+    public CommandScript withEnabled(boolean isEnabled) {
+        return new CommandScript(key, description, isEnabled);
+    }
+
+    @Override
     public <T> T accept(ScriptVisitor<T> visitor) {
         return visitor.visitCommandScript(this);
-    }
-
-    public int getPermissionLevel() {
-        return permissionLevel;
-    }
-
-    LiteralCommandNode<CommandSourceStack> getNode() {
-        return node;
-    }
-
-    void setNode(LiteralCommandNode<CommandSourceStack> node) {
-        this.node = node;
     }
 }

@@ -1,16 +1,23 @@
 package com.plummy.vio.script;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
+import com.plummy.vio.script.runtime.ListenerRuntimeScript;
+import com.plummy.vio.script.runtime.RuntimeScript;
 
-public class ListenerScript extends AbstractToggleableScript {
+public final class ListenerScript implements Script, Toggleable {
 
-    private List<Consumer<?>> registered = List.of();
+    private final ScriptKey key;
+    private final String description;
+    private final boolean isEnabled;
 
-    public ListenerScript(String name, String description, UUID creator, Instant createdAt, boolean enabled, UUID toggledBy, Instant toggledAt, String source) {
-        super(name, description, creator, createdAt, enabled, toggledBy, toggledAt, source);
+    public ListenerScript(ScriptKey key, String description, boolean isEnabled) {
+        this.key = key;
+        this.description = description;
+        this.isEnabled = isEnabled;
+    }
+
+    @Override
+    public ScriptKey getKey() {
+        return key;
     }
 
     @Override
@@ -19,15 +26,27 @@ public class ListenerScript extends AbstractToggleableScript {
     }
 
     @Override
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public Class<? extends RuntimeScript> getRuntimeBaseClass() {
+        return ListenerRuntimeScript.class;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return isEnabled;
+    }
+
+    @Override
+    public ListenerScript withEnabled(boolean isEnabled) {
+        return new ListenerScript(key, description, isEnabled);
+    }
+
+    @Override
     public <T> T accept(ScriptVisitor<T> visitor) {
         return visitor.visitListenerScript(this);
-    }
-
-    List<Consumer<?>> getRegistered() {
-        return registered;
-    }
-
-    void setRegistered(List<Consumer<?>> registered) {
-        this.registered = registered;
     }
 }

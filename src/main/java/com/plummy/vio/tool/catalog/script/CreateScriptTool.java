@@ -1,7 +1,6 @@
 package com.plummy.vio.tool.catalog.script;
 
 import com.google.gson.JsonObject;
-import com.plummy.vio.Vio;
 import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.config.ScriptLimits;
 import com.plummy.vio.config.ServerConfig;
@@ -13,35 +12,31 @@ import com.plummy.vio.tool.requester.ToolRequester;
 import com.plummy.vio.tool.value.argument.ArgumentDefinition;
 import com.plummy.vio.tool.value.argument.ArgumentType;
 import com.plummy.vio.tool.value.argument.Arguments;
-import net.minecraft.server.MinecraftServer;
 
-import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.SequencedMap;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
-public class SaveScriptTool implements BasicTool {
+public class CreateScriptTool implements BasicTool {
 
     private final ScriptType type;
 
-    public SaveScriptTool(ScriptType type) {
+    public CreateScriptTool(ScriptType type) {
         this.type = type;
     }
 
     @Override
     public String getName() {
-        return "save_%s_script".formatted(type.getValue());
+        return "create_%s_script".formatted(type.getValue());
     }
 
     @Override
     public String getDescription() {
-        return ("Create or replace a %s script. %s "
-                + "Scripts are Groovy 4, compiled with @CompileStatic on NeoForge 1.21.1, which uses Mojang's official names (ServerPlayer, ServerLevel, Component, BlockPos, ...), so wrong names or types fail right here with line numbers: fix them and save again. "
+        return ("Create a %s script. %s "
+                + "Scripts are Groovy 4, compiled with @CompileStatic on NeoForge 1.21.1, which uses Mojang's official names (ServerPlayer, ServerLevel, Component, BlockPos, ...), so wrong names or types fail right here: fix them and create it again. "
                 + "A script is plain top-level statements, like the example: no class declarations, no main method. It's not Bukkit, Spigot, Paper, Fabric or old Forge: their classes don't exist. "
-                + "Nothing is imported automatically: write every import. Besides the server's own API, scripts get server (the MinecraftServer) and log (log.info/warn/error(String); println goes to log.info too), read with read_script_log. "
+                + "Nothing is imported automatically: write every import. Besides the server's own API, scripts get server (the MinecraftServer), and println writes to the script's log, read with read_script_log. "
                 + "Scripts run on the server thread with full server authority: keep every run short, never sleep, block or load chunks, and never do what your tools couldn't, such as level 3-4 operator actions. "
-                + "A new script is enabled right away; a replaced one stays enabled or disabled and its log is emptied. If compiling fails, nothing is saved and any previous version keeps running.\n"
+                + "A new script is enabled right away. If compiling fails, nothing is saved. The name must be free: to change only an existing script's source use update_script_source, and to change anything else, delete_script it and create it again.\n"
                 + "Example:\n%s").formatted(type, getTypeDescription(), getExample());
     }
 
@@ -89,6 +84,7 @@ public class SaveScriptTool implements BasicTool {
                     import net.minecraft.server.level.ServerPlayer
 
                     command(Commands.literal('heal')
+                            .requires { source -> source.hasPermission(2) }
                             .then(Commands.argument('target', EntityArgument.player())
                                     .executes { ctx ->
                                         ServerPlayer target = EntityArgument.getPlayer(ctx, 'target')
@@ -103,19 +99,19 @@ public class SaveScriptTool implements BasicTool {
         return switch (type) {
             case ONE_SHOT -> "The script body is the action: run it with run_script as often as needed, within %s ms per run; its return value comes back as the result."
                     .formatted(ServerConfig.RUN_BUDGET_MILLIS.get());
-            case PERIODIC -> "The script body runs every interval_ticks ticks (20 ticks = 1 second) while the script is enabled, the first time one interval after it's enabled or the server starts, within %s ms per run; after %s failures in a row it's disabled. Every run starts fresh, so script variables don't keep values between runs. run_script runs it once right away for testing."
-                    .formatted(ServerConfig.PERIODIC_BUDGET_MILLIS.get(), ServerConfig.MAX_FAILURES.get());
+            case PERIODIC -> "The script body runs every interval_ticks ticks (20 ticks = 1 second) while the script is enabled, the first time one interval after it's enabled or the server starts, within %s ms per run. Every run starts fresh, so script variables don't keep values between runs. run_script runs it once right away for testing."
+                    .formatted(ServerConfig.PERIODIC_BUDGET_MILLIS.get());
             case LISTENER -> ("The script body only declares event handlers, and runs whenever the script is enabled (also when it's saved enabled and when the server starts): on(EventClass) { e -> ... }, as many as needed; e is typed as the event. "
                     + "Only concrete NeoForge game events work: not abstract ones like PlayerEvent itself, mod loading events or client events. Handlers don't see events another mod already canceled. "
                     + "Common events, in net.neoforged.neoforge.event: entity.player.PlayerEvent.PlayerLoggedInEvent, PlayerRespawnEvent and ItemCraftedEvent; entity.player.PlayerInteractEvent.RightClickBlock; level.BlockEvent.BreakEvent and EntityPlaceEvent; entity.living.LivingDeathEvent and LivingIncomingDamageEvent; entity.EntityJoinLevelEvent; ServerChatEvent. Import the outer class for nested ones, as in the example. "
-                    + "Each handler call runs on the server thread within %s ms, declaring within %s ms; after %s failures in a row the script is disabled. Prefer rare, specific events: frequent ones like every entity's tick cost a call each time.")
-                    .formatted(ServerConfig.LISTENER_BUDGET_MILLIS.get(), ScriptLimits.DECLARE_BUDGET_MILLIS, ServerConfig.MAX_FAILURES.get());
+                    + "Each handler call runs on the server thread within %s ms, declaring within %s ms. A failing handler stays registered and logs every failure, so fix or disable it. Prefer rare, specific events: frequent ones like every entity's tick cost a call each time.")
+                    .formatted(ServerConfig.LISTENER_BUDGET_MILLIS.get(), ScriptLimits.DECLARE_BUDGET_MILLIS);
             case COMMAND -> ("The script body only declares the command, and runs whenever the script is enabled (also when it's saved enabled and when the server starts): command(Commands.literal('name')...) exactly once, with Brigadier builder calls chained inside the parentheses as in the example; .executes takes a closure { ctx -> ...; return 1 }. "
                     + "Import net.minecraft.commands.Commands and the argument types (com.mojang.brigadier.arguments.*, net.minecraft.commands.arguments.*); item and block arguments take CommandBuildContext.simple(server.registryAccess(), server.worldData.enabledFeatures()). "
-                    + "The name is 1 to 32 lowercase letters, digits and underscores and can't be an existing command. permission_level decides who can use it, so .requires is ignored; redirect, fork and custom argument types aren't supported. "
-                    + "Executes and suggestions run on the server thread within %s ms per call, declaring within %s ms; after %s failures in a row the script is disabled. For errors meant for the player, throw a CommandSyntaxException or call ctx.source.sendFailure(...): those aren't failures. "
-                    + "The command runs with full server authority whoever types it, so choose permission_level deliberately.")
-                    .formatted(ServerConfig.COMMAND_BUDGET_MILLIS.get(), ScriptLimits.DECLARE_BUDGET_MILLIS, ServerConfig.MAX_FAILURES.get());
+                    + "The name is 1 to 32 lowercase letters, digits and underscores and can't be an existing command. Redirect, fork and custom argument types aren't supported. "
+                    + "Executes, suggestions and requires run on the server thread within %s ms per call, declaring within %s ms. For errors meant for the player, throw a CommandSyntaxException or call ctx.source.sendFailure(...). "
+                    + "The command runs with full server authority whoever types it, and without .requires every player can use it: add .requires { source -> source.hasPermission(level) } deliberately, 0 every player to 4 owners.")
+                    .formatted(ServerConfig.COMMAND_BUDGET_MILLIS.get(), ScriptLimits.DECLARE_BUDGET_MILLIS);
         };
     }
 
@@ -124,19 +120,14 @@ public class SaveScriptTool implements BasicTool {
         SequencedMap<String, ArgumentDefinition> schema = new LinkedHashMap<>();
 
         schema.put("status", ArgumentDefinition.status());
-        schema.put("name", new ArgumentDefinition(ArgumentType.STRING, "Script name, also its file name: %s.".formatted(ScriptStorage.NAME_RULE)));
+        schema.put("name", new ArgumentDefinition(ArgumentType.STRING, "Script name, also its file name: %s.".formatted(ScriptKey.RULE)));
         schema.put("description", new ArgumentDefinition(ArgumentType.STRING, "What the script does, one line of up to %s characters.".formatted(ScriptLimits.MAX_DESCRIPTION_LENGTH)));
 
         if (type == ScriptType.PERIODIC) {
             schema.put("interval_ticks", new ArgumentDefinition(ArgumentType.INTEGER, "Ticks between runs, %s to %s; 20 ticks = 1 second.".formatted(ScriptLimits.MIN_INTERVAL_TICKS, ScriptLimits.MAX_INTERVAL_TICKS)));
         }
 
-        if (type == ScriptType.COMMAND) {
-            schema.put("permission_level", new ArgumentDefinition(ArgumentType.INTEGER, "Who can use the command, 0 to 4: 0 every player, 1 moderators, 2 game masters (like command blocks), 3 admins, 4 owners."));
-        }
-
-        schema.put("source", new ArgumentDefinition(ArgumentType.STRING, "Groovy source, imports first. No header: Vio writes it."));
-        schema.put("replace", new ArgumentDefinition(ArgumentType.BOOLEAN, "true to replace an existing script with this name; false fails if the name is taken."));
+        schema.put("source", new ArgumentDefinition(ArgumentType.STRING, "Groovy source, imports first."));
 
         return schema;
     }
@@ -153,79 +144,49 @@ public class SaveScriptTool implements BasicTool {
 
     @Override
     public ExecutionResult execute(ToolRequester requester, Arguments arguments) {
-        if (!(requester instanceof PlayerToolRequester player)) {
-            return ExecutionResult.failure("Only players can save scripts");
+        if (!(requester instanceof PlayerToolRequester)) {
+            return ExecutionResult.failure("Only players can create scripts");
         }
 
         ScriptManager manager = ScriptTools.getManager();
-        String name = ScriptTools.getName(arguments);
+        ScriptKey key = ScriptTools.getKey(arguments);
         String description = arguments.getString("description").replaceAll("\\R", " ").strip();
         Integer intervalTicks = type == ScriptType.PERIODIC ? arguments.getInt("interval_ticks", ScriptLimits.MIN_INTERVAL_TICKS, ScriptLimits.MAX_INTERVAL_TICKS) : null;
-        Integer permissionLevel = type == ScriptType.COMMAND ? arguments.getInt("permission_level", 0, CommandScript.MAX_PERMISSION_LEVEL) : null;
         String source = arguments.getString("source");
-        boolean replace = arguments.getBoolean("replace");
 
         if (description.isEmpty() || description.length() > ScriptLimits.MAX_DESCRIPTION_LENGTH) {
             return ExecutionResult.invalidArguments("description must be 1 to %s characters, got %s".formatted(ScriptLimits.MAX_DESCRIPTION_LENGTH, description.length()));
-        }
-
-        if (description.contains("*/")) {
-            return ExecutionResult.invalidArguments("description can't contain */");
         }
 
         if (source.isBlank() || source.length() > ScriptLimits.MAX_SOURCE_LENGTH) {
             return ExecutionResult.invalidArguments("source must be 1 to %s characters, got %s".formatted(ScriptLimits.MAX_SOURCE_LENGTH, source.length()));
         }
 
-        UUID creator = player.getPlayerId();
-        Instant createdAt = Instant.now();
-        Script script = switch (type) {
-            case ONE_SHOT -> new OneShotScript(name, description, creator, createdAt, source);
-            case PERIODIC -> new PeriodicScript(name, description, creator, createdAt, intervalTicks, true, creator, createdAt, source);
-            case LISTENER -> new ListenerScript(name, description, creator, createdAt, true, creator, createdAt, source);
-            case COMMAND -> new CommandScript(name, description, creator, createdAt, permissionLevel, true, creator, createdAt, source);
-        };
-
-        script.compile();
-
-        if (!script.isCompiled()) {
-            return ExecutionResult.invalidArguments("%s\nNothing was saved, and any previous version is unchanged".formatted(script.getError()));
-        }
-
-        MinecraftServer server = manager.getServer();
-
-        if (!server.isRunning()) {
-            script.dispose();
-            return ExecutionResult.failure("Server isn't running");
+        if (manager.getScript(key) != null) {
+            return ExecutionResult.invalidArguments("A script named '%s' already exists. Use update_script_source to change its source, delete_script it to change anything else, or choose another name".formatted(key));
         }
 
         try {
-            return server.submit(() -> save(manager, script, replace)).get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ExecutionResult.failure("Execution interrupted");
-        } catch (ExecutionException e) {
-            Vio.getLogger().error("Failed to save script %s".formatted(name), e.getCause());
-            return ExecutionResult.failure("Couldn't save the script: %s".formatted(e.getCause().getMessage()));
-        }
-    }
-
-    private static ExecutionResult save(ScriptManager manager, Script script, boolean replace) {
-        boolean replaced;
-
-        try {
-            replaced = manager.save(script, replace);
+            manager.createScript(createScript(key, description, intervalTicks), new ScriptSource(key, source));
         } catch (ScriptException e) {
-            return ExecutionResult.invalidArguments(e.getMessage());
+            return ExecutionResult.invalidArguments("%s\nNothing was saved".formatted(e.getMessage()));
         }
 
         JsonObject json = new JsonObject();
 
-        json.addProperty("name", script.getName());
-        json.addProperty("type", script.getType().getValue());
-        json.addProperty("state", script.getState().getValue());
-        json.addProperty("replaced", replaced);
+        json.addProperty("name", key.getKey());
+        json.addProperty("type", type.getValue());
+        json.addProperty("state", manager.getScriptState(key).getValue());
 
         return ExecutionResult.success(json);
+    }
+
+    private Script createScript(ScriptKey key, String description, Integer intervalTicks) {
+        return switch (type) {
+            case ONE_SHOT -> new OneShotScript(key, description);
+            case PERIODIC -> new PeriodicScript(key, description, true, intervalTicks);
+            case LISTENER -> new ListenerScript(key, description, true);
+            case COMMAND -> new CommandScript(key, description, true);
+        };
     }
 }

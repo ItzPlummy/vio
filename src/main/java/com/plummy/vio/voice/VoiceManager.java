@@ -111,7 +111,7 @@ public class VoiceManager {
             return SubmitResult.UNAVAILABLE;
         }
 
-        if (Vio.getAccessManager().getAccessLevel(playerId) == AccessLevel.NONE) {
+        if (Vio.getAccessManager().getPlayerAccessLevel(playerId) == AccessLevel.NONE) {
             return SubmitResult.DENIED;
         }
 

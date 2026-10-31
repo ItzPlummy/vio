@@ -1,14 +1,11 @@
-package com.plummy.vio.script.dsl;
+package com.plummy.vio.script.runtime;
 
 import net.neoforged.bus.api.Event;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
-public abstract class ListenerCompiledScript extends CompiledScript {
+public abstract class ListenerRuntimeScript extends RuntimeScript {
 
     private final Map<Class<? extends Event>, Collection<Consumer<Event>>> handlers = new LinkedHashMap<>();
 

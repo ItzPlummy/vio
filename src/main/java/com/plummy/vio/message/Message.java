@@ -2,7 +2,7 @@ package com.plummy.vio.message;
 
 import java.time.Instant;
 
-public interface Message {
+public sealed interface Message permits PlayerRequestMessage, ToolRequestMessage, ToolResponseMessage, AgentResponseMessage {
 
     Instant getDispatchTime();
 

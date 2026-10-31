@@ -25,7 +25,7 @@ public class RunScriptTool implements ServerTool {
 
     @Override
     public String getDescription() {
-        return "Run a one-shot script, or a periodic script once right now even if it's disabled, and get its return value, what it logged and any error with its line. Runs on the server thread within %s ms. Failures here never disable a script."
+        return "Run a one-shot script, or a periodic script once right now even if it's disabled, and get its return value, what it printed and any error. Runs on the server thread within %s ms."
                 .formatted(ServerConfig.RUN_BUDGET_MILLIS.get());
     }
 
@@ -52,30 +52,30 @@ public class RunScriptTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         ScriptManager manager = ScriptTools.getManager();
-        Script script = ScriptTools.getScript(manager, arguments);
-        long mark = script.getLog().mark();
+        Script script = ScriptTools.getScript(manager, ScriptTools.getKey(arguments));
         ScriptOutcome result;
 
         try {
-            result = manager.run(script);
+            result = manager.execute(script.getKey());
         } catch (ScriptException e) {
             return ExecutionResult.invalidArguments(e.getMessage());
         }
 
-        List<ScriptLog.Entry> output = script.getLog().getEntriesSince(mark);
+        // The output is newest first, the result oldest first
+        List<ScriptLogEntry> output = result.output().reversed();
         JsonArray outputJson = new JsonArray();
 
-        for (ScriptLog.Entry entry : output.subList(0, Math.min(output.size(), ScriptLimits.MAX_OUTPUT_LINES))) {
-            outputJson.add(entry.level() == ScriptLog.Level.INFO ? entry.message() : "[%s] %s".formatted(entry.level(), entry.message()));
+        for (ScriptLogEntry entry : output.subList(0, Math.min(output.size(), ScriptLimits.MAX_OUTPUT_LINES))) {
+            outputJson.add(entry.level() == ScriptLogLevel.INFO ? entry.message() : "[%s] %s".formatted(entry.level(), entry.message()));
         }
 
         JsonObject json = new JsonObject();
 
         json.addProperty("success", result.isSuccessful());
-        json.addProperty("result", result.getResult() == null ? null : truncate(String.valueOf(result.getResult())));
+        json.addProperty("result", result.result() == null ? null : truncate(String.valueOf(result.result())));
         json.add("output", outputJson);
-        json.addProperty("error", result.getError());
-        json.addProperty("duration_ms", result.getDurationMillis());
+        json.addProperty("error", result.error());
+        json.addProperty("duration_ms", result.durationMillis());
         json.addProperty("truncated", output.size() > ScriptLimits.MAX_OUTPUT_LINES);
 
         return ExecutionResult.success(json);

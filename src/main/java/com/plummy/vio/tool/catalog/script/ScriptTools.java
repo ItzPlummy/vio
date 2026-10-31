@@ -1,16 +1,14 @@
 package com.plummy.vio.tool.catalog.script;
 
 import com.google.gson.JsonObject;
-import com.mojang.authlib.GameProfile;
 import com.plummy.vio.Vio;
 import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.script.*;
 import com.plummy.vio.tool.executor.ExecutionResultException;
 import com.plummy.vio.tool.value.argument.Arguments;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.players.GameProfileCache;
 
-import java.util.UUID;
+import java.util.Comparator;
+import java.util.List;
 
 public final class ScriptTools {
 
@@ -34,60 +32,40 @@ public final class ScriptTools {
         return manager;
     }
 
-    public static String getName(Arguments arguments) {
-        String name = arguments.getString("name");
-
-        if (!ScriptStorage.isValidName(name)) {
-            throw ExecutionResultException.invalidArguments("Invalid script name '%s': names are %s".formatted(name, ScriptStorage.NAME_RULE));
+    public static ScriptKey getKey(Arguments arguments) {
+        try {
+            return new ScriptKey(arguments.getString("name"));
+        } catch (ScriptException e) {
+            throw ExecutionResultException.invalidArguments(e.getMessage());
         }
-
-        return name;
     }
 
-    public static Script getScript(ScriptManager manager, Arguments arguments) {
-        String name = getName(arguments);
-        Script script = manager.get(name);
+    public static Script getScript(ScriptManager manager, ScriptKey key) {
+        Script script = manager.getScript(key);
 
         if (script == null) {
-            throw ExecutionResultException.invalidArguments("No script named '%s'. Use list_scripts to see every script".formatted(name));
+            throw ExecutionResultException.invalidArguments("No script named '%s'. Use list_scripts to see every script".formatted(key));
         }
 
         return script;
     }
 
-    public static JsonObject describe(MinecraftServer server, Script script) {
+    public static List<Script> getSortedScripts(ScriptManager manager) {
+        return manager.getScripts().stream().sorted(Comparator.comparing(script -> script.getKey().getKey())).toList();
+    }
+
+    public static JsonObject describe(ScriptManager manager, Script script) {
         JsonObject json = new JsonObject();
 
-        json.addProperty("name", script.getName());
+        json.addProperty("name", script.getKey().getKey());
         json.addProperty("type", script.getType().getValue());
-        json.addProperty("state", script.getState().getValue());
-        json.addProperty("error", script.getError());
+        json.addProperty("state", manager.getScriptState(script.getKey()).getValue());
         json.addProperty("description", script.getDescription());
 
-        if (script instanceof PeriodicScript periodic) {
-            json.addProperty("interval_ticks", periodic.getIntervalTicks());
-        }
-
-        if (script instanceof CommandScript command) {
-            json.addProperty("permission_level", command.getPermissionLevel());
-        }
-
-        json.addProperty("creator", script.getCreator().toString());
-        json.addProperty("creator_name", getPlayerName(server, script.getCreator()));
-        json.addProperty("created_at", script.getCreatedAt().toString());
-
-        if (script instanceof Toggleable toggleable) {
-            json.addProperty("toggled_by", toggleable.getToggledBy().toString());
-            json.addProperty("toggled_by_name", getPlayerName(server, toggleable.getToggledBy()));
-            json.addProperty("toggled_at", toggleable.getToggledAt().toString());
+        if (script instanceof PeriodicScript periodicScript) {
+            json.addProperty("interval_ticks", periodicScript.getPeriodTicks());
         }
 
         return json;
-    }
-
-    private static String getPlayerName(MinecraftServer server, UUID playerId) {
-        GameProfileCache cache = server.getProfileCache();
-
-        return cache == null ? null : cache.get(playerId).map(GameProfile::getName).orElse(null);
     }
 }

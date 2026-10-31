@@ -2,7 +2,7 @@ package com.plummy.vio;
 
 import com.mojang.logging.LogUtils;
 import com.plummy.vio.access.AccessManager;
-import com.plummy.vio.access.PlayerAccessStorage;
+import com.plummy.vio.access.DefaultAccessManager;
 import com.plummy.vio.agent.Agent;
 import com.plummy.vio.agent.VioAgent;
 import com.plummy.vio.command.VioCommand;
@@ -14,10 +14,12 @@ import com.plummy.vio.listener.AgentListener;
 import com.plummy.vio.listener.NetworkAgentListener;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderFactory;
+import com.plummy.vio.script.DefaultScriptManager;
+import com.plummy.vio.script.PeriodicScriptTicker;
 import com.plummy.vio.script.ScriptManager;
-import com.plummy.vio.script.ScriptStorage;
 import com.plummy.vio.tool.executor.BasicToolExecutor;
 import com.plummy.vio.tool.executor.ServerToolExecutor;
+import com.plummy.vio.user.PlayerUserStorage;
 import com.plummy.vio.voice.VoiceAgentListener;
 import com.plummy.vio.voice.VoiceChat;
 import com.plummy.vio.voice.VoiceManager;
@@ -55,12 +57,12 @@ public class Vio {
     private static AccessManager accessManager;
 
     private static PlayerConversationStorage conversationStorage;
-    private static PlayerAccessStorage playerAccessStorage;
+    private static PlayerUserStorage playerUserStorage;
 
     private static VoiceManager voiceManager;
     private static ScriptManager scriptManager;
+    private static PeriodicScriptTicker periodicScriptTicker;
 
-    // Set by the voice chat plugin while its server runs, from its own thread.
     private static volatile VoiceChat voiceChat;
 
     public Vio(IEventBus modEventBus, ModContainer modContainer) {
@@ -76,8 +78,8 @@ public class Vio {
 
         provider = ProviderFactory.createProvider();
         conversationStorage = PlayerConversationStorage.fromServer(server);
-        playerAccessStorage = PlayerAccessStorage.fromServer(server);
-        accessManager = new AccessManager(getPlayerAccessStorage());
+        playerUserStorage = PlayerUserStorage.fromServer(server);
+        accessManager = new DefaultAccessManager(server, getPlayerUserStorage());
 
         List<AgentListener> listeners = new ArrayList<>();
         listeners.add(new NetworkAgentListener());
@@ -105,9 +107,10 @@ public class Vio {
     @SubscribeEvent
     public void onServerLevelsLoaded(ServerStartingEvent event) {
         if (ServerConfig.SCRIPTS_ENABLED.get()) {
-            scriptManager = new ScriptManager(event.getServer(), ScriptStorage.fromServer(event.getServer()));
+            scriptManager = new DefaultScriptManager(event.getServer());
             scriptManager.load();
-            NeoForge.EVENT_BUS.register(scriptManager);
+            periodicScriptTicker = new PeriodicScriptTicker(scriptManager);
+            NeoForge.EVENT_BUS.register(periodicScriptTicker);
         }
     }
 
@@ -119,7 +122,8 @@ public class Vio {
         }
 
         if (scriptManager != null) {
-            NeoForge.EVENT_BUS.unregister(scriptManager);
+            NeoForge.EVENT_BUS.unregister(periodicScriptTicker);
+            periodicScriptTicker = null;
             scriptManager.shutdown();
             scriptManager = null;
         }
@@ -132,7 +136,7 @@ public class Vio {
 
         provider = null;
         conversationStorage = null;
-        playerAccessStorage = null;
+        playerUserStorage = null;
     }
 
     @SubscribeEvent
@@ -169,8 +173,8 @@ public class Vio {
         return conversationStorage;
     }
 
-    public static PlayerAccessStorage getPlayerAccessStorage() {
-        return playerAccessStorage;
+    public static PlayerUserStorage getPlayerUserStorage() {
+        return playerUserStorage;
     }
 
     public static VoiceManager getVoiceManager() {

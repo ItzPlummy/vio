@@ -13,9 +13,9 @@ public enum AccessLevel {
     }
 
     public static AccessLevel fromValue(String value) {
-        for (AccessLevel level : values()) {
-            if (level.getValue().equals(value)) {
-                return level;
+        for (AccessLevel accessLevel : values()) {
+            if (accessLevel.getValue().equals(value)) {
+                return accessLevel;
             }
         }
 

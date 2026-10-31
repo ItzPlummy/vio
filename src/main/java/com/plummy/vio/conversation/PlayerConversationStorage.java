@@ -17,7 +17,7 @@ public class PlayerConversationStorage extends ConversationStorage<UUID, PlayerC
     }
 
     public static PlayerConversationStorage fromServer(MinecraftServer server) {
-        return new PlayerConversationStorage(server.getWorldPath(new LevelResource("serverconfig")).resolve(Vio.MODID).resolve("conversations"));
+        return new PlayerConversationStorage(server.getWorldPath(new LevelResource("serverconfig")).resolve(Vio.MODID).resolve("conversations").resolve("players"));
     }
 
     @Override

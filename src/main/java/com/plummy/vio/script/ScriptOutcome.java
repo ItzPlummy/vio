@@ -1,36 +1,14 @@
 package com.plummy.vio.script;
 
-public class ScriptOutcome {
+import java.util.List;
 
-    private final Object result;
-    private final String error;
-    private final Throwable exception;
-    private final long durationMillis;
-
-    public ScriptOutcome(Object result, String error, Throwable exception, long durationMillis) {
-        this.result = result;
-        this.error = error;
-        this.exception = exception;
-        this.durationMillis = durationMillis;
-    }
-
-    public Object getResult() {
-        return result;
-    }
-
-    public String getError() {
-        return error;
-    }
-
-    public Throwable getException() {
-        return exception;
-    }
-
-    public long getDurationMillis() {
-        return durationMillis;
-    }
+public record ScriptOutcome(Object result, String error, Throwable exception, List<ScriptLogEntry> output, long durationMillis) {
 
     public boolean isSuccessful() {
         return error == null;
+    }
+
+    public ScriptOutcome withOutput(List<ScriptLogEntry> output) {
+        return new ScriptOutcome(result, error, exception, output, durationMillis);
     }
 }

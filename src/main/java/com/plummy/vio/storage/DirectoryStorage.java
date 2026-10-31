@@ -99,6 +99,27 @@ public abstract class DirectoryStorage<K, V extends StorageItem<K>> implements S
         synced = true;
     }
 
+    public void sync() {
+        if (synced) {
+            return;
+        }
+
+        for (K key : getPersistentKeys()) {
+            if (cache.has(key) || missing.contains(key)) {
+                continue;
+            }
+
+            V item = getPersistent(key);
+
+            if (item != null) {
+                cache.save(item);
+            }
+        }
+
+        missing.clear();
+        synced = true;
+    }
+
     protected V getPersistent(K key) {
         Path path = getItemPath(key);
 
@@ -174,23 +195,6 @@ public abstract class DirectoryStorage<K, V extends StorageItem<K>> implements S
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to delete %s".formatted(path), e);
         }
-    }
-
-    protected void sync() {
-        for (K key : getPersistentKeys()) {
-            if (cache.has(key) || missing.contains(key)) {
-                continue;
-            }
-
-            V item = getPersistent(key);
-
-            if (item != null) {
-                cache.save(item);
-            }
-        }
-
-        missing.clear();
-        synced = true;
     }
 
     private Path getItemPath(K key) {

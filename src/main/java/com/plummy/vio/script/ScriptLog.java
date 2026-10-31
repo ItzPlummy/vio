@@ -1,76 +1,34 @@
 package com.plummy.vio.script;
 
-import com.plummy.vio.config.ScriptLimits;
-import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.List;
 
-public class ScriptLog {
+public interface ScriptLog {
 
-    private final Deque<Entry> entries = new ArrayDeque<>();
-    private long added;
+    List<ScriptLogEntry> getEntries(int limit, int offset);
 
-    public void info(String message) {
-        add(Level.INFO, message);
+    void log(String message, ScriptLogLevel level);
+
+    default List<ScriptLogEntry> getEntries() {
+        return getEntries(Integer.MAX_VALUE, 0);
     }
 
-    public void warn(String message) {
-        add(Level.WARN, message);
+    default List<ScriptLogEntry> getEntries(ScriptLogLevel level) {
+        return getEntries().stream().filter(entry -> entry.level().isAtLeast(level)).toList();
     }
 
-    public void error(String message) {
-        add(Level.ERROR, message);
+    default List<ScriptLogEntry> getEntries(int limit, int offset, ScriptLogLevel level) {
+        return getEntries(level).stream().skip(offset).limit(limit).toList();
     }
 
-    public synchronized void add(Level level, String message) {
-        String text = message.length() > ScriptLimits.MAX_LOG_MESSAGE_LENGTH ? "%s ...".formatted(message.substring(0, ScriptLimits.MAX_LOG_MESSAGE_LENGTH)) : message;
-
-        if (entries.size() == ScriptLimits.LOG_CAPACITY) {
-            entries.removeFirst();
-        }
-
-        entries.addLast(new Entry(Instant.now(), level, text));
-        added++;
+    default void info(String message) {
+        log(message, ScriptLogLevel.INFO);
     }
 
-    public synchronized List<Entry> getEntries() {
-        return List.copyOf(entries);
+    default void warning(String message) {
+        log(message, ScriptLogLevel.WARNING);
     }
 
-    public synchronized long mark() {
-        return added;
-    }
-
-    public synchronized List<Entry> getEntriesSince(long mark) {
-        List<Entry> all = List.copyOf(entries);
-        int count = (int) Math.min(all.size(), added - mark);
-
-        return all.subList(all.size() - count, all.size());
-    }
-
-    public record Entry(Instant time, Level level, String message) {
-    }
-
-    public enum Level {
-
-        INFO("info"),
-        WARN("warn"),
-        ERROR("error");
-
-        private final String value;
-
-        Level(String value) {
-            this.value = value;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return value;
-        }
+    default void error(String message) {
+        log(message, ScriptLogLevel.ERROR);
     }
 }

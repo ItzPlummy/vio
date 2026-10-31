@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.script.Script;
+import com.plummy.vio.script.ScriptManager;
 import com.plummy.vio.tool.ServerTool;
 import com.plummy.vio.tool.executor.ExecutionResult;
 import com.plummy.vio.tool.value.argument.ArgumentDefinition;
@@ -26,7 +27,7 @@ public class ListScriptsTool implements ServerTool {
 
     @Override
     public String getDescription() {
-        return "Scripts saved on this server, sorted by name: type, state (enabled, disabled or errored, with the error), description, interval or permission level, who created them and who last enabled or disabled them. Scripts are shared: every FULL player can use and change all of them.%s".formatted(ScriptTools.DATA_NOTE);
+        return "Scripts saved on this server, sorted by name: type, state (enabled, disabled, or errored when it doesn't compile or couldn't start; read_script_log has why), description and interval. Scripts are shared: every FULL player can use and change all of them.%s".formatted(ScriptTools.DATA_NOTE);
     }
 
     @Override
@@ -52,11 +53,12 @@ public class ListScriptsTool implements ServerTool {
     @Override
     public ExecutionResult execute(Context context, Arguments arguments) {
         Page page = arguments.getPage("page", MAX_LIMIT);
-        List<Script> scripts = ScriptTools.getManager().getAll();
+        ScriptManager manager = ScriptTools.getManager();
+        List<Script> scripts = ScriptTools.getSortedScripts(manager);
         JsonArray scriptsJson = new JsonArray();
 
         for (Script script : page.apply(scripts)) {
-            scriptsJson.add(ScriptTools.describe(context.getServer(), script));
+            scriptsJson.add(ScriptTools.describe(manager, script));
         }
 
         JsonObject json = new JsonObject();

@@ -91,10 +91,11 @@ public class ToolRegistry {
 
     public static ServerTool LIST_SCRIPTS = register(new ListScriptsTool());
     public static ServerTool READ_SCRIPT = register(new ReadScriptTool());
-    public static BasicTool SAVE_ONE_SHOT_SCRIPT = register(new SaveScriptTool(ScriptType.ONE_SHOT));
-    public static BasicTool SAVE_PERIODIC_SCRIPT = register(new SaveScriptTool(ScriptType.PERIODIC));
-    public static BasicTool SAVE_LISTENER_SCRIPT = register(new SaveScriptTool(ScriptType.LISTENER));
-    public static BasicTool SAVE_COMMAND_SCRIPT = register(new SaveScriptTool(ScriptType.COMMAND));
+    public static BasicTool CREATE_ONE_SHOT_SCRIPT = register(new CreateScriptTool(ScriptType.ONE_SHOT));
+    public static BasicTool CREATE_PERIODIC_SCRIPT = register(new CreateScriptTool(ScriptType.PERIODIC));
+    public static BasicTool CREATE_LISTENER_SCRIPT = register(new CreateScriptTool(ScriptType.LISTENER));
+    public static BasicTool CREATE_COMMAND_SCRIPT = register(new CreateScriptTool(ScriptType.COMMAND));
+    public static ServerTool UPDATE_SCRIPT_SOURCE = register(new UpdateScriptSourceTool());
     public static ServerTool SET_SCRIPT_ENABLED = register(new SetScriptEnabledTool());
     public static ServerTool RUN_SCRIPT = register(new RunScriptTool());
     public static ServerTool READ_SCRIPT_LOG = register(new ReadScriptLogTool());

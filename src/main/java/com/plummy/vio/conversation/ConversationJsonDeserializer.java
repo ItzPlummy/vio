@@ -17,8 +17,8 @@ public class ConversationJsonDeserializer {
     private ConversationJsonDeserializer() {
     }
 
-    public PlayerConversation deserializePlayerConversation(UUID playerId, JsonObject json) {
-        PlayerConversation conversation = new PlayerConversation(playerId);
+    public PlayerConversation deserializePlayerConversation(UUID id, JsonObject json) {
+        PlayerConversation conversation = new PlayerConversation(id);
 
         for (JsonElement message : json.getAsJsonArray("messages")) {
             conversation.addMessage(MessageJsonDeserializer.getInstance().deserialize(message.getAsJsonObject()));

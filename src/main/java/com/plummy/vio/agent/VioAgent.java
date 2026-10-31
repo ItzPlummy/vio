@@ -66,7 +66,7 @@ public class VioAgent implements Agent {
     @Override
     public SubmitResult submit(ServerPlayer player, String request, Instant time, boolean voice) {
         UUID playerId = player.getUUID();
-        AccessLevel accessLevel = accessManager.getAccessLevel(playerId);
+        AccessLevel accessLevel = accessManager.getPlayerAccessLevel(playerId);
 
         if (accessLevel == AccessLevel.NONE) {
             return SubmitResult.DENIED;

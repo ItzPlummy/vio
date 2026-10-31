@@ -5,7 +5,7 @@ import com.plummy.vio.storage.StorageItem;
 
 import java.util.List;
 
-public interface Conversation<K> extends StorageItem<K> {
+public sealed interface Conversation<K> extends StorageItem<K> permits PlayerConversation {
 
     List<Message> getMessages();
 

@@ -1,36 +1,21 @@
 package com.plummy.vio.access;
 
-import com.plummy.vio.config.ServerConfig;
-import com.plummy.vio.storage.Storage;
+import com.plummy.vio.user.PlayerUser;
 
 import java.util.UUID;
 
-public class AccessManager {
+// Each kind of user gets its own methods here, so console or HTTP users can be added next to players
+public interface AccessManager {
 
-    private final Storage<UUID, PlayerAccess> storage;
+    AccessLevel getDefaultAccessLevel();
 
-    public AccessManager(Storage<UUID, PlayerAccess> storage) {
-        this.storage = storage;
-    }
+    // The player's stored level, or the default one when they have none
+    AccessLevel getPlayerAccessLevel(UUID playerId);
 
-    public AccessLevel getAccessLevel(UUID playerId) {
-        PlayerAccess playerAccess = getPlayerAccess(playerId);
-        return playerAccess == null ? getDefaultAccessLevel() : playerAccess.getAccessLevel();
-    }
+    // Null when the player has no stored level and uses the default one
+    PlayerUser getPlayerUser(UUID playerId);
 
-    public AccessLevel getDefaultAccessLevel() {
-        return AccessLevel.fromValue(ServerConfig.DEFAULT_ACCESS_LEVEL.get());
-    }
+    void setPlayerAccessLevel(UUID playerId, AccessLevel accessLevel);
 
-    public PlayerAccess getPlayerAccess(UUID playerId) {
-        return storage.get(playerId);
-    }
-
-    public void setPlayerAccessLevel(UUID playerId, String playerName, AccessLevel level) {
-        storage.save(new PlayerAccess(playerId, playerName, level));
-    }
-
-    public void resetPlayerAccessLevel(UUID playerId) {
-        storage.delete(playerId);
-    }
+    void resetPlayerAccessLevel(UUID playerId);
 }

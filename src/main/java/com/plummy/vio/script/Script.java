@@ -1,44 +1,15 @@
 package com.plummy.vio.script;
 
-import com.plummy.vio.script.dsl.CompiledScript;
+import com.plummy.vio.script.runtime.RuntimeScript;
 import com.plummy.vio.storage.StorageItem;
 
-import java.time.Instant;
-import java.util.UUID;
-
-public interface Script extends StorageItem<String> {
+public sealed interface Script extends StorageItem<ScriptKey> permits Executable, Toggleable, OneShotScript, PeriodicScript, CommandScript, ListenerScript {
 
     ScriptType getType();
 
-    String getName();
-
     String getDescription();
 
-    ScriptState getState();
-
-    UUID getCreator();
-
-    Instant getCreatedAt();
-
-    String getSource();
-
-    void compile();
-
-    boolean isCompiled();
-
-    CompiledScript newInstance();
-
-    ScriptLog getLog();
-
-    String getError();
-
-    void setError(String error);
-
-    int recordFailure();
-
-    void resetFailures();
-
-    void dispose();
+    Class<? extends RuntimeScript> getRuntimeBaseClass();
 
     <T> T accept(ScriptVisitor<T> visitor);
 }
