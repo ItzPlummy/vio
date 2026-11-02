@@ -4,6 +4,8 @@ public final class ScriptLimits {
 
     public static final int MIN_INTERVAL_TICKS = 1;
     public static final int MAX_INTERVAL_TICKS = 72000;
+    public static final int MIN_DELAY_TICKS = 1;
+    public static final int MAX_DELAY_TICKS = 72000;
     public static final int DECLARE_BUDGET_MILLIS = 100;
     public static final int LOG_CAPACITY = 200;
     public static final int MAX_LOG_MESSAGE_LENGTH = 1000;

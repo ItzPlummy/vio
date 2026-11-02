@@ -40,9 +40,10 @@ public class CreateScriptTool implements BasicTool {
                 + "Both hold StateItem values (import com.plummy.vio.script.state.StateItem and com.google.gson.JsonObject): get(key) returns the item or null, save(new StateItem(key, data)) adds or replaces one, and has(key), delete(key), getKeys() and getItems() work as named. "
                 + "Items are immutable and getData() returns a copy, so to change data, save a new item. Keys are %s; start them with the script name, like my_script.count, so scripts don't overwrite each other. "
                 + "Every fileState save rewrites its file, so save only when something changes and keep fast-changing data in memoryState. "
+                + "after(ticks) { ... } runs code once, 1 to %s ticks later (20 ticks = 1 second), within %s ms; to repeat it, call after again inside it. Pending ones are dropped when the script is disabled, deleted or its source is updated, and when the server stops. "
                 + "Scripts run on the server thread with full server authority: keep every run short, never sleep, block or load chunks, and never do what your tools couldn't, such as level 3-4 operator actions. "
                 + "A new script is enabled right away. If compiling fails, nothing is saved. The name must be free: to change only an existing script's source use update_script_source, and to change anything else, delete_script it and create it again.\n"
-                + "Example:\n%s").formatted(type, getTypeDescription(), StateItem.KEY_RULE, getExample());
+                + "Example:\n%s").formatted(type, getTypeDescription(), StateItem.KEY_RULE, ScriptLimits.MAX_DELAY_TICKS, ServerConfig.PERIODIC_BUDGET_MILLIS.get(), getExample());
     }
 
     private String getExample() {

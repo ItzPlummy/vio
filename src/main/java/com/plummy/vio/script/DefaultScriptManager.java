@@ -77,6 +77,9 @@ public final class DefaultScriptManager implements ScriptManager {
     private final Map<ScriptKey, Long> remainingTicks = new HashMap<>();
     private final Map<ScriptKey, LiteralCommandNode<CommandSourceStack>> commandNodes = new HashMap<>();
     private final Map<ScriptKey, List<Consumer<? extends Event>>> listenerHandlers = new HashMap<>();
+    private final Map<ScriptKey, List<ScheduledTask>> scheduledTasks = new HashMap<>();
+
+    private long currentTick;
 
     public DefaultScriptManager(MinecraftServer server) {
         this.server = server;
@@ -131,6 +134,7 @@ public final class DefaultScriptManager implements ScriptManager {
                 disposeLoader(script.getKey());
             }
 
+            scheduledTasks.clear();
             logs.clear();
         });
     }
@@ -150,6 +154,8 @@ public final class DefaultScriptManager implements ScriptManager {
     @Override
     public void tick() {
         runOnServerThread(() -> {
+            currentTick++;
+
             // A copy, since a running script may enable or disable scripts and change the map
             for (ScriptKey key : List.copyOf(remainingTicks.keySet())) {
                 Long remaining = remainingTicks.get(key);
@@ -167,8 +173,10 @@ public final class DefaultScriptManager implements ScriptManager {
                 Class<? extends RuntimeScript> runtimeClass = runtimeClasses.get(key);
 
                 remainingTicks.put(key, periodicScript.getPeriodTicks());
-                invoke(periodicScript, ServerConfig.PERIODIC_BUDGET_MILLIS.get(), () -> createRuntimeScript(runtimeClass, logs.get(key)).run());
+                invoke(periodicScript, ServerConfig.PERIODIC_BUDGET_MILLIS.get(), () -> createRuntimeScript(key, runtimeClass, logs.get(key)).run());
             }
+
+            runScheduledTasks();
         });
     }
 
@@ -276,6 +284,7 @@ public final class DefaultScriptManager implements ScriptManager {
                 deactivate(script);
             }
 
+            List<ScheduledTask> previousTasks = scheduledTasks.remove(key);
             install(key, loader, runtimeClass);
 
             boolean activated = false;
@@ -292,8 +301,13 @@ public final class DefaultScriptManager implements ScriptManager {
                     deactivate(script);
                 }
 
+                scheduledTasks.remove(key);
                 dispose(loader);
                 restore(key, previousLoader, previousClass);
+
+                if (previousTasks != null) {
+                    scheduledTasks.put(key, previousTasks);
+                }
 
                 if (wasActive) {
                     try {
@@ -357,7 +371,7 @@ public final class DefaultScriptManager implements ScriptManager {
             Class<? extends RuntimeScript> runtimeClass = requireRuntimeClass(key);
             CapturingScriptLog output = new CapturingScriptLog(logs.get(key));
 
-            ScriptOutcome outcome = invoke(script, ServerConfig.RUN_BUDGET_MILLIS.get(), () -> createRuntimeScript(runtimeClass, output).run());
+            ScriptOutcome outcome = invoke(script, ServerConfig.RUN_BUDGET_MILLIS.get(), () -> createRuntimeScript(key, runtimeClass, output).run());
             return outcome.withOutput(output.getEntries());
         });
     }
@@ -497,6 +511,8 @@ public final class DefaultScriptManager implements ScriptManager {
             default -> {
             }
         }
+
+        scheduledTasks.remove(script.getKey());
     }
 
     private ScriptOutcome invoke(Script script, int budgetMillis, Callable<Object> call) {
@@ -558,6 +574,7 @@ public final class DefaultScriptManager implements ScriptManager {
     private void disposeLoader(ScriptKey key) {
         GroovyClassLoader loader = loaders.remove(key);
         runtimeClasses.remove(key);
+        scheduledTasks.remove(key);
 
         if (loader != null) {
             dispose(loader);
@@ -625,7 +642,7 @@ public final class DefaultScriptManager implements ScriptManager {
         return compiled.asSubclass(RuntimeScript.class);
     }
 
-    private RuntimeScript createRuntimeScript(Class<? extends RuntimeScript> runtimeClass, ScriptLog log) {
+    private RuntimeScript createRuntimeScript(ScriptKey key, Class<? extends RuntimeScript> runtimeClass, ScriptLog log) {
         RuntimeScript runtimeScript;
 
         try {
@@ -644,15 +661,61 @@ public final class DefaultScriptManager implements ScriptManager {
             throw new IllegalStateException("Failed to create an instance of %s".formatted(runtimeClass.getName()), e);
         }
 
-        runtimeScript.init(server, log, memoryState, fileState);
+        runtimeScript.init(server, log, memoryState, fileState, (delayTicks, task) -> schedule(key, delayTicks, task));
         return runtimeScript;
+    }
+
+    private void schedule(ScriptKey key, long delayTicks, Runnable task) {
+        if (task == null) {
+            throw new ScriptException("after(...) needs a delay in ticks and a task");
+        }
+
+        if (delayTicks < ScriptLimits.MIN_DELAY_TICKS || delayTicks > ScriptLimits.MAX_DELAY_TICKS) {
+            throw new ScriptException("Invalid delay of %s ticks: it must be %s to %s".formatted(delayTicks, ScriptLimits.MIN_DELAY_TICKS, ScriptLimits.MAX_DELAY_TICKS));
+        }
+
+        scheduledTasks.computeIfAbsent(key, ignored -> new ArrayList<>()).add(new ScheduledTask(currentTick + delayTicks, task));
+    }
+
+    private void runScheduledTasks() {
+        for (ScriptKey key : List.copyOf(scheduledTasks.keySet())) {
+            List<ScheduledTask> tasks = scheduledTasks.get(key);
+            Script script = scriptStorage.get(key);
+
+            if (tasks == null) {
+                continue;
+            }
+
+            if (script == null) {
+                scheduledTasks.remove(key);
+                continue;
+            }
+
+            List<ScheduledTask> due = tasks.stream().filter(task -> task.dueTick() <= currentTick).toList();
+            tasks.removeAll(due);
+
+            for (ScheduledTask task : due) {
+                if (scheduledTasks.get(key) != tasks) {
+                    break;
+                }
+
+                invoke(script, ServerConfig.PERIODIC_BUDGET_MILLIS.get(), () -> {
+                    task.task().run();
+                    return null;
+                });
+            }
+
+            if (tasks.isEmpty() && scheduledTasks.get(key) == tasks) {
+                scheduledTasks.remove(key);
+            }
+        }
     }
 
     private void registerCommand(CommandScript commandScript) {
         Class<? extends RuntimeScript> runtimeClass = requireRuntimeClass(commandScript.getKey());
 
         ScriptOutcome outcome = invoke(commandScript, ScriptLimits.DECLARE_BUDGET_MILLIS, () -> {
-            CommandRuntimeScript runtimeScript = (CommandRuntimeScript) createRuntimeScript(runtimeClass, logs.get(commandScript.getKey()));
+            CommandRuntimeScript runtimeScript = (CommandRuntimeScript) createRuntimeScript(commandScript.getKey(), runtimeClass, logs.get(commandScript.getKey()));
 
             runtimeScript.run();
             return runtimeScript.getCommand();
@@ -704,7 +767,7 @@ public final class DefaultScriptManager implements ScriptManager {
         Class<? extends RuntimeScript> runtimeClass = requireRuntimeClass(key);
 
         ScriptOutcome outcome = invoke(listenerScript, ScriptLimits.DECLARE_BUDGET_MILLIS, () -> {
-            ListenerRuntimeScript runtimeScript = (ListenerRuntimeScript) createRuntimeScript(runtimeClass, logs.get(key));
+            ListenerRuntimeScript runtimeScript = (ListenerRuntimeScript) createRuntimeScript(key, runtimeClass, logs.get(key));
 
             runtimeScript.run();
             return runtimeScript.getHandlers();
@@ -880,6 +943,9 @@ public final class DefaultScriptManager implements ScriptManager {
         } catch (ReflectiveOperationException | RuntimeException e) {
             throw new IllegalStateException("Brigadier's CommandNode.%s isn't accessible".formatted(name), e);
         }
+    }
+
+    private record ScheduledTask(long dueTick, Runnable task) {
     }
 
     private static final class CapturingScriptLog extends DefaultScriptLog {
