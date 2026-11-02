@@ -4,6 +4,7 @@
   "package": "com.plummy.vio.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ServerPacksSourceMixin"
   ],
   "client": [
   ],

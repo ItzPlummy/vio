@@ -37,6 +37,8 @@ public class ServerConfig {
     public static final ModConfigSpec.IntValue COMMAND_BUDGET_MILLIS;
     public static final ModConfigSpec.IntValue MAX_FAILURES;
 
+    public static final ModConfigSpec.BooleanValue DATAPACK_ENABLED;
+
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
@@ -143,6 +145,12 @@ public class ServerConfig {
         MAX_FAILURES = builder
                 .comment("Consecutive failures, timeouts included, after which a script is disabled until it's enabled again or the server restarts")
                 .defineInRange("max_failures", 5, 1, 100);
+        builder.pop();
+
+        builder.push("datapack");
+        DATAPACK_ENABLED = builder
+                .comment("Whether FULL players can have Vio write files into a data pack kept in the world's serverconfig/vio/datapack and reload it. Takes effect on restart; while it's off, the pack isn't loaded, but its files stay on disk")
+                .define("enabled", true);
         builder.pop();
 
         SPEC = builder.build();

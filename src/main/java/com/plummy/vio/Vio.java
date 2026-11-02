@@ -10,6 +10,8 @@ import com.plummy.vio.config.Instructions;
 import com.plummy.vio.config.KeysConfig;
 import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.conversation.PlayerConversationStorage;
+import com.plummy.vio.datapack.DatapackManager;
+import com.plummy.vio.datapack.DefaultDatapackManager;
 import com.plummy.vio.listener.AgentListener;
 import com.plummy.vio.listener.NetworkAgentListener;
 import com.plummy.vio.provider.Provider;
@@ -62,6 +64,7 @@ public class Vio {
     private static VoiceManager voiceManager;
     private static ScriptManager scriptManager;
     private static PeriodicScriptTicker periodicScriptTicker;
+    private static DatapackManager datapackManager;
 
     private static volatile VoiceChat voiceChat;
 
@@ -90,6 +93,10 @@ public class Vio {
             voiceManager.start();
             NeoForge.EVENT_BUS.register(voiceManager);
             listeners.add(new VoiceAgentListener(voiceManager));
+        }
+
+        if (ServerConfig.DATAPACK_ENABLED.get()) {
+            datapackManager = new DefaultDatapackManager(server);
         }
 
         agent = new VioAgent(
@@ -134,6 +141,7 @@ public class Vio {
             voiceManager = null;
         }
 
+        datapackManager = null;
         provider = null;
         conversationStorage = null;
         playerUserStorage = null;
@@ -183,6 +191,10 @@ public class Vio {
 
     public static ScriptManager getScriptManager() {
         return scriptManager;
+    }
+
+    public static DatapackManager getDatapackManager() {
+        return datapackManager;
     }
 
     public static VoiceChat getVoiceChat() {

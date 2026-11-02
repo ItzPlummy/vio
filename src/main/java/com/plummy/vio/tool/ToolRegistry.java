@@ -2,6 +2,7 @@ package com.plummy.vio.tool;
 
 import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.script.ScriptType;
+import com.plummy.vio.tool.catalog.datapack.*;
 import com.plummy.vio.tool.catalog.editing.*;
 import com.plummy.vio.tool.catalog.entity.FindEntitiesTool;
 import com.plummy.vio.tool.catalog.entity.GetEntityInfoTool;
@@ -100,6 +101,12 @@ public class ToolRegistry {
     public static final ServerTool RUN_SCRIPT = register(new RunScriptTool());
     public static final ServerTool READ_SCRIPT_LOG = register(new ReadScriptLogTool());
     public static final ServerTool DELETE_SCRIPT = register(new DeleteScriptTool());
+
+    public static final ServerTool LIST_DATAPACK_FILES = register(new ListDatapackFilesTool());
+    public static final ServerTool READ_DATAPACK_FILE = register(new ReadDatapackFileTool());
+    public static final ServerTool WRITE_DATAPACK_FILE = register(new WriteDatapackFileTool());
+    public static final ServerTool DELETE_DATAPACK_FILE = register(new DeleteDatapackFileTool());
+    public static final BasicTool APPLY_DATAPACK_CHANGES = register(new ApplyDatapackChangesTool());
 
     public static final BasicTool WEB_SEARCH = register(new WebSearchTool());
     public static final BasicTool WEB_FETCH = register(new WebFetchTool());
