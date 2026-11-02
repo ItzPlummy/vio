@@ -2,17 +2,18 @@ package com.plummy.vio.provider;
 
 import com.google.gson.*;
 import com.plummy.vio.Vio;
+import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.config.Endpoints;
-import com.plummy.vio.core.access.AccessLevel;
-import com.plummy.vio.core.conversation.Conversation;
-import com.plummy.vio.core.message.*;
-import com.plummy.vio.core.section.SectionContentSerializer;
-import com.plummy.vio.core.tool.*;
-import com.plummy.vio.core.tool.value.argument.ArgumentSchemaJsonSerializer;
-import com.plummy.vio.core.tool.value.argument.Arguments;
-import com.plummy.vio.core.tool.executor.ExecutionRequest;
-import com.plummy.vio.core.tool.executor.ExecutionResult;
-import com.plummy.vio.core.tool.executor.ExecutionStatus;
+import com.plummy.vio.conversation.Conversation;
+import com.plummy.vio.message.*;
+import com.plummy.vio.message.MessageContentSerializer;
+import com.plummy.vio.tool.Tool;
+import com.plummy.vio.tool.ToolRegistry;
+import com.plummy.vio.tool.executor.ExecutionRequest;
+import com.plummy.vio.tool.executor.ExecutionResult;
+import com.plummy.vio.tool.executor.ExecutionStatus;
+import com.plummy.vio.tool.value.argument.ArgumentSchemaJsonSerializer;
+import com.plummy.vio.tool.value.argument.Arguments;
 
 import java.io.IOException;
 import java.net.URI;
@@ -53,7 +54,7 @@ public class AnthropicProvider implements Provider {
     }
 
     @Override
-    public Message request(AccessLevel accessLevel, String instructions, Conversation conversation) {
+    public Message request(AccessLevel accessLevel, String instructions, Conversation<?> conversation) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(Endpoints.ANTHROPIC_URI))
                 .header("Content-Type", "application/json")
@@ -84,7 +85,7 @@ public class AnthropicProvider implements Provider {
         }
     }
 
-    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, Conversation conversation) {
+    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, Conversation<?> conversation) {
         JsonObject json = new JsonObject();
 
         JsonArray messages = new JsonArray();
@@ -142,7 +143,7 @@ public class AnthropicProvider implements Provider {
         switch (stopReason) {
             case "refusal" -> {
                 Vio.getLogger().warn("Anthropic declined the request: %s".formatted(json.get("stop_details")));
-                return AgentResponseMessage.of(REFUSAL_RESPONSE);
+                return new AgentResponseMessage(REFUSAL_RESPONSE);
             }
             case "max_tokens" -> throw new ProviderException("Anthropic response hit max_tokens");
         }
@@ -167,18 +168,18 @@ public class AnthropicProvider implements Provider {
         }
 
         if (toolExecutionRequests.isEmpty()) {
-            return AgentResponseMessage.of(text.toString());
+            return new AgentResponseMessage(text.toString());
         }
 
         // Text before tool calls is the model thinking out loud; the player sees the calls' status argument instead.
-        return ToolRequestMessage.of(toolExecutionRequests);
+        return new ToolRequestMessage(toolExecutionRequests);
     }
 
     private static class AnthropicMessageJsonSerializer implements MessageVisitor<List<JsonObject>> {
 
         @Override
         public List<JsonObject> visitPlayerRequestMessage(PlayerRequestMessage message) {
-            return List.of(buildMessage("user", SectionContentSerializer.getInstance().getMessageContent(message)));
+            return List.of(buildMessage("user", message.accept(MessageContentSerializer.getInstance())));
         }
 
         @Override
@@ -230,7 +231,7 @@ public class AnthropicProvider implements Provider {
 
         @Override
         public List<JsonObject> visitAgentResponseMessage(AgentResponseMessage message) {
-            String text = SectionContentSerializer.getInstance().getMessageContent(message);
+            String text = message.getResponse();
 
             // The API rejects empty assistant content; dropping the turn is fine, since consecutive user turns are merged.
             if (text.isBlank()) {

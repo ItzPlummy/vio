@@ -4,7 +4,6 @@ import com.plummy.vio.Vio;
 import com.plummy.vio.agent.Agent;
 import com.plummy.vio.agent.SubmitResult;
 import com.plummy.vio.client.network.ClientPayloadHandler;
-import com.plummy.vio.core.message.Message;
 import com.plummy.vio.network.payload.*;
 import com.plummy.vio.voice.VoiceManager;
 import io.netty.buffer.ByteBuf;

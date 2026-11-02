@@ -3,10 +3,9 @@ package com.plummy.vio.network;
 import com.plummy.vio.Vio;
 import com.plummy.vio.agent.Agent;
 import com.plummy.vio.config.AgentLimits;
-import com.plummy.vio.core.conversation.Conversation;
-import com.plummy.vio.core.message.*;
-import com.plummy.vio.core.section.SectionContentSerializer;
-import com.plummy.vio.core.conversation.ConversationStorage;
+import com.plummy.vio.conversation.Conversation;
+import com.plummy.vio.conversation.PlayerConversationStorage;
+import com.plummy.vio.message.*;
 import com.plummy.vio.network.payload.HistoryPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -28,7 +27,7 @@ public class HistorySender {
 
     public static void send(ServerPlayer player) {
         Agent agent = Vio.getAgent();
-        ConversationStorage storage = Vio.getConversationStorage();
+        PlayerConversationStorage storage = Vio.getConversationStorage();
 
         if (agent == null || storage == null || !Networking.hasClient(player)) {
             return;
@@ -37,7 +36,7 @@ public class HistorySender {
         List<HistoryPayload.Entry> entries = List.of();
 
         try {
-            Conversation conversation = storage.get(String.valueOf(player.getUUID()));
+            Conversation<?> conversation = storage.get(player.getUUID());
 
             if (conversation != null) {
                 entries = toEntries(conversation);
@@ -49,7 +48,7 @@ public class HistorySender {
         Networking.send(player, new HistoryPayload(agent.isBusy(player.getUUID()), entries));
     }
 
-    private static List<HistoryPayload.Entry> toEntries(Conversation conversation) {
+    private static List<HistoryPayload.Entry> toEntries(Conversation<?> conversation) {
         EntryMapper mapper = new EntryMapper();
         List<HistoryPayload.Entry> entries = new ArrayList<>();
 
@@ -84,7 +83,7 @@ public class HistorySender {
         @Override
         public HistoryPayload.Entry visitPlayerRequestMessage(PlayerRequestMessage message) {
             // Only the player's own text: the context sections are for the model.
-            return new HistoryPayload.Entry(HistoryPayload.Kind.PLAYER, message.getRequest().getRequest(), message.getTime(), message.isVoice());
+            return new HistoryPayload.Entry(HistoryPayload.Kind.PLAYER, message.getRequest(), message.getDispatchTime(), message.isVoice());
         }
 
         @Override
@@ -99,7 +98,7 @@ public class HistorySender {
 
         @Override
         public HistoryPayload.Entry visitAgentResponseMessage(AgentResponseMessage message) {
-            return new HistoryPayload.Entry(HistoryPayload.Kind.AGENT, SectionContentSerializer.getInstance().getMessageContent(message), message.getTime(), false);
+            return new HistoryPayload.Entry(HistoryPayload.Kind.AGENT, message.getResponse(), message.getDispatchTime(), false);
         }
     }
 }

@@ -1,8 +1,7 @@
 package com.plummy.vio.listener;
 
-import com.plummy.vio.core.message.AgentResponseMessage;
-import com.plummy.vio.core.message.ToolRequestMessage;
-import com.plummy.vio.core.section.SectionContentSerializer;
+import com.plummy.vio.message.AgentResponseMessage;
+import com.plummy.vio.message.ToolRequestMessage;
 import com.plummy.vio.network.Networking;
 import com.plummy.vio.network.payload.AgentErrorPayload;
 import com.plummy.vio.network.payload.AgentResponsePayload;
@@ -14,12 +13,12 @@ public class NetworkAgentListener implements AgentListener {
 
     @Override
     public void onActivity(ServerPlayer player, ToolRequestMessage request) {
-        Networking.send(player, new AgentStatusPayload(request.getActivityDescription().getActivityDescription(), request.getTime()));
+        Networking.send(player, new AgentStatusPayload(request.getActivityDescription(), request.getDispatchTime()));
     }
 
     @Override
     public void onResponse(ServerPlayer player, AgentResponseMessage response) {
-        Networking.send(player, new AgentResponsePayload(SectionContentSerializer.getInstance().getMessageContent(response), response.getTime()));
+        Networking.send(player, new AgentResponsePayload(response.getResponse(), response.getDispatchTime()));
     }
 
     @Override

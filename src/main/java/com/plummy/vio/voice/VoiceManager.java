@@ -1,12 +1,11 @@
 package com.plummy.vio.voice;
 
 import com.plummy.vio.Vio;
+import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.agent.Agent;
 import com.plummy.vio.agent.SubmitResult;
 import com.plummy.vio.config.ServerConfig;
 import com.plummy.vio.config.VoiceLimits;
-import com.plummy.vio.core.access.AccessLevel;
-import com.plummy.vio.core.message.Message;
 import com.plummy.vio.network.Networking;
 import com.plummy.vio.network.payload.AgentErrorPayload;
 import com.plummy.vio.network.payload.SubmitResultPayload;
@@ -112,7 +111,7 @@ public class VoiceManager {
             return SubmitResult.UNAVAILABLE;
         }
 
-        if (Vio.getAccessManager().getAccessLevel(playerId) == AccessLevel.NONE) {
+        if (Vio.getAccessManager().getPlayerAccessLevel(playerId) == AccessLevel.NONE) {
             return SubmitResult.DENIED;
         }
 

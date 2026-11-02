@@ -1,7 +1,7 @@
 package com.plummy.vio.listener;
 
-import com.plummy.vio.core.message.AgentResponseMessage;
-import com.plummy.vio.core.message.ToolRequestMessage;
+import com.plummy.vio.message.AgentResponseMessage;
+import com.plummy.vio.message.ToolRequestMessage;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 

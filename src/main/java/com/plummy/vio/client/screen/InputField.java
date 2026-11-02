@@ -2,7 +2,6 @@ package com.plummy.vio.client.screen;
 
 import com.plummy.vio.client.Theme;
 import com.plummy.vio.config.AgentLimits;
-import com.plummy.vio.network.payload.PlayerRequestPayload;
 import net.minecraft.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;

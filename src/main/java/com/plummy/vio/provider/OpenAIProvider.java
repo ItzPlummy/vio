@@ -2,18 +2,18 @@ package com.plummy.vio.provider;
 
 import com.google.gson.*;
 import com.plummy.vio.Vio;
+import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.config.Endpoints;
-import com.plummy.vio.core.access.AccessLevel;
-import com.plummy.vio.core.conversation.Conversation;
-import com.plummy.vio.core.message.*;
-import com.plummy.vio.core.section.SectionContentSerializer;
-import com.plummy.vio.core.tool.executor.ExecutionRequest;
-import com.plummy.vio.core.tool.executor.ExecutionResult;
-import com.plummy.vio.core.tool.Tool;
-import com.plummy.vio.core.tool.ToolRegistry;
-import com.plummy.vio.core.tool.value.argument.Argument;
-import com.plummy.vio.core.tool.value.argument.ArgumentSchemaJsonSerializer;
-import com.plummy.vio.core.tool.value.argument.Arguments;
+import com.plummy.vio.conversation.Conversation;
+import com.plummy.vio.message.*;
+import com.plummy.vio.message.MessageContentSerializer;
+import com.plummy.vio.tool.Tool;
+import com.plummy.vio.tool.ToolRegistry;
+import com.plummy.vio.tool.executor.ExecutionRequest;
+import com.plummy.vio.tool.executor.ExecutionResult;
+import com.plummy.vio.tool.value.argument.Argument;
+import com.plummy.vio.tool.value.argument.ArgumentSchemaJsonSerializer;
+import com.plummy.vio.tool.value.argument.Arguments;
 
 import java.io.IOException;
 import java.net.URI;
@@ -49,7 +49,7 @@ public class OpenAIProvider implements Provider {
     }
 
     @Override
-    public Message request(AccessLevel accessLevel, String instructions, Conversation conversation) {
+    public Message request(AccessLevel accessLevel, String instructions, Conversation<?> conversation) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(Endpoints.OPENAI_URI))
                 .header("Content-Type", "application/json")
@@ -79,7 +79,7 @@ public class OpenAIProvider implements Provider {
         }
     }
 
-    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, Conversation conversation) {
+    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, Conversation<?> conversation) {
         JsonObject json = new JsonObject();
 
         JsonArray input = new JsonArray();
@@ -159,11 +159,11 @@ public class OpenAIProvider implements Provider {
         }
 
         if (toolExecutionRequests.isEmpty()) {
-            return AgentResponseMessage.of(text.toString());
+            return new AgentResponseMessage(text.toString());
         }
 
         // Text before tool calls is the model thinking out loud; the player sees the calls' status argument instead.
-        return ToolRequestMessage.of(toolExecutionRequests);
+        return new ToolRequestMessage(toolExecutionRequests);
     }
 
     private static class OpenAIMessageJsonSerializer implements MessageVisitor<List<JsonObject>> {
@@ -174,7 +174,7 @@ public class OpenAIProvider implements Provider {
 
             json.addProperty("type", "message");
             json.addProperty("role", "user");
-            json.addProperty("content", SectionContentSerializer.getInstance().getMessageContent(message));
+            json.addProperty("content", message.accept(MessageContentSerializer.getInstance()));
 
             return List.of(json);
         }
@@ -226,7 +226,7 @@ public class OpenAIProvider implements Provider {
 
             json.addProperty("type", "message");
             json.addProperty("role", "assistant");
-            json.addProperty("content", SectionContentSerializer.getInstance().getMessageContent(message));
+            json.addProperty("content", message.getResponse());
 
             return List.of(json);
         }
