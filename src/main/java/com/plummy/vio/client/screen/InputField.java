@@ -87,7 +87,7 @@ public class InputField extends MultilineTextField {
                 int left = font.width(value.substring(line.beginIndex(), selectionStart));
                 int right = font.width(value.substring(line.beginIndex(), selectionEnd));
 
-                graphics.fill(left, -1, right, LINE_HEIGHT, Theme.INPUT_SELECTION);
+                graphics.fill(left, -1, right, LINE_HEIGHT, Theme.getInputSelection());
             }
 
             graphics.drawString(font, value.substring(line.beginIndex(), line.endIndex()), 0, 0, Theme.PLAYER_TEXT, false);
@@ -95,7 +95,7 @@ public class InputField extends MultilineTextField {
             if (caretVisible && index == cursorLine) {
                 int caretX = font.width(value.substring(line.beginIndex(), Math.min(cursor(), line.endIndex())));
 
-                graphics.fill(caretX, -1, caretX + 1, LINE_HEIGHT, Theme.VIO_TEXT);
+                graphics.fill(caretX, -1, caretX + 1, LINE_HEIGHT, Theme.getVioText());
             }
 
             graphics.pose().popPose();

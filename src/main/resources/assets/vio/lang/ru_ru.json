@@ -4,6 +4,7 @@
   "key.vio.talk": "Говорить с Vio",
   "key.vio.cancel": "Отменить разговор с Vio",
   "vio.screen.title": "Vio",
+  "vio.screen.reset": "Сбросить диалог",
   "vio.chat.placeholder": "...",
   "vio.chat.placeholder.busy": "Vio работает...",
   "vio.chat.thought.one": "Сделано за 1 сек.",

@@ -138,7 +138,8 @@ public abstract class FileStorage<K, V extends StorageItem<K>> implements Storag
     }
 
     protected void requireLoaded() {
-        if (isLoaded) return;
-        load();
+        if (!isLoaded) {
+            load();
+        }
     }
 }

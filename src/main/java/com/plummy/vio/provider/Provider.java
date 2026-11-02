@@ -6,5 +6,5 @@ import com.plummy.vio.message.Message;
 
 public interface Provider {
 
-    Message request(AccessLevel accessLevel, String instructions, Conversation<?> conversation);
+    Message request(AccessLevel accessLevel, String instructions, String profile, Conversation<?> conversation);
 }

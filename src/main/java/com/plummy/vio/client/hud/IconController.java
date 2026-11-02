@@ -12,13 +12,11 @@ public class IconController {
     private static final long FRAME_MILLIS = 50;
 
     private static final float GROW_EASING = 6f;
-    private static final float TINT_EASING = 6f;
     private static final float PULSE_EASING = 2.5f;
     private static final float BUSY_PULSE_SPEED = 3f;
     private static final float MAX_FRAME_SECONDS = 0.1f;
 
     private float grow;
-    private float tint;
     private float pulseSpeed = 1;
 
     // Advanced by the eased speed, so speeding up doesn't make the rings jump.
@@ -47,7 +45,6 @@ public class IconController {
 
         // Big while it's the player's turn to talk or Vio's, and back to normal while the reply is worked on.
         grow = ease(grow, recording || voiceState == VoiceState.TRANSCRIBING || voiceState == VoiceState.SPEAKING ? 1 : 0, GROW_EASING, seconds);
-        tint = ease(tint, recording ? 1 : 0, TINT_EASING, seconds);
         pulseSpeed = ease(pulseSpeed, conversation.isBusy() ? BUSY_PULSE_SPEED : 1, PULSE_EASING, seconds);
         pulseSeconds += pulseSpeed * seconds;
 
@@ -62,10 +59,6 @@ public class IconController {
 
     public float getGrow() {
         return grow;
-    }
-
-    public float getTint() {
-        return tint;
     }
 
     // Seconds of pulse at its normal speed, stepped to the frame.

@@ -18,9 +18,9 @@ public final class StarRenderer {
     }
 
     // Takes the whole frame; stars spawn in its upper half and show only inside it.
-    public static void render(GuiGraphics graphics, int x, int y, int size, IconController icon) {
+    public static void render(GuiGraphics graphics, int x, int y, int size) {
         int[][] spans = FrameRenderer.getSpans(size, size, size / 2, FrameRenderer.BORDER);
-        int color = Theme.lerp(Theme.ICON_STAR, Theme.ICON_RECORDING_STAR, icon.getTint());
+        int color = Theme.ICON_STAR;
         long now = Util.getMillis();
 
         // Each star follows from its spawn time alone, so nothing has to be kept between frames.

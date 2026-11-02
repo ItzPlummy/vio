@@ -15,7 +15,7 @@ public enum ClientMessageType {
 
     public static ClientMessageType fromValue(String value) {
         for (ClientMessageType type : values()) {
-            if (type.value.equals(value)) {
+            if (type.getValue().equals(value)) {
                 return type;
             }
         }

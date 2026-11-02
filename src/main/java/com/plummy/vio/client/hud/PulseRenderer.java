@@ -31,7 +31,7 @@ public final class PulseRenderer {
 
         double waveTime = icon.getPulseSeconds() * WAVE_SPEED;
         double noiseTime = icon.getFrameSeconds() * NOISE_SPEED;
-        int color = Theme.lerp(Theme.ICON_PULSE, Theme.ICON_RECORDING_PULSE, icon.getTint());
+        int color = Theme.ICON_PULSE;
         float center = size / 2f;
         float radius = center - FrameRenderer.BORDER;
 

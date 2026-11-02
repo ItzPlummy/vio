@@ -46,11 +46,11 @@ public class OllamaProvider implements Provider {
     }
 
     @Override
-    public Message request(AccessLevel accessLevel, String instructions, Conversation<?> conversation) {
+    public Message request(AccessLevel accessLevel, String instructions, String profile, Conversation<?> conversation) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(ServerConfig.OLLAMA_URI.get()))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, conversation).toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, profile, conversation).toString()))
                 .build();
 
         HttpResponse<String> response;
@@ -75,15 +75,20 @@ public class OllamaProvider implements Provider {
         }
     }
 
-    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, Conversation<?> conversation) {
+    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, String profile, Conversation<?> conversation) {
         JsonObject json = new JsonObject();
 
         JsonObject system = new JsonObject();
         system.addProperty("role", "system");
         system.addProperty("content", instructions);
 
+        JsonObject profileMessage = new JsonObject();
+        profileMessage.addProperty("role", "system");
+        profileMessage.addProperty("content", profile);
+
         JsonArray messages = new JsonArray();
         messages.add(system);
+        messages.add(profileMessage);
 
         // Remembers tool names across messages, so one per request.
         OllamaMessageJsonSerializer serializer = new OllamaMessageJsonSerializer();

@@ -4,9 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.plummy.vio.access.AccessLevel;
-import com.plummy.vio.script.ScriptState;
-import com.plummy.vio.script.ScriptType;
 import com.plummy.vio.tool.executor.ExecutionRequest;
 import com.plummy.vio.tool.executor.ExecutionResult;
 import com.plummy.vio.tool.executor.ExecutionStatus;
@@ -18,7 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SequencedMap;
-import java.util.UUID;
 
 public class MessageJsonDeserializer {
 
@@ -37,12 +33,10 @@ public class MessageJsonDeserializer {
         return switch (MessageType.fromValue(json.get("type").getAsString())) {
             case PLAYER_REQUEST -> new PlayerRequestMessage(
                     json.get("request").getAsString(),
-                    deserializePlayerInfo(json.getAsJsonObject("player_info")),
                     deserializePlayerLocation(json.getAsJsonObject("player_location")),
                     deserializePlayerState(json.getAsJsonObject("player_state")),
                     deserializePlayerInventory(json.getAsJsonObject("player_inventory")),
                     deserializeServerInfo(json.getAsJsonObject("server_info")),
-                    json.get("script_info").isJsonNull() ? null : deserializeScriptInfo(json.getAsJsonObject("script_info")),
                     json.get("is_voice").getAsBoolean(),
                     dispatchTime
             );
@@ -88,14 +82,6 @@ public class MessageJsonDeserializer {
         return messageClass.cast(message);
     }
 
-    private static PlayerRequestMessage.PlayerInfo deserializePlayerInfo(JsonObject json) {
-        return new PlayerRequestMessage.PlayerInfo(
-                UUID.fromString(json.get("id").getAsString()),
-                json.get("name").getAsString(),
-                AccessLevel.fromValue(json.get("access_level").getAsString())
-        );
-    }
-
     private static PlayerRequestMessage.PlayerLocation deserializePlayerLocation(JsonObject json) {
         return new PlayerRequestMessage.PlayerLocation(
                 json.get("x").getAsDouble(),
@@ -112,11 +98,7 @@ public class MessageJsonDeserializer {
     private static PlayerRequestMessage.PlayerState deserializePlayerState(JsonObject json) {
         return new PlayerRequestMessage.PlayerState(
                 json.get("health").getAsDouble(),
-                json.get("armor").getAsDouble(),
-                json.get("food").getAsDouble(),
-                json.get("saturation").getAsDouble(),
-                json.get("level").getAsInt(),
-                json.get("game_mode").getAsString()
+                json.get("food").getAsDouble()
         );
     }
 
@@ -129,27 +111,9 @@ public class MessageJsonDeserializer {
 
     private static PlayerRequestMessage.ServerInfo deserializeServerInfo(JsonObject json) {
         return new PlayerRequestMessage.ServerInfo(
-                deserializeStrings(json.getAsJsonArray("dimensions")),
                 json.get("time").getAsLong(),
                 json.get("day").getAsLong()
         );
-    }
-
-    private static PlayerRequestMessage.ScriptInfo deserializeScriptInfo(JsonObject json) {
-        List<PlayerRequestMessage.ScriptInfo.Entry> scripts = new ArrayList<>();
-
-        for (JsonElement element : json.getAsJsonArray("scripts")) {
-            JsonObject script = element.getAsJsonObject();
-
-            scripts.add(new PlayerRequestMessage.ScriptInfo.Entry(
-                    script.get("name").getAsString(),
-                    ScriptType.fromValue(script.get("type").getAsString()),
-                    ScriptState.fromValue(script.get("state").getAsString()),
-                    script.get("description").getAsString()
-            ));
-        }
-
-        return new PlayerRequestMessage.ScriptInfo(scripts);
     }
 
     private static List<String> deserializeStrings(JsonArray json) {

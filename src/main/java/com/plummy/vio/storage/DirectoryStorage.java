@@ -53,19 +53,28 @@ public abstract class DirectoryStorage<K, V extends StorageItem<K>> implements S
 
     @Override
     public synchronized Collection<K> getKeys() {
-        if (!synced) sync();
+        if (!synced) {
+            sync();
+        }
+
         return cache.getKeys();
     }
 
     @Override
     public synchronized Collection<V> getItems() {
-        if (!synced) sync();
+        if (!synced) {
+            sync();
+        }
+
         return cache.getItems();
     }
 
     @Override
     public synchronized int getSize() {
-        if (!synced) sync();
+        if (!synced) {
+            sync();
+        }
+
         return cache.getSize();
     }
 
@@ -85,7 +94,10 @@ public abstract class DirectoryStorage<K, V extends StorageItem<K>> implements S
     public synchronized void delete(K key) {
         deletePersistent(key);
         cache.delete(key);
-        if (!synced) missing.add(key);
+
+        if (!synced) {
+            missing.add(key);
+        }
     }
 
     @Override

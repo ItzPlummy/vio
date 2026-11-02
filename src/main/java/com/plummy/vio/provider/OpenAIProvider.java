@@ -49,12 +49,12 @@ public class OpenAIProvider implements Provider {
     }
 
     @Override
-    public Message request(AccessLevel accessLevel, String instructions, Conversation<?> conversation) {
+    public Message request(AccessLevel accessLevel, String instructions, String profile, Conversation<?> conversation) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(Endpoints.OPENAI_URI))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer %s".formatted(getApiKey()))
-                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, conversation).toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, profile, conversation).toString()))
                 .build();
 
         HttpResponse<String> response;
@@ -79,10 +79,18 @@ public class OpenAIProvider implements Provider {
         }
     }
 
-    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, Conversation<?> conversation) {
+    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, String profile, Conversation<?> conversation) {
         JsonObject json = new JsonObject();
 
+        JsonObject profileMessage = new JsonObject();
+
+        profileMessage.addProperty("type", "message");
+        profileMessage.addProperty("role", "developer");
+        profileMessage.addProperty("content", profile);
+
         JsonArray input = new JsonArray();
+        input.add(profileMessage);
+
         for (Message message : conversation.getMessages()) {
             message.accept(OPENAI_MESSAGE_JSON_SERIALIZER).forEach(input::add);
         }
@@ -101,6 +109,7 @@ public class OpenAIProvider implements Provider {
         json.add("input", input);
         json.add("tools", toolDefinitions);
 
+        json.addProperty("prompt_cache_key", conversation.getKey().toString());
         json.addProperty("store", false);
         json.add("reasoning", reasoning);
         // Reasoning counts toward it too.

@@ -20,7 +20,7 @@ public enum ScriptType {
             }
         }
 
-        throw new IllegalArgumentException("Invalid script type: " + value);
+        throw new IllegalArgumentException("Invalid script type: %s".formatted(value));
     }
 
     public String getValue() {
@@ -29,6 +29,6 @@ public enum ScriptType {
 
     @Override
     public String toString() {
-        return getValue();
+        return value;
     }
 }

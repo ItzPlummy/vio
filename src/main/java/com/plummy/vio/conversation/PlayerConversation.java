@@ -1,18 +1,14 @@
 package com.plummy.vio.conversation;
 
 import com.plummy.vio.config.AgentLimits;
-import com.plummy.vio.message.Message;
-import com.plummy.vio.message.PlayerRequestMessage;
+import com.plummy.vio.message.*;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public final class PlayerConversation implements Conversation<UUID> {
 
     private final UUID id;
-    private final Deque<Message> messages = new ArrayDeque<>();
+    private final List<Message> messages = new ArrayList<>();
 
     public PlayerConversation(UUID id) {
         this.id = id;
@@ -26,7 +22,10 @@ public final class PlayerConversation implements Conversation<UUID> {
     @Override
     public synchronized void addMessage(Message message) {
         messages.add(message);
-        clearOldMessages();
+
+        if (messages.getLast() instanceof AgentResponseMessage) {
+            clearOldMessages();
+        }
     }
 
     @Override
@@ -44,8 +43,42 @@ public final class PlayerConversation implements Conversation<UUID> {
     }
 
     private synchronized void clearOldMessages() {
-        while (!messages.isEmpty() && (messages.size() > AgentLimits.MAX_CONVERSATION_MESSAGES || !(messages.getFirst() instanceof PlayerRequestMessage))) {
-            messages.removeFirst();
+        long requests = messages.stream().filter(PlayerRequestMessage.class::isInstance).count();
+
+        int requestsLeft = requests > AgentLimits.MAX_CONVERSATION_REQUESTS ? AgentLimits.TRIMMED_CONVERSATION_REQUESTS : AgentLimits.MAX_CONVERSATION_REQUESTS;
+        int toolRequestsLeft = AgentLimits.MAX_CONVERSATION_TOOL_REQUESTS;
+
+        List<Message> kept = new ArrayList<>();
+
+        boolean decided = false;
+        boolean keepsTools = false;
+
+        for (Message message : messages.reversed()) {
+            if (requestsLeft <= 0) {
+                break;
+            }
+
+            if (message instanceof ToolRequestMessage || message instanceof ToolResponseMessage) {
+                if (!decided) {
+                    keepsTools = toolRequestsLeft > 0;
+                    toolRequestsLeft--;
+                    decided = true;
+                }
+
+                if (!keepsTools) {
+                    continue;
+                }
+            }
+
+            if (message instanceof PlayerRequestMessage) {
+                requestsLeft--;
+                decided = false;
+            }
+
+            kept.add(message);
         }
+
+        messages.clear();
+        messages.addAll(kept.reversed());
     }
 }

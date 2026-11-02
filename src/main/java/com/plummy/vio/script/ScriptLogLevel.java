@@ -14,12 +14,12 @@ public enum ScriptLogLevel {
 
     public static ScriptLogLevel fromValue(String value) {
         for (ScriptLogLevel scriptLogLevel : values()) {
-            if (scriptLogLevel.value.equals(value)) {
+            if (scriptLogLevel.getValue().equals(value)) {
                 return scriptLogLevel;
             }
         }
 
-        throw new IllegalArgumentException("Invalid script log level: " + value);
+        throw new IllegalArgumentException("Invalid script log level: %s".formatted(value));
     }
 
     public String getValue() {
@@ -32,7 +32,6 @@ public enum ScriptLogLevel {
 
     @Override
     public String toString() {
-        return getValue();
+        return value;
     }
-
 }

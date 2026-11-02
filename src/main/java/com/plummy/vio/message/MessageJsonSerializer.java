@@ -1,7 +1,6 @@
 package com.plummy.vio.message;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.plummy.vio.tool.executor.ExecutionRequest;
 import com.plummy.vio.tool.executor.ExecutionResult;
@@ -27,12 +26,10 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
         json.addProperty("type", MessageType.PLAYER_REQUEST.getValue());
         json.addProperty("dispatch_time", message.getDispatchTime().toString());
         json.addProperty("request", message.getRequest());
-        json.add("player_info", serializePlayerInfo(message.getPlayerInfo()));
         json.add("player_location", serializePlayerLocation(message.getPlayerLocation()));
         json.add("player_state", serializePlayerState(message.getPlayerState()));
         json.add("player_inventory", serializePlayerInventory(message.getPlayerInventory()));
         json.add("server_info", serializeServerInfo(message.getServerInfo()));
-        json.add("script_info", message.getScriptInfo() == null ? JsonNull.INSTANCE : serializeScriptInfo(message.getScriptInfo()));
         json.addProperty("is_voice", message.isVoice());
 
         return json;
@@ -94,16 +91,6 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
         return json;
     }
 
-    private static JsonObject serializePlayerInfo(PlayerRequestMessage.PlayerInfo playerInfo) {
-        JsonObject json = new JsonObject();
-
-        json.addProperty("id", playerInfo.id().toString());
-        json.addProperty("name", playerInfo.name());
-        json.addProperty("access_level", playerInfo.accessLevel().getValue());
-
-        return json;
-    }
-
     private static JsonObject serializePlayerLocation(PlayerRequestMessage.PlayerLocation playerLocation) {
         JsonObject json = new JsonObject();
 
@@ -123,11 +110,7 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
         JsonObject json = new JsonObject();
 
         json.addProperty("health", playerState.health());
-        json.addProperty("armor", playerState.armor());
         json.addProperty("food", playerState.food());
-        json.addProperty("saturation", playerState.saturation());
-        json.addProperty("level", playerState.level());
-        json.addProperty("game_mode", playerState.gameMode());
 
         return json;
     }
@@ -144,30 +127,8 @@ public class MessageJsonSerializer implements MessageVisitor<JsonObject> {
     private static JsonObject serializeServerInfo(PlayerRequestMessage.ServerInfo serverInfo) {
         JsonObject json = new JsonObject();
 
-        json.add("dimensions", serializeStrings(serverInfo.dimensions()));
         json.addProperty("time", serverInfo.time());
         json.addProperty("day", serverInfo.day());
-
-        return json;
-    }
-
-    private static JsonObject serializeScriptInfo(PlayerRequestMessage.ScriptInfo scriptInfo) {
-        JsonArray scripts = new JsonArray();
-
-        for (PlayerRequestMessage.ScriptInfo.Entry entry : scriptInfo.scripts()) {
-            JsonObject script = new JsonObject();
-
-            script.addProperty("name", entry.name());
-            script.addProperty("type", entry.type().getValue());
-            script.addProperty("state", entry.state().getValue());
-            script.addProperty("description", entry.description());
-
-            scripts.add(script);
-        }
-
-        JsonObject json = new JsonObject();
-
-        json.add("scripts", scripts);
 
         return json;
     }

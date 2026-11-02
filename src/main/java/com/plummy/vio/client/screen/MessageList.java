@@ -249,7 +249,7 @@ public class MessageList {
                 renderPostfix(graphics, font, block, x + width - BOX_PADDING_X, y, true);
             }
             case AGENT -> {
-                renderBox(graphics, font, block, x, y, Theme.VIO_BOX, Theme.VIO_BOX_BORDER, Theme.VIO_TEXT);
+                renderBox(graphics, font, block, x, y, Theme.VIO_BOX, Theme.getVioBoxBorder(), Theme.getVioText());
                 renderPostfix(graphics, font, block, x + BOX_PADDING_X, y, false);
             }
             case STATUS -> {
@@ -281,7 +281,7 @@ public class MessageList {
         float scrolled = Math.max(0, Math.min(animatedScroll, maxScroll));
         int thumbY = maxScroll <= 0 ? y : y + Math.round((height - thumbHeight) * (maxScroll - scrolled) / maxScroll);
 
-        graphics.fill(x, thumbY, x + 1, thumbY + thumbHeight, alpha << 24 | Theme.VIO_TEXT & 0xFFFFFF);
+        graphics.fill(x, thumbY, x + 1, thumbY + thumbHeight, alpha << 24 | Theme.getVioText() & 0xFFFFFF);
     }
 
     private void animateScroll() {

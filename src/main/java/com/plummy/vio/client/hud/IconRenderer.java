@@ -56,15 +56,9 @@ public final class IconRenderer {
         graphics.pose().pushPose();
         graphics.pose().translate(0, 0, Z_OFFSET);
 
-        float tint = icon.getTint();
-
-        FrameRenderer.render(graphics, x, y, size, size, size / 2,
-                Theme.lerp(Theme.ICON_OUTLINE, Theme.ICON_RECORDING_OUTLINE, tint),
-                Theme.lerp(Theme.ICON_LIGHT, Theme.ICON_RECORDING_LIGHT, tint),
-                Theme.lerp(Theme.ICON_SHADOW, Theme.ICON_RECORDING_SHADOW, tint),
-                Theme.lerp(Theme.ICON_BACKGROUND, Theme.ICON_RECORDING_BACKGROUND, tint));
+        FrameRenderer.render(graphics, x, y, size, size, size / 2, Theme.ICON_OUTLINE, Theme.getIconLight(), Theme.ICON_SHADOW, Theme.ICON_BACKGROUND);
         PulseRenderer.render(graphics, x, y, size, icon);
-        StarRenderer.render(graphics, x, y, size, icon);
+        StarRenderer.render(graphics, x, y, size);
 
         CubeController cube = CubeController.getInstance();
         cube.update();

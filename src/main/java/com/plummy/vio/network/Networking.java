@@ -97,6 +97,12 @@ public class Networking {
                 (payload, context) -> handleCancelCapture(context)
         );
 
+        registrar.playToServer(
+                ResetConversationPayload.getType(),
+                ResetConversationPayload.getStreamCodec(),
+                (payload, context) -> handleResetConversation(context)
+        );
+
         registrar.playToClient(
                 VoiceStatePayload.getType(),
                 VoiceStatePayload.getStreamCodec(),
@@ -139,6 +145,26 @@ public class Networking {
 
         // The client shows the request with the server's time, so it matches the stored one and the reply's.
         context.reply(new SubmitResultPayload(result, time));
+    }
+
+    private static void handleResetConversation(IPayloadContext context) {
+        if (!(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+
+        Agent agent = Vio.getAgent();
+
+        if (agent == null) {
+            context.reply(new SubmitResultPayload(SubmitResult.UNAVAILABLE, Instant.now().truncatedTo(ChronoUnit.MILLIS)));
+            return;
+        }
+
+        if (!agent.reset(player.getUUID())) {
+            context.reply(new SubmitResultPayload(SubmitResult.BUSY, Instant.now().truncatedTo(ChronoUnit.MILLIS)));
+            return;
+        }
+
+        context.reply(ClearHistoryPayload.getInstance());
     }
 
     private static void handleStartCapture(IPayloadContext context) {

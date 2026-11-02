@@ -54,13 +54,13 @@ public class AnthropicProvider implements Provider {
     }
 
     @Override
-    public Message request(AccessLevel accessLevel, String instructions, Conversation<?> conversation) {
+    public Message request(AccessLevel accessLevel, String instructions, String profile, Conversation<?> conversation) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(Endpoints.ANTHROPIC_URI))
                 .header("Content-Type", "application/json")
                 .header("x-api-key", getApiKey())
                 .header("anthropic-version", Endpoints.ANTHROPIC_VERSION)
-                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, conversation).toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(accessLevel, instructions, profile, conversation).toString()))
                 .build();
 
         HttpResponse<String> response;
@@ -85,7 +85,7 @@ public class AnthropicProvider implements Provider {
         }
     }
 
-    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, Conversation<?> conversation) {
+    private JsonObject buildRequestBody(AccessLevel accessLevel, String instructions, String profile, Conversation<?> conversation) {
         JsonObject json = new JsonObject();
 
         JsonArray messages = new JsonArray();
@@ -108,8 +108,21 @@ public class AnthropicProvider implements Provider {
         JsonObject cacheControl = new JsonObject();
         cacheControl.addProperty("type", "ephemeral");
 
+        JsonObject instructionsBlock = new JsonObject();
+        instructionsBlock.addProperty("type", "text");
+        instructionsBlock.addProperty("text", instructions);
+        instructionsBlock.add("cache_control", cacheControl.deepCopy());
+
+        JsonObject profileBlock = new JsonObject();
+        profileBlock.addProperty("type", "text");
+        profileBlock.addProperty("text", profile);
+
+        JsonArray system = new JsonArray();
+        system.add(instructionsBlock);
+        system.add(profileBlock);
+
         json.addProperty("model", getModel());
-        json.addProperty("system", instructions);
+        json.add("system", system);
         json.add("messages", messages);
 
         if (!toolDefinitions.isEmpty()) {

@@ -1,10 +1,5 @@
 package com.plummy.vio.message;
 
-import com.plummy.vio.access.AccessLevel;
-import com.plummy.vio.script.Script;
-import com.plummy.vio.script.ScriptManager;
-import com.plummy.vio.script.ScriptState;
-import com.plummy.vio.script.ScriptType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -18,53 +13,45 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public final class PlayerRequestMessage implements Message {
 
     private final String request;
-    private final PlayerInfo playerInfo;
     private final PlayerLocation playerLocation;
     private final PlayerState playerState;
     private final PlayerInventory playerInventory;
     private final ServerInfo serverInfo;
-    private final ScriptInfo scriptInfo;
     private final boolean isVoice;
     private final Instant dispatchTime;
 
-    public PlayerRequestMessage(String request, PlayerInfo playerInfo, PlayerLocation playerLocation, PlayerState playerState, PlayerInventory playerInventory, ServerInfo serverInfo, ScriptInfo scriptInfo, boolean isVoice) {
+    public PlayerRequestMessage(String request, PlayerLocation playerLocation, PlayerState playerState, PlayerInventory playerInventory, ServerInfo serverInfo, boolean isVoice) {
         this.request = request;
-        this.playerInfo = playerInfo;
         this.playerLocation = playerLocation;
         this.playerState = playerState;
         this.playerInventory = playerInventory;
         this.serverInfo = serverInfo;
-        this.scriptInfo = scriptInfo;
         this.isVoice = isVoice;
         this.dispatchTime = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     }
 
-    public PlayerRequestMessage(String request, PlayerInfo playerInfo, PlayerLocation playerLocation, PlayerState playerState, PlayerInventory playerInventory, ServerInfo serverInfo, ScriptInfo scriptInfo, boolean isVoice, Instant dispatchTime) {
+    public PlayerRequestMessage(String request, PlayerLocation playerLocation, PlayerState playerState, PlayerInventory playerInventory, ServerInfo serverInfo, boolean isVoice, Instant dispatchTime) {
         this.request = request;
-        this.playerInfo = playerInfo;
         this.playerLocation = playerLocation;
         this.playerState = playerState;
         this.playerInventory = playerInventory;
         this.serverInfo = serverInfo;
-        this.scriptInfo = scriptInfo;
         this.isVoice = isVoice;
         this.dispatchTime = dispatchTime;
     }
 
-    public static PlayerRequestMessage of(String request, ServerPlayer player, MinecraftServer server, AccessLevel accessLevel, ScriptInfo scriptInfo, boolean isVoice) {
-        return new PlayerRequestMessage(request, PlayerInfo.of(player, accessLevel), PlayerLocation.of(player), PlayerState.of(player), PlayerInventory.of(player), ServerInfo.of(server), scriptInfo, isVoice);
+    public static PlayerRequestMessage of(String request, ServerPlayer player, MinecraftServer server, boolean isVoice) {
+        return new PlayerRequestMessage(request, PlayerLocation.of(player), PlayerState.of(player), PlayerInventory.of(player), ServerInfo.of(server), isVoice);
     }
 
-    public static PlayerRequestMessage of(String request, ServerPlayer player, MinecraftServer server, AccessLevel accessLevel, ScriptInfo scriptInfo, boolean isVoice, Instant dispatchTime) {
-        return new PlayerRequestMessage(request, PlayerInfo.of(player, accessLevel), PlayerLocation.of(player), PlayerState.of(player), PlayerInventory.of(player), ServerInfo.of(server), scriptInfo, isVoice, dispatchTime);
+    public static PlayerRequestMessage of(String request, ServerPlayer player, MinecraftServer server, boolean isVoice, Instant dispatchTime) {
+        return new PlayerRequestMessage(request, PlayerLocation.of(player), PlayerState.of(player), PlayerInventory.of(player), ServerInfo.of(server), isVoice, dispatchTime);
     }
 
     @Override
@@ -79,10 +66,6 @@ public final class PlayerRequestMessage implements Message {
 
     public String getRequest() {
         return request;
-    }
-
-    public PlayerInfo getPlayerInfo() {
-        return playerInfo;
     }
 
     public PlayerLocation getPlayerLocation() {
@@ -101,19 +84,8 @@ public final class PlayerRequestMessage implements Message {
         return serverInfo;
     }
 
-    public ScriptInfo getScriptInfo() {
-        return scriptInfo;
-    }
-
     public boolean isVoice() {
         return isVoice;
-    }
-
-    public record PlayerInfo(UUID id, String name, AccessLevel accessLevel) {
-
-        public static PlayerInfo of(ServerPlayer player, AccessLevel accessLevel) {
-            return new PlayerInfo(player.getUUID(), player.getName().getString(), accessLevel);
-        }
     }
 
     public record PlayerLocation(double x, double y, double z, double yaw, double pitch, String dimension, String biome, List<String> structures) {
@@ -158,10 +130,10 @@ public final class PlayerRequestMessage implements Message {
         }
     }
 
-    public record PlayerState(double health, double armor, double food, double saturation, int level, String gameMode) {
+    public record PlayerState(double health, double food) {
 
         public static PlayerState of(ServerPlayer player) {
-            return new PlayerState(player.getHealth(), player.getArmorValue(), player.getFoodData().getFoodLevel(), player.getFoodData().getSaturationLevel(), player.experienceLevel, player.gameMode.getGameModeForPlayer().getLongDisplayName().getString());
+            return new PlayerState(player.getHealth(), player.getFoodData().getFoodLevel());
         }
     }
 
@@ -172,36 +144,12 @@ public final class PlayerRequestMessage implements Message {
         }
     }
 
-    public record ServerInfo(List<String> dimensions, long time, long day) {
+    public record ServerInfo(long time, long day) {
 
         public static ServerInfo of(MinecraftServer server) {
-            List<String> dimensions = new ArrayList<>();
-
-            for (ServerLevel level : server.getAllLevels()) {
-                dimensions.add(level.dimension().location().toString());
-            }
-
             long dayTime = server.overworld().getDayTime();
 
-            return new ServerInfo(dimensions, dayTime % 24000, dayTime / 24000 + 1);
-        }
-    }
-
-    public record ScriptInfo(List<Entry> scripts) {
-
-        public static ScriptInfo of(ScriptManager manager) {
-            List<Entry> scripts = new ArrayList<>();
-
-            for (Script script : manager.getScripts()) {
-                scripts.add(new Entry(script.getKey().getKey(), script.getType(), manager.getScriptState(script.getKey()), script.getDescription()));
-            }
-
-            scripts.sort(Comparator.comparing(Entry::name));
-
-            return new ScriptInfo(scripts);
-        }
-
-        public record Entry(String name, ScriptType type, ScriptState state, String description) {
+            return new ServerInfo(dayTime % 24000, dayTime / 24000 + 1);
         }
     }
 }

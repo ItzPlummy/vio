@@ -8,6 +8,8 @@ import com.plummy.vio.config.Instructions;
 import com.plummy.vio.conversation.PlayerConversation;
 import com.plummy.vio.listener.AgentListener;
 import com.plummy.vio.message.*;
+import com.plummy.vio.profile.Profile;
+import com.plummy.vio.profile.ProfileContentSerializer;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderException;
 import com.plummy.vio.script.ScriptManager;
@@ -86,18 +88,12 @@ public class VioAgent implements Agent {
         ScriptManager scriptManager = Vio.getScriptManager();
         boolean scripts = accessLevel == AccessLevel.FULL && ScriptTools.isAvailable() && scriptManager != null;
 
-        PlayerRequestMessage message = PlayerRequestMessage.of(
-                request,
-                player,
-                server,
-                accessLevel,
-                scripts ? PlayerRequestMessage.ScriptInfo.of(scriptManager) : null,
-                voice,
-                time
-        );
+        Profile profile = Profile.of(player, server, accessLevel, scripts ? Profile.ScriptInfo.of(scriptManager) : null);
+        String profileContent = ProfileContentSerializer.getInstance().serialize(profile);
+        PlayerRequestMessage message = PlayerRequestMessage.of(request, player, server, voice, time);
 
         try {
-            worker.execute(() -> process(server, playerId, accessLevel, message));
+            worker.execute(() -> process(server, playerId, accessLevel, profileContent, message));
         } catch (RejectedExecutionException e) {
             busyPlayers.remove(playerId);
             return SubmitResult.UNAVAILABLE;
@@ -131,7 +127,7 @@ public class VioAgent implements Agent {
         worker.shutdownNow();
     }
 
-    private void process(MinecraftServer server, UUID playerId, AccessLevel accessLevel, PlayerRequestMessage message) {
+    private void process(MinecraftServer server, UUID playerId, AccessLevel accessLevel, String profile, PlayerRequestMessage message) {
         PlayerConversation conversation = null;
 
         try {
@@ -144,7 +140,7 @@ public class VioAgent implements Agent {
             conversation.addMessage(message);
 
             for (int round = 0; round < AgentLimits.MAX_ROUNDS; round++) {
-                Message response = provider.request(accessLevel, instructions.getText(), conversation);
+                Message response = provider.request(accessLevel, instructions.getText(), profile, conversation);
                 conversation.addMessage(response);
 
                 if (response instanceof AgentResponseMessage agentResponse) {

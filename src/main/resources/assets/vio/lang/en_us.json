@@ -4,6 +4,7 @@
   "key.vio.talk": "Talk to Vio",
   "key.vio.cancel": "Cancel talking to Vio",
   "vio.screen.title": "Vio",
+  "vio.screen.reset": "Reset conversation",
   "vio.chat.placeholder": "...",
   "vio.chat.placeholder.busy": "Vio is working...",
   "vio.chat.thought.one": "Thought for 1 second",

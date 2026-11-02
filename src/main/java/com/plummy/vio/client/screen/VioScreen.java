@@ -40,6 +40,7 @@ public class VioScreen extends Screen {
     private static final float HEIGHT_EASING = 8f;
     private static final float MAX_FRAME_SECONDS = 0.1f;
     private static final float FADE_Z = 10;
+    private static final float RESET_Z = 20;
 
     private static final long HOLD_BASE_MILLIS = 1000;
     private static final long HOLD_MILLIS_PER_CHARACTER = 40;
@@ -87,6 +88,9 @@ public class VioScreen extends Screen {
 
     private int cancelX;
     private int cancelY;
+
+    private int resetX;
+    private int resetY;
 
     public VioScreen() {
         super(Component.translatable("vio.screen.title"));
@@ -148,7 +152,7 @@ public class VioScreen extends Screen {
 
         windowWidth = Math.min(Math.max(Math.round(referenceWidth * WIDTH), MIN_WIDTH), width - SCREEN_MARGIN * 2);
         // Room for the cancel button is always kept, so the text doesn't reflow when it appears.
-        input = new InputField(font, windowWidth - PADDING * 2 - INPUT_PADDING_X * 2 - getCancelScreenWidth() - CANCEL_MARGIN);
+        input = new InputField(font, windowWidth - PADDING * 2 - INPUT_PADDING_X * 2 - getButtonScreenWidth() - CANCEL_MARGIN);
         input.setValue(value);
         input.seekCursor(Whence.ABSOLUTE, cursor);
     }
@@ -158,6 +162,7 @@ public class VioScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderWindow(graphics);
         renderCancel(graphics, isOverCancel(mouseX, mouseY));
+        renderReset(graphics, isOverReset(mouseX, mouseY));
         renderTooltip(graphics, mouseX, mouseY);
     }
 
@@ -227,9 +232,23 @@ public class VioScreen extends Screen {
         int textHeight = visibleInputLines * input.getScreenLineHeight();
 
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (IconRenderer.contains(width, Math.max(IconRenderer.OPEN_SIZE, IconRenderer.getGrownSize()), mouseX, mouseY)) {
+                onClose();
+                return true;
+            }
+
             if (isOverCancel(mouseX, mouseY)) {
                 conversation.cancelCapture();
                 Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
+                return true;
+            }
+
+            if (isOverReset(mouseX, mouseY)) {
+                if (conversation.canReset()) {
+                    conversation.resetConversation();
+                    Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
+                }
+
                 return true;
             }
 
@@ -295,8 +314,11 @@ public class VioScreen extends Screen {
         renderInputBox(graphics, contentX, inputY - INPUT_PADDING_Y - slide, contentWidth, inputBoxHeight);
         input.render(graphics, contentX + INPUT_PADDING_X, inputY - slide, visibleInputLines, getPlaceholder());
 
-        cancelX = contentX + contentWidth - INPUT_PADDING_X - getCancelScreenWidth();
+        cancelX = contentX + contentWidth - INPUT_PADDING_X - getButtonScreenWidth();
         cancelY = inputY + (visibleInputLines - 1) * input.getScreenLineHeight() - slide;
+
+        resetX = contentX + contentWidth - getButtonScreenWidth();
+        resetY = windowY + PADDING - slide;
 
         int iconSize = Math.round(IconRenderer.CLOSED_SIZE + (IconRenderer.OPEN_SIZE - IconRenderer.CLOSED_SIZE) * progress);
         IconRenderer.render(graphics, iconSize);
@@ -311,7 +333,7 @@ public class VioScreen extends Screen {
 
     private void renderInputBox(GuiGraphics graphics, int x, int y, int width, int height) {
         float scale = input.getScale();
-        int border = minecraft != null && minecraft.screen == this ? Theme.INPUT_BORDER_FOCUSED : Theme.INPUT_BORDER;
+        int border = minecraft != null && minecraft.screen == this ? Theme.getInputBorderFocused() : Theme.INPUT_BORDER;
 
         graphics.pose().pushPose();
         graphics.pose().translate(x, y, 0);
@@ -327,14 +349,29 @@ public class VioScreen extends Screen {
         }
 
         float scale = Theme.getTextScale();
-        int size = getCancelSize();
+        int size = getButtonSize();
 
         graphics.pose().pushPose();
         graphics.pose().translate(cancelX, cancelY, 0);
         graphics.pose().scale(scale, scale, 1);
 
-        BoxRenderer.render(graphics, 0, -1, size, size, Theme.ERROR_BOX, Theme.ERROR_BOX_BORDER);
-        GlyphRenderer.render(graphics, GlyphRenderer.CROSS, (size - GlyphRenderer.getWidth(GlyphRenderer.CROSS)) / 2, 1, hovered ? Theme.PLAYER_TEXT : Theme.ERROR_TEXT);
+        BoxRenderer.render(graphics, 0, -1, size, size, Theme.VIO_BOX, Theme.getVioBoxBorder());
+        GlyphRenderer.render(graphics, GlyphRenderer.CROSS, (size - GlyphRenderer.getWidth(GlyphRenderer.CROSS)) / 2, 1, hovered ? Theme.PLAYER_TEXT : Theme.getVioText());
+
+        graphics.pose().popPose();
+    }
+
+    private void renderReset(GuiGraphics graphics, boolean hovered) {
+        float scale = Theme.getTextScale();
+        int size = getButtonSize();
+        int color = !conversation.canReset() ? Theme.STATUS_TEXT : hovered ? Theme.PLAYER_TEXT : Theme.getVioText();
+
+        graphics.pose().pushPose();
+        graphics.pose().translate(resetX, resetY, RESET_Z);
+        graphics.pose().scale(scale, scale, 1);
+
+        BoxRenderer.render(graphics, 0, 0, size, size, Theme.VIO_BOX, Theme.getVioBoxBorder());
+        GlyphRenderer.render(graphics, GlyphRenderer.CROSS, (size - GlyphRenderer.getWidth(GlyphRenderer.CROSS)) / 2, 2, color);
 
         graphics.pose().popPose();
     }
@@ -342,7 +379,22 @@ public class VioScreen extends Screen {
     private void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         if (isOverCancel(mouseX, mouseY)) {
             graphics.renderTooltip(font, Component.literal(I18n.get("vio.voice.cancel", KeyMappings.CANCEL.getTranslatedKeyMessage().getString())), mouseX, mouseY);
+        } else if (isOverReset(mouseX, mouseY) && conversation.canReset()) {
+            graphics.renderTooltip(font, Component.translatable("vio.screen.reset"), mouseX, mouseY);
         }
+    }
+
+    private boolean isOverReset(double mouseX, double mouseY) {
+        if (font == null || minecraft == null || minecraft.screen != this) {
+            return false;
+        }
+
+        float scale = Theme.getTextScale();
+        int size = getButtonSize();
+        double x = (mouseX - resetX) / scale;
+        double y = (mouseY - resetY) / scale;
+
+        return x >= 0 && x < size && y >= 0 && y < size;
     }
 
     // The position is where the button was last drawn, so what's hit is what's seen.
@@ -352,19 +404,19 @@ public class VioScreen extends Screen {
         }
 
         float scale = Theme.getTextScale();
-        int size = getCancelSize();
+        int size = getButtonSize();
         double x = (mouseX - cancelX) / scale;
         double y = (mouseY - cancelY) / scale;
 
         return x >= 0 && x < size && y >= -1 && y < size - 1;
     }
 
-    private int getCancelSize() {
+    private int getButtonSize() {
         return font.lineHeight + 2;
     }
 
-    private int getCancelScreenWidth() {
-        return (int) Math.ceil(getCancelSize() * Theme.getTextScale());
+    private int getButtonScreenWidth() {
+        return (int) Math.ceil(getButtonSize() * Theme.getTextScale());
     }
 
     private boolean isHeld() {

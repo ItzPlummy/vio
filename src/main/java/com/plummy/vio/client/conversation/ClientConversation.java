@@ -131,6 +131,16 @@ public class ClientConversation {
         PacketDistributor.sendToServer(CancelCapturePayload.getInstance());
     }
 
+    public boolean canReset() {
+        return isAvailable() && !isBusy() && !isCapturing() && voiceState != VoiceState.TRANSCRIBING;
+    }
+
+    public void resetConversation() {
+        if (canReset()) {
+            PacketDistributor.sendToServer(ResetConversationPayload.getInstance());
+        }
+    }
+
     public boolean isAvailable() {
         ClientPacketListener connection = Minecraft.getInstance().getConnection();
         return connection != null && connection.hasChannel(PlayerRequestPayload.getType());
