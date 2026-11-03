@@ -8,7 +8,6 @@ public final class VoiceLimits {
     public static final long NO_AUDIO_MILLIS = 1000;
     public static final long NO_SPEECH_MILLIS = 5000;
     public static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
-    public static final long SHUTDOWN_TIMEOUT_SECONDS = 5;
 
     private VoiceLimits() {
     }

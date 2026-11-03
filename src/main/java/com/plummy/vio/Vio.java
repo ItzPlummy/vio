@@ -14,8 +14,6 @@ import com.plummy.vio.datapack.DatapackManager;
 import com.plummy.vio.datapack.DefaultDatapackManager;
 import com.plummy.vio.listener.AgentListener;
 import com.plummy.vio.listener.NetworkAgentListener;
-import com.plummy.vio.provider.Provider;
-import com.plummy.vio.provider.ProviderFactory;
 import com.plummy.vio.script.DefaultScriptManager;
 import com.plummy.vio.script.PeriodicScriptTicker;
 import com.plummy.vio.script.ScriptManager;
@@ -25,8 +23,6 @@ import com.plummy.vio.user.PlayerUserStorage;
 import com.plummy.vio.voice.VoiceAgentListener;
 import com.plummy.vio.voice.VoiceChat;
 import com.plummy.vio.voice.VoiceManager;
-import com.plummy.vio.voice.transformer.SpeechToTextTransformerFactory;
-import com.plummy.vio.voice.transformer.TextToSpeechTransformerFactory;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -55,7 +51,6 @@ public class Vio {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static Agent agent;
-    private static Provider provider;
     private static AccessManager accessManager;
 
     private static PlayerConversationStorage conversationStorage;
@@ -79,7 +74,6 @@ public class Vio {
     public void onServerStarting(ServerAboutToStartEvent event) {
         MinecraftServer server = event.getServer();
 
-        provider = ProviderFactory.createProvider();
         conversationStorage = PlayerConversationStorage.fromServer(server);
         playerUserStorage = PlayerUserStorage.fromServer(server);
         accessManager = new DefaultAccessManager(server, getPlayerUserStorage());
@@ -87,10 +81,8 @@ public class Vio {
         List<AgentListener> listeners = new ArrayList<>();
         listeners.add(new NetworkAgentListener());
 
-        // Voice only works through Simple Voice Chat; without it, the speech model isn't even downloaded.
         if (ModList.get().isLoaded(VOICECHAT_MODID)) {
-            voiceManager = new VoiceManager(SpeechToTextTransformerFactory.createTransformer(), TextToSpeechTransformerFactory.createTransformer());
-            voiceManager.start();
+            voiceManager = new VoiceManager();
             NeoForge.EVENT_BUS.register(voiceManager);
             listeners.add(new VoiceAgentListener(voiceManager));
         }
@@ -100,7 +92,6 @@ public class Vio {
         }
 
         agent = new VioAgent(
-                getProvider(),
                 getConversationStorage(),
                 accessManager,
                 new BasicToolExecutor(),
@@ -142,7 +133,6 @@ public class Vio {
         }
 
         datapackManager = null;
-        provider = null;
         conversationStorage = null;
         playerUserStorage = null;
     }
@@ -167,10 +157,6 @@ public class Vio {
 
     public static Agent getAgent() {
         return agent;
-    }
-
-    public static Provider getProvider() {
-        return provider;
     }
 
     public static AccessManager getAccessManager() {

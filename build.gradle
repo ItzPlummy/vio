@@ -18,11 +18,6 @@ repositories {
         url = 'https://api.modrinth.com/maven'
         content { includeGroup 'maven.modrinth' }
     }
-    // sherpa-onnx, which is only published there
-    maven {
-        url = 'https://jitpack.io'
-        content { includeGroup 'com.github.k2-fsa.sherpa-onnx' }
-    }
 }
 
 base {
@@ -113,10 +108,6 @@ dependencies {
     jarJar(implementation("org.jsoup:jsoup:1.18.3"))
     // Dev runs don't load Jar-in-Jar contents, so put plain libraries on the game classpath explicitly
     additionalRuntimeClasspath "org.jsoup:jsoup:1.18.3"
-
-    // Local speech to text; its native libraries and the model are downloaded on first server start instead
-    jarJar(implementation("com.github.k2-fsa.sherpa-onnx:sherpa-onnx-jvm:v${sherpa_onnx_version}"))
-    additionalRuntimeClasspath "com.github.k2-fsa.sherpa-onnx:sherpa-onnx-jvm:v${sherpa_onnx_version}"
 
     // Groovy for scripts; a range, so another mod bundling Groovy 4 shares one copy with us
     jarJar(implementation("org.apache.groovy:groovy")) {

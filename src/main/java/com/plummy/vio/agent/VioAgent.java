@@ -12,6 +12,7 @@ import com.plummy.vio.profile.Profile;
 import com.plummy.vio.profile.ProfileContentSerializer;
 import com.plummy.vio.provider.Provider;
 import com.plummy.vio.provider.ProviderException;
+import com.plummy.vio.provider.ProviderFactory;
 import com.plummy.vio.script.ScriptManager;
 import com.plummy.vio.storage.Storage;
 import com.plummy.vio.tool.BasicTool;
@@ -36,7 +37,6 @@ import java.util.function.BiConsumer;
 
 public class VioAgent implements Agent {
 
-    private final Provider provider;
     private final Storage<UUID, PlayerConversation> conversationStorage;
     private final AccessManager accessManager;
     private final BasicToolExecutor basicToolExecutor;
@@ -55,8 +55,7 @@ public class VioAgent implements Agent {
 
     private final Set<UUID> busyPlayers = ConcurrentHashMap.newKeySet();
 
-    public VioAgent(Provider provider, Storage<UUID, PlayerConversation> conversationStorage, AccessManager accessManager, BasicToolExecutor basicToolExecutor, ServerToolExecutor serverToolExecutor, Instructions instructions, List<AgentListener> listeners) {
-        this.provider = provider;
+    public VioAgent(Storage<UUID, PlayerConversation> conversationStorage, AccessManager accessManager, BasicToolExecutor basicToolExecutor, ServerToolExecutor serverToolExecutor, Instructions instructions, List<AgentListener> listeners) {
         this.conversationStorage = conversationStorage;
         this.accessManager = accessManager;
         this.basicToolExecutor = basicToolExecutor;
@@ -138,6 +137,8 @@ public class VioAgent implements Agent {
             }
 
             conversation.addMessage(message);
+
+            Provider provider = ProviderFactory.createProvider();
 
             for (int round = 0; round < AgentLimits.MAX_ROUNDS; round++) {
                 Message response = provider.request(accessLevel, instructions.getText(), profile, conversation);

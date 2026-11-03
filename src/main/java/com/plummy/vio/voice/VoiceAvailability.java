@@ -9,9 +9,7 @@ public enum VoiceAvailability {
     NOT_INSTALLED("not_installed"),
     DISCONNECTED("disconnected"),
     // The player turned voice chat off.
-    DISABLED("disabled"),
-    // Speech to text is still being downloaded or loaded.
-    LOADING("loading");
+    DISABLED("disabled");
 
     private final String value;
 

@@ -5,14 +5,13 @@ import com.plummy.vio.access.AccessLevel;
 import com.plummy.vio.agent.Agent;
 import com.plummy.vio.agent.SubmitResult;
 import com.plummy.vio.config.ServerConfig;
-import com.plummy.vio.config.VoiceLimits;
 import com.plummy.vio.network.Networking;
 import com.plummy.vio.network.payload.AgentErrorPayload;
 import com.plummy.vio.network.payload.SubmitResultPayload;
 import com.plummy.vio.network.payload.VoiceStatePayload;
 import com.plummy.vio.network.payload.VoiceTranscriptPayload;
-import com.plummy.vio.voice.transformer.SpeechToTextTransformer;
-import com.plummy.vio.voice.transformer.TextToSpeechTransformer;
+import com.plummy.vio.voice.transformer.SpeechToTextTransformerFactory;
+import com.plummy.vio.voice.transformer.TextToSpeechTransformerFactory;
 import com.plummy.vio.voice.transformer.Transcript;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
@@ -27,53 +26,19 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 // Captures, transcription results and replies all change state on the server thread; only the transformers run on
 // their workers, and only microphone frames arrive on voice chat's thread, straight into their CaptureSession.
 public class VoiceManager {
 
-    private final SpeechToTextTransformer speechToText;
-    private final TextToSpeechTransformer textToSpeech;
-
     // Separate, so a slow text to speech request never holds up transcription.
     private final ExecutorService speechToTextWorker = createWorker("vio_speech_to_text");
     private final ExecutorService textToSpeechWorker = createWorker("vio_text_to_speech");
-
-    // LOADING until speech to text is loaded, then AVAILABLE, or UNSUPPORTED if loading failed.
-    private volatile VoiceAvailability availability = VoiceAvailability.LOADING;
 
     private final Map<UUID, CaptureSession> sessions = new HashMap<>();
     // Players whose current request was spoken, so its reply is spoken too, in the request's language if it's known.
     private final Map<UUID, String> awaitingReply = new HashMap<>();
     private final Set<UUID> speakingPlayers = new HashSet<>();
-
-    public VoiceManager(SpeechToTextTransformer speechToText, TextToSpeechTransformer textToSpeech) {
-        this.speechToText = speechToText;
-        this.textToSpeech = textToSpeech;
-    }
-
-    public VoiceAvailability getAvailability() {
-        return availability;
-    }
-
-    // Loading may download the model first, so it runs on the worker that later uses it.
-    public void start() {
-        speechToTextWorker.execute(() -> {
-            long start = System.nanoTime();
-
-            try {
-                speechToText.load();
-                availability = VoiceAvailability.AVAILABLE;
-                Vio.getLogger().info("Speech to text loaded in %s ms".formatted((System.nanoTime() - start) / 1_000_000));
-            } catch (RuntimeException e) {
-                availability = VoiceAvailability.UNSUPPORTED;
-                Vio.getLogger().error("Failed to load speech to text, voice is unavailable", e);
-            }
-
-            VoiceAvailabilitySender.sendAllLater();
-        });
-    }
 
     public void shutdown() {
         List.copyOf(sessions.keySet()).forEach(this::endCapture);
@@ -82,23 +47,6 @@ public class VoiceManager {
 
         textToSpeechWorker.shutdownNow();
         speechToTextWorker.shutdownNow();
-
-        // A model may still be in use by a running transcription or synthesis, so it's released only once that ends.
-        try {
-            if (speechToTextWorker.awaitTermination(VoiceLimits.SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-                speechToText.release();
-            } else {
-                Vio.getLogger().warn("Speech to text didn't stop in time, its model isn't released");
-            }
-
-            if (textToSpeechWorker.awaitTermination(VoiceLimits.SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-                textToSpeech.release();
-            } else {
-                Vio.getLogger().warn("Text to speech didn't stop in time, its voices aren't released");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     // Anything but ACCEPTED is reported to the player like a rejected text request.
@@ -174,7 +122,7 @@ public class VoiceManager {
             short[] audio;
 
             try {
-                audio = textToSpeech.synthesize(text, language);
+                audio = TextToSpeechTransformerFactory.createTransformer().synthesize(text, language);
             } catch (RuntimeException e) {
                 Vio.getLogger().error("Failed to synthesize speech for %s".formatted(playerId), e);
                 server.execute(() -> sendError(server, playerId, "speech"));
@@ -262,7 +210,7 @@ public class VoiceManager {
             boolean failed = false;
 
             try {
-                transcript = speechToText.transcribe(speech, gameLanguage);
+                transcript = SpeechToTextTransformerFactory.createTransformer().transcribe(speech, gameLanguage);
             } catch (RuntimeException e) {
                 Vio.getLogger().error("Failed to transcribe speech for %s".formatted(session.getPlayerId()), e);
                 transcript = new Transcript("", null);

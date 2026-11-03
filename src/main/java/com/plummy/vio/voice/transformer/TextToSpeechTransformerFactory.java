@@ -16,7 +16,12 @@ public class TextToSpeechTransformerFactory {
                     ServerConfig.ELEVENLABS_OUTPUT_FORMAT.get(),
                     KeysConfig.ELEVENLABS.get()
             );
-            case "local" -> new LocalTextToSpeechTransformer(4);
+            case "voicestudio" -> new VoiceStudioTextToSpeechTransformer(
+                    ServerConfig.VOICESTUDIO_URI.get(),
+                    ServerConfig.VOICESTUDIO_MODEL.get(),
+                    ServerConfig.VOICESTUDIO_VOICE.get(),
+                    KeysConfig.VOICESTUDIO.get()
+            );
             default -> throw new IllegalArgumentException("Text to speech '%s' isn't available".formatted(ServerConfig.TEXT_TO_SPEECH.get()));
         };
     }

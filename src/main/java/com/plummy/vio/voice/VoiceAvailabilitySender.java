@@ -22,18 +22,14 @@ public class VoiceAvailabilitySender {
         }
     }
 
-    // Server problems first, then the player's own voice chat state, then whether speech to text is ready.
     public static VoiceAvailability getAvailability(ServerPlayer player) {
         VoiceChat voiceChat = Vio.getVoiceChat();
-        VoiceManager voiceManager = Vio.getVoiceManager();
 
-        if (voiceChat == null || voiceManager == null || voiceManager.getAvailability() == VoiceAvailability.UNSUPPORTED) {
+        if (voiceChat == null || Vio.getVoiceManager() == null) {
             return VoiceAvailability.UNSUPPORTED;
         }
 
-        VoiceAvailability availability = voiceChat.getAvailability(player.getUUID());
-
-        return availability == VoiceAvailability.AVAILABLE ? voiceManager.getAvailability() : availability;
+        return voiceChat.getAvailability(player.getUUID());
     }
 
     public static void send(ServerPlayer player) {

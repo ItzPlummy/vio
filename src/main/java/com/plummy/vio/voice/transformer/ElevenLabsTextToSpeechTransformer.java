@@ -104,8 +104,4 @@ public class ElevenLabsTextToSpeechTransformer implements TextToSpeechTransforme
 
         return samples;
     }
-
-    @Override
-    public void release() {
-    }
 }

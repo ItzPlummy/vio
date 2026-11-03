@@ -8,7 +8,6 @@ import com.plummy.vio.config.Endpoints;
 import com.plummy.vio.config.VoiceLimits;
 import com.plummy.vio.voice.VoiceChat;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -16,11 +15,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 
 // Scribe, in the cloud: the whole capture in one request, with the language detected. Short phrases are often
 // detected as some other language, so when Scribe isn't sure, the capture is transcribed again as the game's language.
@@ -63,10 +60,6 @@ public class ElevenLabsSpeechToTextTransformer implements SpeechToTextTransforme
     }
 
     @Override
-    public void load() {
-    }
-
-    @Override
     public Transcript transcribe(short[] samples, String gameLanguage) {
         byte[] pcm = toPcm(samples);
         JsonObject detected = request(pcm, null);
@@ -82,14 +75,9 @@ public class ElevenLabsSpeechToTextTransformer implements SpeechToTextTransforme
         return new Transcript(text, text.equals(getText(detected)) ? language : gameLanguage);
     }
 
-    @Override
-    public void release() {
-    }
-
     // With a language, Scribe reports that one back as certain, so only a request without it says what was detected.
     private JsonObject request(byte[] pcm, String language) {
-        String boundary = UUID.randomUUID().toString();
-        Multipart body = new Multipart(boundary);
+        Multipart body = new Multipart();
 
         body.addField("model_id", getModel());
         body.addField("file_format", FILE_FORMAT);
@@ -105,7 +93,7 @@ public class ElevenLabsSpeechToTextTransformer implements SpeechToTextTransforme
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(Endpoints.ELEVENLABS_SPEECH_TO_TEXT_URI))
                 .timeout(VoiceLimits.REQUEST_TIMEOUT)
-                .header("Content-Type", "multipart/form-data; boundary=%s".formatted(boundary))
+                .header("Content-Type", body.getContentType())
                 .header("xi-api-key", getApiKey())
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body.build()))
                 .build();
@@ -178,39 +166,5 @@ public class ElevenLabsSpeechToTextTransformer implements SpeechToTextTransforme
         }
 
         return pcm.array();
-    }
-
-    // multipart/form-data, which the HTTP client has no builder for.
-    private static class Multipart {
-
-        private final String boundary;
-        private final ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-        private Multipart(String boundary) {
-            this.boundary = boundary;
-        }
-
-        private void addField(String name, String value) {
-            write("--%s\r\n".formatted(boundary));
-            write("Content-Disposition: form-data; name=\"%s\"\r\n\r\n".formatted(name));
-            write("%s\r\n".formatted(value));
-        }
-
-        private void addFile(String name, String fileName, byte[] content) {
-            write("--%s\r\n".formatted(boundary));
-            write("Content-Disposition: form-data; name=\"%s\"; filename=\"%s\"\r\n".formatted(name, fileName));
-            write("Content-Type: application/octet-stream\r\n\r\n");
-            output.writeBytes(content);
-            write("\r\n");
-        }
-
-        private byte[] build() {
-            write("--%s--\r\n".formatted(boundary));
-            return output.toByteArray();
-        }
-
-        private void write(String text) {
-            output.writeBytes(text.getBytes(StandardCharsets.UTF_8));
-        }
     }
 }
